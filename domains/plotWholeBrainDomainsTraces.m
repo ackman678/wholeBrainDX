@@ -116,6 +116,8 @@ if lenVarargin < 4 || isempty(varargin{4}),
     %load sigtoolHandle or make actvFraction temporarily;
     handles.plot4(1).data=handles.plot3(1).data;
     handles.plot4(1).legendText = handles.plot3(1).legendText;
+    handles.plot4(1).Fs = 1; %sampling rate (Hz).  Used to convert data point indices to appropriate time units.  Leave at '1' for no conversion (like plotting the indices, 'frames')
+	handles.plot4(1).unitConvFactor = 1;
 elseif isnumeric(varargin{4})
     handles.plot4 = setupEphysData(varargin{4}, varargin{5}, handles);   %based on sigTOOL figure handle and channel handle inputs
 elseif isstruct(varargin{4})
@@ -271,7 +273,12 @@ clickableLegend(handles.axes3,legendText,handles.slider2);  %pass axes handle, l
 % setappdata(gca,'LegendColorbarManualSpace',1);
 % setappdata(gca,'LegendColorbarReclaimSpace',1);
 % pan xon
-linkaxes([handles.axes3 handles.axes4],'x');
+
+	plot4(1).Fs=1;   %sampling rate (Hz).  Used to convert data point indices to appropriate time units.  Leave at '1' for no conversion (like plotting the indices, 'frames')
+	plot4(1).unitConvFactor = 1;
+if handles.plot4(1).unitConvFactor == 1
+	linkaxes([handles.axes3 handles.axes4],'x');
+end
 zoom xon
 %-------end setup plot3----------------
 
@@ -301,7 +308,15 @@ end
 szZ = length(handles.plot3(1).data);
 
 set(gca,'xlim', [0 szZ/handles.plot4(1).unitConvFactor]);   %unitConvFactor will usually be equivalent to Fs for plot3
-xlabel('Time (s)'); ylabel('movement signal (uV)'); %title(handles.axesTitles{4});
+
+if handles.plot4(1).unitConvFactor == 1
+	xlabel('Time (frames)'); 
+	ylabel('signal plot4'); %title(handles.axesTitles{4});
+else
+	xlabel('Time (s)'); 
+	ylabel('movement signal (uV)'); %title(handles.axesTitles{4});
+end
+
 % Static legend
 % legend(legendText, 'Location', 'NorthEastOutside');
 % [legend_h,object_h,plot_h,text_str] = legendflex(handles.axes4, legendText,'ref', handles.axes4, 'anchor', [3 1], 'buffer', [ 10   0]);
