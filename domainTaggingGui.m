@@ -28,6 +28,8 @@ function varargout = domainTaggingGui(varargin)
 
 % Last Modified by GUIDE v2.5 15-May-2013 16:12:42
 
+%Author: %James B. Ackman (c) 5/8/2013 
+
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...

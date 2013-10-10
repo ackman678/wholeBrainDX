@@ -36,7 +36,7 @@ function varargout = plotWholeBrainDomainsTraces(varargin)
 
 % Edit the above text to modify the response to help plotWholeBrainDomainsTraces
 
-% Last Modified by GUIDE v2.5 08-May-2013 09:38:52
+% Last Modified by GUIDE v2.5 08-Oct-2013 13:07:27
 
 %Author: %James B. Ackman (c) 4/15/2013 
 
@@ -266,7 +266,7 @@ xlabel('frame no.'); ylabel('Fraction of pixels active'); %title(handles.axesTit
 % legend(legendText, 'Location', 'NorthEastOutside');
 
 % [legend_h,object_h,plot_h,text_str] = legendflex(handles.axes3, legendText,'ref', handles.axes3, 'anchor', [3 1], 'buffer', [ 10   0]);
-clickableLegend(handles.axes3,legendText,handles.slider2);  %pass axes handle, legendText cellarray of strings, and ui element you want to pass uicontrol to after button toggles
+%clickableLegend(handles.axes3,legendText,handles.slider2);  %pass axes handle, legendText cellarray of strings, and ui element you want to pass uicontrol to after button toggles
 
 
 % set(gca,'LegendColorbarListeners',[]); 
@@ -320,7 +320,7 @@ end
 % Static legend
 % legend(legendText, 'Location', 'NorthEastOutside');
 % [legend_h,object_h,plot_h,text_str] = legendflex(handles.axes4, legendText,'ref', handles.axes4, 'anchor', [3 1], 'buffer', [ 10   0]);
-clickableLegend(handles.axes4,legendText,handles.slider2);  %pass axes handle, legendText cellarray of strings, and ui element you want to pass uicontrol to after button toggles
+%clickableLegend(handles.axes4,legendText,handles.slider2);  %pass axes handle, legendText cellarray of strings, and ui element you want to pass uicontrol to after button toggles
 
 % set(gca,'LegendColorbarListeners',[]); 
 % setappdata(gca,'LegendColorbarManualSpace',1);
@@ -355,6 +355,7 @@ function handles = plotImages(handles)
 
 handles.current_data1 = handles.movie1(:,:,handles.currentFrame);
 set(handles.figure1,'CurrentAxes',handles.axes1)
+delete(findobj(gca,'Type','line'))
 set(handles.image1,'CData',handles.current_data1)  %set image data directly instead of making new imagesc call
 hold on
 plot(handles.data(1).frame(handles.currentFrame).allDomains.x,handles.data(1).frame(handles.currentFrame).allDomains.y,'og','MarkerSize',7);
@@ -364,6 +365,7 @@ hold off
 % 
 handles.current_data2 = handles.movie2(:,:,handles.currentFrame);
 set(handles.figure1,'CurrentAxes',handles.axes2)
+delete(findobj(gca,'Type','line'))
 set(handles.image2,'CData',handles.current_data2)  %set image data directly instead of making new imagesc call
 hold on
 plot(handles.data(2).frame(handles.currentFrame).allDomains.x,handles.data(2).frame(handles.currentFrame).allDomains.y,'og','MarkerSize',7);
@@ -562,6 +564,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
+%KeyPressFcn: plotWholeBrainDomainsTraces('figure1_KeyPressFcn',hObject,eventdata,guidata(hObject))
 % --- Executes on key press with focus on figure1 and none of its controls.
 function figure1_KeyPressFcn(hObject, eventdata, handles)
 % hObject    handle to figure1 (see GCBO)
@@ -572,8 +575,11 @@ function figure1_KeyPressFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % str = get(handles.figure1_KeyPressFcn,'Key');
 str = eventdata.Key;
-if strcmp(str,'1')  %add all true-positive domains markers from real data in green
-    [x,y] = ginput;
+
+switch lower(str)
+     case '1'
+%if strcmp(str,'1')  %add all true-positive domains markers from real data in green
+    [x,y] = myginput2;
 
     currAxis= get(hObject,'CurrentAxes');
     if currAxis == handles.axes1
@@ -582,7 +588,7 @@ if strcmp(str,'1')  %add all true-positive domains markers from real data in gre
             handles.data(nMovies).frame(handles.currentFrame).allDomains.y = y;
         end
     end
-    plotImages(hObject, eventdata, handles)
+    plotImages(handles);
 %     chi=get(currAxis,'Children');
 %     xdata=get(chi,'XData');
 %     ydata=get(chi,'YData');
@@ -591,8 +597,9 @@ if strcmp(str,'1')  %add all true-positive domains markers from real data in gre
     
 %     idx1 = xdata{1};
 %     idx1 = ydata{1};
-elseif strcmp(str,'2')  %add good domains markers in magenta
-    [x,y] = ginput;
+%elseif strcmp(str,'2')  %add good domains markers in magenta
+	case '2'
+    [x,y] = myginput2;
     
     currAxis= get(hObject,'CurrentAxes');
     if currAxis == handles.axes2
@@ -607,9 +614,10 @@ elseif strcmp(str,'2')  %add good domains markers in magenta
     else
         return
     end
-    plotImages(hObject, eventdata, handles)
-elseif strcmp(str,'3')  %add bad domains markers in red
-    [x,y] = ginput;
+    plotImages(handles);
+%elseif strcmp(str,'3')  %add bad domains markers in red
+	case '3'
+    [x,y] = myginput2;
     currAxis= get(hObject,'CurrentAxes');
     if currAxis == handles.axes2
         handles.data(2).frame(handles.currentFrame).badDomains.x = x;
@@ -623,9 +631,10 @@ elseif strcmp(str,'3')  %add bad domains markers in red
     else
         return
     end
-    plotImages(hObject, eventdata, handles)    
-elseif strcmp(str,'d')  %delete
-    [x,y] = ginput(1);
+    plotImages(handles);    
+%elseif strcmp(str,'d')  %delete
+	case 'd'
+    [x,y] = myginput2(1);
     currAxis= get(hObject,'CurrentAxes');
     if currAxis == handles.axes1
         for nMovies = 1:2
@@ -663,12 +672,15 @@ elseif strcmp(str,'d')  %delete
     else
         return
     end
-    plotImages(hObject, eventdata, handles)    
+    plotImages(handles);    
     
-else
-    return
+	 otherwise
+	  % Hmmm, something wrong with the parameter string
+	  %error(['Unrecognized parameter: ''' str '''']);
+	  return
 end
 guidata(hObject, handles);
+uicontrol(handles.slider2);
 
 
 % --- Executes on button press in pushbutton5.
@@ -677,10 +689,10 @@ function pushbutton5_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 if isfield(handles,'dataFilename')
-    delete(dataFilename)
+%    delete(dataFilename)
     data = handles.data;
     assignin('base', 'data', data)
-    handles.dataFilename = ['temp_plotWholeBrainDomains-data-' datestr(now,'yyyymmdd-HHMMSS') '.mat'];      
+%    handles.dataFilename = ['temp_plotWholeBrainDomains-data-' datestr(now,'yyyymmdd-HHMMSS') '.mat'];      
     save(handles.dataFilename,'data','-v7.3')
 else
     data = handles.data;
@@ -699,7 +711,7 @@ function pushbutton6_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 r = randi(handles.movieLength);  %random integer on interval [1,nFrames]
 % handles.currentFrame = r;
-% plotImages(hObject, eventdata, handles)
+% plotImages(handles)
 % guidata(hObject, handles);
 newFrame = r; %returns contents of frameNumberText1 as a double
 
