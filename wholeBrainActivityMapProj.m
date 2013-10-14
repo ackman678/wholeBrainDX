@@ -1,9 +1,9 @@
-function [A3proj, maxSig] = wholeBrainActivityMapPlot(region, frames, plotType, normValue, handles)
-%wholeBrainActivityMapPlot(region, plotType)
+function [A3proj] = wholeBrainActivityMapPlot(region, frames, plotType)
+%wholeBrainActivityMapPlot(region, frames, plotType)
 % Examples
 %	wholeBrainActivityMapPlot(region);
-%	wholeBrainActivityMapPlot(region, [], 1, normValue);
-%	wholeBrainActivityMapPlot(region, [300 1800], 2, normValue, handles);
+%	wholeBrainActivityMapPlot(region, [], 1);
+%	wholeBrainActivityMapPlot(region, [300 1800], 2);
 % INPUTS
 % region -- region formatted data structure (as from CalciumDX, domains2region, etc) that includes CC and STATS data structures returned from wholeBrain_segmentation.m and wholeBrain_kmeans.m
 % frames -- frames should be a vector containing two integers, the startFrame and endFrame for the range you want to plot
@@ -11,8 +11,6 @@ function [A3proj, maxSig] = wholeBrainActivityMapPlot(region, frames, plotType, 
 %	1: plot all detected components (true positive activity domains and false positive artifacts)
 %	2: plot without false positive artifacts tagged in the STATS.descriptor variable in region.STATS
 %	3: plot only the false positive artifacts
-% normValue --
-% handles -- handles for figure
 % James B. Ackman 2013-10-10 14:31:28
 
 
@@ -22,12 +20,6 @@ sz=region.domainData.CC.ImageSize;
 
 if (nargin < 2 || isempty(plotType)), plotType = 1; end
 if (nargin < 3 || isempty(frames)), frames = [1 sz(3)]; end
-if (nargin < 4 || isempty(normValue)), normValue = []; end
-if nargin < 5 || isempty(handles),
-	handles.figHandle = figure;
-	handles.axesHandle = gca;
-	handles.axesTitle = 'Signal px count norm to max sig count. MaxSig=';
-end
 
 %-----------main-----------------
 BW = makeBlankArray(sz);
@@ -50,7 +42,6 @@ otherwise
 end
 
 A3proj = sumProjectArray(A3,frames);  %this can be changed to other Array projections to different types of images (amplitude instead of pixel frequency, distances/optical flow transforms. mean domain membership size, duration)
-maxSig=max(A3proj(:)); 
 
 %-----------functions-------------
 
