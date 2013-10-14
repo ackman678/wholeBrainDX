@@ -14,6 +14,10 @@ tmp = zeros(sz,'uint8');
 A3 = logical(tmp);
 clear tmp;
 
+
+clims = [0 max([mxA3norm mxA4norm])];
+
+
 switch removArtifacts
 case 1
 	A4 = A3;
