@@ -73,3 +73,20 @@ case 2
 	title(['Signal px count norm to max sig count. MaxSig=' num2str(mx)]); colorbar('location','eastoutside'); axis image
 
 end
+
+
+
+function handles = setupPlot(figHandle,nRows,nCols)
+if nargin < 1 || isempty(figHandle), figHandle = figure; end
+if nargin < 2 || isempty(nRows), nRows = 1; end
+if nargin < 3 || isempty(nCols), nCols = 1; end
+
+handles.figHandle = figHandle;
+
+for i = 1:nRows
+handles.ax(i) = subplot(
+end
+
+for i = 1:nCols
+
+end
