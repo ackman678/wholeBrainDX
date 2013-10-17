@@ -1,9 +1,9 @@
-function [A3proj] = wholeBrainActivityMapPlot(region, frames, plotType)
-%wholeBrainActivityMapPlot(region, frames, plotType)
+function [A3proj,frames] = wholeBrainActivityMapPlot(region, frames, plotType)
+%wholeBrainActivityMapProj(region, frames, plotType)
 % Examples
-%	wholeBrainActivityMapPlot(region);
-%	wholeBrainActivityMapPlot(region, [], 1);
-%	wholeBrainActivityMapPlot(region, [300 1800], 2);
+%	[A3proj,frames] = wholeBrainActivityMapProj(region);
+%	A3proj = wholeBrainActivityMapProj(region, [], 1);
+%	[A3proj,frames] = wholeBrainActivityMapProj(region, [300 1800], 2);
 % INPUTS
 % region -- region formatted data structure (as from CalciumDX, domains2region, etc) that includes CC and STATS data structures returned from wholeBrain_segmentation.m and wholeBrain_kmeans.m
 % frames -- frames should be a vector containing two integers, the startFrame and endFrame for the range you want to plot
@@ -13,6 +13,7 @@ function [A3proj] = wholeBrainActivityMapPlot(region, frames, plotType)
 %	3: plot only the false positive artifacts
 % James B. Ackman 2013-10-10 14:31:28
 
+%sumProjectArray() function here could be changed to other Array projections to different types of images (amplitude instead of pixel frequency, distances/optical flow transforms. mean domain membership size, duration)
 
 CC = region.domainData.CC;  
 STATS = region.domainData.STATS;  
@@ -23,25 +24,46 @@ if (nargin < 3 || isempty(frames)), frames = [1 sz(3)]; end
 
 %-----------main-----------------
 BW = makeBlankArray(sz);
+frTxt = ['fr' num2str(frames(1)) ':' num2str(frames(2))];
 
 switch plotType
 case 1
 	A3 = makeBinaryPixelArray(BW,CC);
 	nSigPx = numel(find(A3));
-	disp([num2str(nSigPx) ' detected active pixels'])
+	disp([num2str(nSigPx) ' whole movie detected active pixels'])
+
+	A3proj = sumProjectArray(A3,frames);
+
+	nSigPx2 = sum(A3proj(:));
+	disp([num2str(nSigPx2) ' ' frTxt ' detected active pixels'])
+	disp([num2str(round(nSigPx2/(diff(frames)*region.timeres))) ' active pixels/sec'])
+	
+	disp(['Fraction of total: ' num2str(nSigPx2/nSigPx)])
 case 2
 	A3 = makeBinaryPixelArrayTagged(BW, CC, STATS, '');
 	nSigPx = numel(find(A3));
-	disp([num2str(nSigPx) ' true positive active pixels'])
+	disp([num2str(nSigPx) ' whole movie true positive active pixels'])
+
+	A3proj = sumProjectArray(A3,frames);
+
+	nSigPx2 = sum(A3proj(:));
+	disp([num2str(nSigPx2) ' ' frTxt ' true positive active pixels'])
+	disp([num2str(round(nSigPx2/(diff(frames)*region.timeres))) ' active pixels/sec'])
+	disp(['Fraction of total: ' num2str(nSigPx2/nSigPx)])
 case 3
 	A3 = makeBinaryPixelArrayTagged(BW, CC, STATS, 'artifact');
 	nNoisePx = numel(find(A3));
-	disp([num2str(nNoisePx) ' false positive active pixels'])
+	disp([num2str(nNoisePx) ' whole movie false positive active pixels'])
+
+	A3proj = sumProjectArray(A3,frames);
+
+	nNoisePx2 = sum(A3proj(:));
+	disp([num2str(nNoisePx2) ' ' frTxt ' false positive active pixels'])
+	disp([num2str(round(nNoisePx2/(diff(frames)*region.timeres))) ' active pixels/sec'])
+	disp(['Fraction of total: ' num2str(nNoisePx2/nNoisePx)])
 otherwise
 	return
 end
-
-A3proj = sumProjectArray(A3,frames);  %this can be changed to other Array projections to different types of images (amplitude instead of pixel frequency, distances/optical flow transforms. mean domain membership size, duration)
 
 %-----------functions-------------
 

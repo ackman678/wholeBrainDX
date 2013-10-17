@@ -36,7 +36,7 @@ function varargout = plotWholeBrainDomainsTraces(varargin)
 
 % Edit the above text to modify the response to help plotWholeBrainDomainsTraces
 
-% Last Modified by GUIDE v2.5 08-Oct-2013 13:07:27
+% Last Modified by GUIDE v2.5 14-Oct-2013 13:35:51
 
 %Author: %James B. Ackman (c) 4/15/2013 
 
@@ -159,6 +159,12 @@ else
     end
 end
 
+if lenVarargin < 8 || isempty(varargin{8}), 
+	handles.makeMovie = 0; 
+else
+	handles.makeMovie = varargin{1};
+end
+
 %Set the current data value.
 handles.currentFrame=1;
 
@@ -174,6 +180,10 @@ handles.output = hObject;
 
 % Update handles structure
 guidata(hObject, handles);
+
+if handles.makeMovie > 0
+	pushbutton9_Callback(hObject, eventdata, handles)   %so that this can be called from commandline by passing varargin{8} without having to click on gui using an HPC session
+end
 
 % UIWAIT makes plotWholeBrainDomainsTraces wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
@@ -266,7 +276,7 @@ xlabel('frame no.'); ylabel('Fraction of pixels active'); %title(handles.axesTit
 % legend(legendText, 'Location', 'NorthEastOutside');
 
 % [legend_h,object_h,plot_h,text_str] = legendflex(handles.axes3, legendText,'ref', handles.axes3, 'anchor', [3 1], 'buffer', [ 10   0]);
-%clickableLegend(handles.axes3,legendText,handles.slider2);  %pass axes handle, legendText cellarray of strings, and ui element you want to pass uicontrol to after button toggles
+clickableLegend(handles.axes3,legendText,handles.slider2);  %pass axes handle, legendText cellarray of strings, and ui element you want to pass uicontrol to after button toggles
 
 
 % set(gca,'LegendColorbarListeners',[]); 
@@ -320,7 +330,7 @@ end
 % Static legend
 % legend(legendText, 'Location', 'NorthEastOutside');
 % [legend_h,object_h,plot_h,text_str] = legendflex(handles.axes4, legendText,'ref', handles.axes4, 'anchor', [3 1], 'buffer', [ 10   0]);
-%clickableLegend(handles.axes4,legendText,handles.slider2);  %pass axes handle, legendText cellarray of strings, and ui element you want to pass uicontrol to after button toggles
+clickableLegend(handles.axes4,legendText,handles.slider2);  %pass axes handle, legendText cellarray of strings, and ui element you want to pass uicontrol to after button toggles
 
 % set(gca,'LegendColorbarListeners',[]); 
 % setappdata(gca,'LegendColorbarManualSpace',1);
@@ -741,3 +751,30 @@ function pushbutton7_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 helpdlg({'1. Click on fig window outside axes', '2. Keyboard press 1, 2, 3, d','     * 1 for marking all true-positives in the raw movie data',  '     * 2 for marking good domains in detected data', '     * 3 for marking false positives in detected data', '     * d to delete all domain markers for a frame'},'Marking domains in images')
+
+
+% --- Executes on button press in pushbutton9.
+function pushbutton9_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton9 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+%if handles.makeMovie > 0;
+	nFrames = handles.movieLength;
+%	nFrames = 30;
+	M(1:nFrames) = struct('cdata', [],'colormap', []);
+	i = 1;
+	while i <= nFrames
+		set(handles.slider2,'Value',i);
+		slider2_Callback(hObject, eventdata, handles);
+%		guidata(hObject, handles);
+		M(i) = getframe(handles.figure1);
+		i = i + 1;
+	end
+	disp(numel(M));
+	vidObj = VideoWriter(['plotWholeBrainDomainsTraces' datestr(now,'yyyymmdd-HHMMSS') '.avi'])
+	open(vidObj)
+	for i =1:numel(M)
+		writeVideo(vidObj,M(i))
+	end
+	close(vidObj)	
+%end
