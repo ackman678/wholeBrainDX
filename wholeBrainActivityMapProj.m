@@ -1,4 +1,4 @@
-function [A3proj,frames] = wholeBrainActivityMapPlot(region, frames, plotType)
+function [A3proj,frames] = wholeBrainActivityMapProj(region, frames, plotType)
 %wholeBrainActivityMapProj(region, frames, plotType)
 % Examples
 %	[A3proj,frames] = wholeBrainActivityMapProj(region);
