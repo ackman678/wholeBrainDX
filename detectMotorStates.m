@@ -47,7 +47,7 @@ plot(ax, idx,data(idx),'ok');
 %imagesc(dfoverf(region.traces));
 %linkaxes(a,'x')
 
-pks = [1 idx size(region.traces,2)];
+pks = [1 idx size(data,2)];
 minima = [];
 for pkind = 1:(length(pks) - 1)
     datasegment = data(pks(pkind):pks(pkind+1));
@@ -103,7 +103,7 @@ if numel(idx1) ~= numel(idx2)
     button = questdlg('Number of onsets not equal to number of offsets (Event may be at end of movie). Set final offset to last frame of movie?');
     %     errordlg('Number of onsets not equal to number of offsets. Final offset set to last datapoint, in case wave was at end of movie.')
     if strcmp(button,'Yes')
-        idx2=[idx2 size(region.traces,2)];
+        idx2=[idx2 size(data,2)];
     end
 end
 

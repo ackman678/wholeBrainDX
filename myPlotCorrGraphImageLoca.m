@@ -110,7 +110,9 @@ mycolors = jet;
 cm_length = size(mycolors,1);  %used to linearly scale the colormap (same way default colormapping is done in matlab, but here each patch object will be separate and can't be automatically concatenated into single colormap with default matlab plotting.
 cmin = minEdge;
 cmax = maxEdge;
-	
+
+cmin = mn;
+cmax = mx;	
 
 h2=[];
 j = 0;
@@ -129,20 +131,22 @@ for i = 1:size(edgeData,1)  %Plot the pairs in order based on their sorted edgeA
 		centr2 = centroid(region.coords{strcmp(name2,region.name)});  %Get centroid location for cell 2
 		h2(j)=patch([centr1(1) centr2(1)],[centr1(2)*rXY centr2(2)*rXY],[0 0 0]);  %Draw patch line object connecting the cells
 		set(h2(j),'EdgeColor',mycolors(colormap_index,:))
-		set(h2(j),'EdgeColor','r')
+%		set(h2(j),'EdgeColor','r')
 %		set(h2(j),'FaceAlpha',alphaLevel,'EdgeAlpha',alphaLevel)
 
-		if edgeData(i,3) <= maxEdge & edgeData(i,3) >= 0.4;
-			set(h2(j),'LineWidth',5)
-		elseif edgeData(i,3) < 0.4 & edgeData(i,3) >= 0.3;
-			set(h2(j),'LineWidth',4)		
-		elseif edgeData(i,3) < 0.3 & edgeData(i,3) >= 0.2;
-			set(h2(j),'LineWidth',3)		
-%		elseif edgeData(i,3) < 0.2 & edgeData(i,3) >= 0.1;
-%			set(h2(j),'LineWidth',1)		
-%		else edgeData(i,3) < 0.2 & edgeData(i,3) >= 0.1;
-%			set(h2(j),'LineWidth',0.5)
-		end
+
+%		if edgeData(i,3) <= maxEdge & edgeData(i,3) >= 0.4;
+%			set(h2(j),'LineWidth',5)
+%		elseif edgeData(i,3) < 0.4 & edgeData(i,3) >= 0.3;
+%			set(h2(j),'LineWidth',4)		
+%		elseif edgeData(i,3) < 0.3 & edgeData(i,3) >= 0.2;
+%			set(h2(j),'LineWidth',3)		
+%%		elseif edgeData(i,3) < 0.2 & edgeData(i,3) >= 0.1;
+%%			set(h2(j),'LineWidth',1)		
+%%		else edgeData(i,3) < 0.2 & edgeData(i,3) >= 0.1;
+%%			set(h2(j),'LineWidth',0.5)
+%		end
+		set(h2(j),'LineWidth',3)
 %	else
 %		j = j+1;
 %		name1 = names{edgeData(i,1)};
@@ -159,7 +163,9 @@ for i = 1:size(edgeData,1)  %Plot the pairs in order based on their sorted edgeA
 end
 colormap(mycolors)
 colorbar
-caxis([minEdge maxEdge])
+%caxis([minEdge maxEdge])
+caxis([mn mx])
+
 title(['plotType' num2str(plotType) ',alpha' num2str(alphaLevel) ';' edgeAesthetic ',[min,max]=[' num2str(minEdge) ',' num2str(maxEdge) ']' ',p<' pVal])
 %printfig('png',[fname2base datestr(now,'yyyymmdd-HHMMSS') '.png'])
 
