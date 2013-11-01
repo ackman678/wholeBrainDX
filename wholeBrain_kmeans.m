@@ -8,20 +8,20 @@ function [A3, CC, STATS] = wholeBrain_kmeans(A2,A,Nclusters,showFigure,fnm)
 %SEE AlSO -- kmeans, wholeBrain_segmentation.m
 %James B. Ackman
 %2012-12-20
-
+% update 2013-10-31 15:42:02 JBA to used mean, duration, diameter for clustering and to remove single frame activations in the largest cluster
 
 %-----setup default parameters-------
 if nargin < 5 || isempty(fnm),
 	fnm2 = ['wholeBrain_kmeans_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
 else
-	fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_kmeans_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
+	fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_kmeans_' '.avi']; 
 end
 
 if nargin < 4 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)
 
-if nargin < 3 || isempty(Nclusters), Nclusters = 2; end %default Number of k-means clusters to optimize
+if nargin < 3 || isempty(Nclusters), Nclusters = 3; end %default Number of k-means clusters to optimize
 
-myColors = lines(8);  %if more more than 8 clusters, then change this colormap accordingly 
+myColors = lines(Nclusters);  %if more more than 8 clusters, then change this colormap accordingly 
 %Nclusters = 3;
 Nreplicates = 5;  %5 repetitions is typically fine.
 
@@ -51,6 +51,7 @@ for i = 1:length(STATS)
 end  
 
 durations = roiBoundingBox(:,6);  %add to kmeans
+diameters = mean([roiBoundingBox(:,4) roiBoundingBox(:,5)], 2);
 
 
 %----TESTING-- following several lines are to find domains with durations of just 1 fr for 5fr/sec recordings (mostly noise component) for comparison with noise component isolated from kmeans. Not needed/not useful. Rationale outlined in [[2013-01-30_wholeBrain_analysis.txt]].
@@ -99,40 +100,55 @@ durations = roiBoundingBox(:,6);  %add to kmeans
 
 
 %------Do the clustering procedure------------------
-%X = [(roiMean/max(roiMean))' (roiMax/max(roiMax))' (roiArea/max(roiArea))' (roiMin/max(roiMin))'];  %adding in minIntensity draws too much similarity between signal and noise
-%X = [(roiMean/max(roiMean))' (roiMax/max(roiMax))' (roiArea/max(roiArea))'];  %make data matrix to pass to kmeans for clustering  
 %X = [(roiMean/max(roiMean))' (durations/max(durations)) (roiArea/max(roiArea))' (roiMax/max(roiMax))' (edgeDistances/max(edgeDistances))];  %make data matrix to pass to kmeans for clustering  
-X = [(roiMean/max(roiMean))' (durations/max(durations)) (roiArea/max(roiArea))' (roiMax/max(roiMax))'];  %make data matrix to pass to kmeans for clustering  
-%X = [(edgeDistances/max(edgeDistances)) (durations/max(durations)) (roiArea/max(roiArea))'];  %make data matrix to pass to kmeans for clustering  
+%X = [(roiMean/max(roiMean))' (durations/max(durations)) (roiArea/max(roiArea))' (roiMax/max(roiMax))'];  %make data matrix to pass to kmeans for clustering  % **previous default from 2013-03-27**
 
 %X = [sqDist (durations/max(durations)) (roiArea/max(roiArea))'];
 %X = [(roiMean/max(roiMean))' (durations/max(durations)) (roiArea/max(roiArea))' (roiMax/max(roiMax))' sqDist];  %make data matrix to pass to kmeans for clustering  
 
+X = [(roiMean/max(roiMean))' (durations/max(durations)) (diameters/max(diameters))];  %make data matrix to pass to kmeans for clustering  
+xlab = 'roiMean'; ylab = 'duration'; zlab = 'diameters'; 
+
 cidx = kmeans(X,Nclusters,'replicates',Nreplicates);   %we want two clusters and the default clustering method (sq euclidean)  
 
+NumObjects = [];
+for i = 1:Nclusters
+	NumObjects = [NumObjects numel(find(cidx == i))];
+end
+disp(NumObjects)
+
+sortNumObj = sort(NumObjects,'descend');
+sz = size(A2);
 
 %---Make plots of all clusters---
 figure;   
 hold on  
-for i = 1:Nclusters  
-	plot3(centr(cidx==i,1),centr(cidx==i,2),centr(cidx==i,3),'o','Color',myColors(i,:))
+for j = 1:Nclusters
+%	j = find(sortNumObj == NumObjects(i));  
+	i = find(NumObjects == sortNumObj(j));  
+	%plot3(centr(cidx==i,1),centr(cidx==i,2),centr(cidx==i,3),'o','Color',myColors(j,:))
+	plot(centr(cidx==i,1),centr(cidx==i,2),'o','Color',myColors(j,:))
 	hold on  
 end  
-colormap(myColors); colorbar; title(['domain centroid location, k=' num2str(Nclusters) ',' num2str(Nreplicates) 'reps']); view(180,90)
-print(gcf, '-dpng', [fnm2(1:end-4) 'kmeans' datestr(now,'yyyymmdd-HHMMSS') '-1.png']);
-
+axis image; axis ij; %axis off
+ylim([1 sz(1)]); xlim([1 sz(2)]);
+colormap(myColors); colorbar; title(['domain centroid location, k=' num2str(Nclusters) ',' num2str(Nreplicates) 'reps']);% view(180,90)
+print(gcf, '-dpng', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '.png']);
+print(gcf, '-depsc', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '.eps']);
 
 figure;   
 hold on  
-for i = 1:Nclusters  
-	plot3(X(cidx==i,1),X(cidx==i,2),X(cidx==i,3),'o','Color',myColors(i,:))     %plot3(X(cidx==i,1),X(cidx==i,2),X(cidx==i,3),'o')  
+for j = 1:Nclusters 
+%	j = find(sortNumObj == NumObjects(i));   
+	i = find(NumObjects == sortNumObj(j));  
+	plot3(X(cidx==i,1),X(cidx==i,2),X(cidx==i,3),'o','Color',myColors(j,:))     %plot3(X(cidx==i,1),X(cidx==i,2),X(cidx==i,3),'o')  
 	hold on  
 end  
-xlabel('roiMean intensity'); ylabel('roi duration'); zlabel('roiArea');  
+xlabel(xlab); ylabel(ylab); zlabel(zlab);  
 colormap(myColors); colorbar; title(['kmeans inputs distribution, k=' num2str(Nclusters) ',' num2str(Nreplicates) 'reps']); view(3)  
 %ylim([0.03 0.07])  %scaled for testing purposes, single outlier in test distribution based on max intensity (bad pixel?)  
-print(gcf, '-dpng', [fnm2(1:end-4) 'kmeans' datestr(now,'yyyymmdd-HHMMSS') '-2.png']);
-
+print(gcf, '-dpng', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '-2.png']);
+print(gcf, '-depsc', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '-2.eps']);
 
 
 %figure;
@@ -158,6 +174,9 @@ print(gcf, '-dpng', [fnm2(1:end-4) 'kmeans' datestr(now,'yyyymmdd-HHMMSS') '-2.p
 %Again we assume that the objects will be in minority, but here we make assumption that noise component is the single largest cluster
 %TODO: Will have to change and make option of making interactive, or together with automated selection based on population distance from hemisphere edge, where edge effects lead to greatest source of noise
 
+
+%{
+%original from 2013-03-27
 NumObjects = [];
 for i = 1:Nclusters
 NumObjects = [NumObjects numel(find(cidx == i))];
@@ -166,7 +185,6 @@ NumObjects
 NoiseClusterIdx = find(NumObjects == max(NumObjects));  %change to interactive or automated based on TODO item above
 ObjectIndices = find(cidx ~= NoiseClusterIdx);
 GoodClusters = unique(cidx(cidx ~= NoiseClusterIdx));
-
 
 %---Make plot of only good clusters---
 figure;   
@@ -177,6 +195,32 @@ for i = 1:length(GoodClusters)
 end  
 colormap(myColors); colorbar; title(['domain centroid location for good clusters, k=' num2str(Nclusters) ',' num2str(Nreplicates) 'reps']); view(180,90)
 print(gcf, '-dpng', [fnm2(1:end-4) 'kmeans' datestr(now,'yyyymmdd-HHMMSS') '-3.png']);
+
+%}
+
+%Single frame activation noise removal on big cluster algorithm
+
+%---Make plots of all clusters---
+NoiseClusterIdx = find(NumObjects == max(NumObjects));
+badComponents = find(durations<2 & cidx==NoiseClusterIdx);
+ObjectIndices =  setdiff(1:length(durations),badComponents);
+
+tmp = {};
+tmp{1} = 'total no. of good:';
+tmp{2} = num2str(numel(ObjectIndices));
+disp(tmp)
+
+%---Make plot of only good clusters---
+figure; plot(centr(ObjectIndices,1),centr(ObjectIndices,2),'o','Color',myColors(1,:)); title('durations > 1fr')
+axis image; axis ij; %axis off
+ylim([1 sz(1)]); xlim([1 sz(2)]); colormap(myColors); colorbar; 
+print(gcf, '-dpng', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '-3.png']);
+print(gcf, '-depsc', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '-3.eps']);
+
+
+
+
+
 
 %ObjectIndices=goodComponents;  %TESTING. Line goes with <= 1 frame delete noise code above.
 %----Remake CC data structure with desired objects (deleting noise components)----

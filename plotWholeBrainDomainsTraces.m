@@ -104,7 +104,7 @@ if lenVarargin < 3 || isempty(varargin{3}),
         handles.plot3(1).legendText = 'no data';
     end
 else
-    handles.plot3=setupActiveFractionHandles(varargin{3});   %provide 'region.locationData.data' as input to varargin{3}.
+    handles.plot3=setupActiveFractionHandles(varargin{3});   %provide 'region' containing 'locationData.data' as input to varargin{3}.
 end
 
 
