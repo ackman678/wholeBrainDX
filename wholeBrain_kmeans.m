@@ -283,12 +283,12 @@ end
 
 
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
-%vidObj = VideoWriter(fnm2)
-%open(vidObj)
-%for i =1:numel(M)
-%writeVideo(vidObj,M(i));
-%end
-%close(vidObj)
+vidObj = VideoWriter(fnm2)
+open(vidObj)
+for i =1:numel(M)
+writeVideo(vidObj,M(i));
+end
+close(vidObj)
 
 
 

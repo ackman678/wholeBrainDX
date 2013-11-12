@@ -1,4 +1,4 @@
-function myPlotCorrGraphImage(region,plotType,numLoca,alphaLevel,edgeAesthetic,minEdge, maxEdge, datasetSelector, pValue)
+function [edgeData,names] = myPlotCorrGraphImage(region,plotType,numLoca,alphaLevel,edgeAesthetic,minEdge, maxEdge, datasetSelector, pValue)
 %myPlotCorrGraphImage Make a graph with cell outlines and physical positions as nodes and connect significant pairs with lines.
 %myPlotCorrGraphImage(data,region,plotType,numLoca)
 %
@@ -56,6 +56,8 @@ else
 	data = [i j];
 	region.userdata.corr{1}.corr_pairs{1} = data;
 end
+
+
 
 %--setup roi height width ratio--------------
 %The following is important for getting the distances right if the data pixel dimensions are not equivalent

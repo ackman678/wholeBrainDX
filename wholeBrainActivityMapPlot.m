@@ -58,7 +58,7 @@ xlimits = [1 size(img,2)];
 
 %***contour plot***    
 contour(flipud(img),contourLevels); caxis(handles.clims) 
-myColors = jet;
+myColors = jet(contourLevels);
 myColors(1,:) = [0 0 0];
 colormap(myColors);
 

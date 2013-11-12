@@ -31,6 +31,8 @@ if nargin< 3 || isempty(datafilename); datafilename = 'dLocationProps.txt'; end
 if nargin< 2 || isempty(region); region = []; end
 
 
+%@nMaskPixels @nPixelsActiveTotal @nPixelsActive @nPixelsActivePerSec  new 2013-11-12 17:15:25
+
 %---**functionHandles.workers and functionHandles.main must be valid functions in this program or in matlabpath to provide an array of function_handles
 functionHandles.workers = {@filename @matlab_filename @region_name @actvPeriodType @actvFraction @maxFraction @minFraction @meanFraction @sdFraction @meanActvFraction @sdActvFraction @actvFrames @actvTimeFraction @nonActvFrames @nonActvTimeFraction @maxDuration_s @minDuration_s @medianDuration_s @meanDuration_s @sdDuration_s @sumDuration_s};
 functionHandles.main = @wholeBrain_getActiveFractionStats;
@@ -69,7 +71,7 @@ fid = fopen(filename,'a');
 for i=1:numel(tmp); tmp{i} = num2str(tmp{i}); end  %this will be to 4 decimal points (defaut for 'format short'). Can switch to 'format long' before running this loop if need more precision.
 tmp2=tmp';
 fprintf(fid,[repmat('%s\t',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %tab delimited
-fprintf(fid,[repmat('%s ',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %space delimited
+%fprintf(fid,[repmat('%s ',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %space delimited
 fclose(fid);
 end
 
@@ -139,7 +141,7 @@ varin.datafilename=datafilename;
 for locationIndex = 1:length(locationMarkers)
     locationName = region.locationData.data(locationIndex).name;
     rawSignal = region.locationData.data(locationIndex).activeFractionByFrame;
-    
+    %START Add for loop here by stimulus.stimuliParams-------------------------------
     pulseSignal = makeActivePulseSignal(rawSignal);
     plotTitles{1} = ['active fraction by frame for ' locationName]; plotTitles{2} = 'active periods to positive pulse'; plotTitles{3} = 'derivative of active pulse';
     [onsets, offsets] = getPulseOnsetsOffsets(rawSignal,pulseSignal,plotTitles,locationName);
@@ -158,7 +160,7 @@ for locationIndex = 1:length(locationMarkers)
     varin.offsets=offsets;
     varin.periodType='non.active';
     printStats(functionHandles, varin)
-    
+    %END Add for loop here by stimulus.stimuliParams-------------------------------    
 %    SignalMatrix(locationIndex,:) = rawSignal; %for making a combined actvFraction location signal
 end
 %{
@@ -233,6 +235,26 @@ data = varin.region.locationData.data;
 out = data(varin.locationIndex).activeFraction;
 end
 
+function out = nMaskPixels(varin)
+data = varin.region.locationData.data;
+out = data(varin.locationIndex).nPixels;
+end
+
+function out = nPixelsActiveTotal(varin)
+data = varin.region.locationData.data;
+out = sum(data(varin.locationIndex).nPixelsByFrame);
+end
+
+function out = nPixelsActive(varin)
+data = varin.region.locationData.data;
+out = sum(data(varin.locationIndex).nPixelsByFrame(varin.on:varin.off));
+end
+
+function out = nPixelsActivePerSec(varin)
+data = varin.region.locationData.data;
+out = sum(data(varin.locationIndex).nPixelsByFrame(varin.on:varin.off)) / (numel(varin.on:varin.off)*varin.region.timeres);
+end
+
 function out = maxFraction(varin)  
 %maximum fraction of all pixels active at one time (default is by frame, TODO: change/add in future by binned time?)
 data = varin.region.locationData.data;
@@ -242,7 +264,7 @@ end
 function out = minFraction(varin)  
 %minimum fraction of all pixels active at one time
 data = varin.region.locationData.data;
-out = max(data(varin.locationIndex).activeFractionByFrame);
+out = min(data(varin.locationIndex).activeFractionByFrame);
 end
 
 function out = meanFraction(varin)
