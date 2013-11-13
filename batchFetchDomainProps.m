@@ -1,11 +1,11 @@
-function batchFetchLocationProps(filelist,region, datafilename, useStimuli, stimuliIndices)
-%batchFetchLocationProps - A wrapper and output generator for getting information on active pixel fraction per location during the movie, after 'locationData' data structure has been returned and saved into 'region' from wholeBrain_activeFraction.m
+function batchFetchDomainProps(filelist,region, datafilename, useStimuli, stimuliIndices)
+%batchFetchDomainProps - A wrapper and output generator for getting information on active pixel fraction per location during the movie, after 'locationData' data structure has been returned and saved into 'region' from wholeBrain_activeFraction.m
 %Examples:
-% >> batchFetchLocationProps(filelist);
-% >> batchFetchLocationProps({filename},region);
-% >> batchFetchLocationProps(filelist,[],[], 'true', {'motor.state.active' 'motor.state.quiet'});
-% >> batchFetchLocationProps({fnm},[],[], 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
-% >> batchFetchLocationProps({filename},region,'dLocationProps.txt', 'true', [2 3]);
+% >> batchFetchDomainProps(filelist);
+% >> batchFetchDomainProps({filename},region);
+% >> batchFetchDomainProps(filelist,[],[], 'true', {'motor.state.active' 'motor.state.quiet'});
+% >> batchFetchDomainProps({fnm},[],[], 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
+% >> batchFetchDomainProps({filename},region,'dLocationProps.txt', 'true', [2 3]);
 %
 %**USE**
 %Must provide one input:
@@ -39,12 +39,12 @@ function batchFetchLocationProps(filelist,region, datafilename, useStimuli, stim
 
 if nargin< 5 || isempty(stimuliIndices); stimuliIndices = []; end 
 if nargin< 4 || isempty(useStimuli); useStimuli = 'false'; end
-if nargin< 3 || isempty(datafilename); datafilename = 'dLocationProps.txt'; end
+if nargin< 3 || isempty(datafilename); datafilename = 'dDomainProps.txt'; end
 if nargin< 2 || isempty(region); region = []; end
 
 %---**functionHandles.workers and functionHandles.main must be valid functions in this program or in matlabpath to provide an array of function_handles
-functionHandles.workers = {@filename @matlab_filename @region_name @actvFraction @maxFraction @minFraction @meanFraction @sdFraction @meanActvFraction @sdActvFraction @actvFrames @actvTimeFraction @nonActvFrames @nonActvTimeFraction @stimulusDesc @nstimuli @stimOn @stimOff @nMaskPixels @nPixelsActiveTotal @nPixelsActive @nPixelsActivePerSec};
-functionHandles.main = @wholeBrain_getActiveFractionStats;
+functionHandles.workers = {@filename @matlab_filename @domainInd @region_name1 @region_name2 @volume_px @xwidth_px @ywidth_px @xcentr_px @ycentr_px @zcentr_px @MeanIntensity @MaxIntensity @onset_fr @offset_fr @Duration_s};
+functionHandles.main = @wholeBrain_getDomainStats;
 %tableHeaders = {'filename' 'matlab.filename' 'region.name' 'roi.number' 'nrois' 'roi.height.px' 'roi.width.px' 'xloca.px' 'yloca.px' 'xloca.norm' 'yloca.norm' 'freq.hz' 'intvls.s' 'onsets.s' 'durs.s' 'ampl.df'};
 %filename %roi no. %region.name %roi size %normalized xloca %normalized yloca %region.stimuli{numStim}.description %normalized responseFreq %absolutefiringFreq(dFreq) %meanLatency %meanAmpl %meanDur
 
@@ -151,7 +151,7 @@ close(h)
 
 %-----------------------------------------------------------------------------------------
 %dataFunctionHandle
-function output = wholeBrain_getActiveFractionStats(region, functionHandles, datafilename, stimuliIndices)
+function output = wholeBrain_getDomainStats(region, functionHandles, datafilename, stimuliIndices)
 %script to fetch the active and non-active pixel fraction period durations
 %for all data and all locations
 %2013-04-09 11:35:04 James B. Ackman
@@ -159,84 +159,42 @@ function output = wholeBrain_getActiveFractionStats(region, functionHandles, dat
 %Should get an extra location signal too-- for combined locations/hemisphere periods.
 %2013-04-11 18:00:23  Added under the batchFetchLocation generalized wrapper table functions
 
-locationMarkers = unique(region.location);
+%locationMarkers = unique(region.location);
 varin.datafilename=datafilename;
 varin.region=region;
+%locationName = region.locationData.data(locationIndex).name;
 
-if ~isempty(stimuliIndices)
-	%SignalMatrix = zeros(length(locationMarkers),size(region.locationData.data(1).activeFractionByFrame,2));  %for making a combined actvFraction location signal
-	for locationIndex = 1:length(locationMarkers)
-		locationName = region.locationData.data(locationIndex).name;
-		%START For loop here by stimulus.stimuliParams-------------------------------
-		for numStim = stimuliIndices
-			for nstimuli=1:numel(region.stimuli{numStim}.stimulusParams)
-				varin.nstimuli = nstimuli;
-				varin.stimulusdesc = region.stimuli{numStim}.description;
-				varin.on = region.stimuli{numStim}.stimulusParams{nstimuli}.frame_indices(1);
-				varin.off = region.stimuli{numStim}.stimulusParams{nstimuli}.frame_indices(end);
-				varin.locationName=locationName;
-				varin.locationIndex=locationIndex;
-				printStats(functionHandles, varin) 
-			end
-		end
-		%END For loop here by stimulus.stimuliParams-------------------------------
-	%    SignalMatrix(locationIndex,:) = rawSignal; %for making a combined actvFraction location signal
+
+
+if isfield(region,'domainData')
+	data = region.domainData;
+	if isfield(data.STATS,'descriptor')
+%		roiBoundingBox = [];  
+		ObjectIndices = [];
+%		j = 0;
+		for i = 1:data.CC.NumObjects  
+		   if ~strcmp(data.STATS(i).descriptor, 'artifact')  
+%			   j = j + 1;
+	%		   roiBoundingBox(j,:) = STATS(i).BoundingBox;
+			   ObjectIndices = [ObjectIndices i];        
+		   end        
+		end 
+	else
+		ObjectIndices = 1:data.CC.NumObjects;        
 	end
+
+	for idx = ObjectIndices
+		varin.idx = idx;
+		printStats(functionHandles, varin) 	
+	end	
 else
-	for locationIndex = 1:length(locationMarkers)
-		locationName = region.locationData.data(locationIndex).name;
-		varin.nstimuli = '';
-		varin.stimulusdesc = '';
-		varin.on = 1;
-		varin.off = numel(region.locationData.data(locationIndex).nPixelsByFrame);
-		varin.locationName=locationName;
-		varin.locationIndex=locationIndex;
-		printStats(functionHandles, varin) 
-	end
+	error('region.domainData not found')
 end
-%{
-%---START---use the combined actvFraction location signal----   
-%2013-04-15 11:38:21 removed-- if new amalgam locations need to be added, then this should be separate from this script. Can do in data = wholeBrain_activeFraction.m if wanted. But the mean values for actvFraction and stats, when looped through many id. regions will be similar to the whole brain values anyways. By hemisphere is sufficient for now. 
-locationName = 'all';
-CombinedSignal = max(SignalMatrix,[],1);  %combine active periods to find combined active and non-active durations
-actvFrac = sum(vertcat(region.locationData.data(:).activeFraction),1)/locationIndex;  %combine active fractions to calc combined stats 
-actvFracFrame = sum(vertcat(region.locationData.data(:).activeFraction),1)/locationIndex;
-region.locationData.data(locationIndex+1).activeFraction = actvFrac;
-region.locationData.data(locationIndex+1).activeFractionByFrame = actvFracFrame;
-
-pulseSignal = makeActivePulseSignal(CombinedSignal);
-plotTitles{1} = ['active fraction by frame for ' locationName]; plotTitles{2} = 'active periods to positive pulse'; plotTitles{3} = 'derivative of active pulse';
-[onsets, offsets] = getPulseOnsetsOffsets(CombinedSignal,pulseSignal,plotTitles,locationName);
-varin.onsets=onsets;
-varin.offsets=offsets;
-varin.locationName=locationName;
-varin.region=region;
-varin.periodType='active';
-varin.locationIndex=locationIndex+1;
-printStats(functionHandles, varin)
-
-pulseSignal = makeNonActivePulseSignal(CombinedSignal);
-plotTitles{1} = ['active fraction by frame for ' locationName]; plotTitles{2} = 'Non-active periods to positive pulse'; plotTitles{3} = 'derivative of non-active pulse';
-[onsets, offsets] = getPulseOnsetsOffsets(CombinedSignal,pulseSignal,plotTitles,locationName);
-varin.onsets=onsets;
-varin.offsets=offsets;
-varin.periodType='non.active';
-printStats(functionHandles, varin)
-%---END---use the combined actvFraction location signal----
-%}
 
 
 function stats = printStats(functionHandles, varin)
 output=cellfun(@(x)x(varin), functionHandles, 'UniformOutput', false); %cellfun example using a generic function  @x applied to the function cell array so that varin can be passed to each function
 appendCellArray2file(varin.datafilename,output)
-%functionHandles.workers = {@region_name @actvPeriodType ...
-%@actvFraction @maxFraction @minFraction @meanFraction @sdFraction @meanActvFraction @sdActvFraction @actvFrames @actvTimeFraction @nonActvFrames @nonActvTimeFraction ...
-%@maxDuration_s @minDuration_s @medianDuration_s @meanDuration_s @sdDuration_s @sumDuration_s};
-
-%do for loop through functionHandles or cellfun
-%S = cellfun(@str2func, {'sin' 'cos' 'tan'}, 'UniformOutput', false);  %cellfun example
-%cellfun(@(x)x(2), S, 'UniformOutput', false) %cellfun example
-
 
 
 function out = filename(varin) 
@@ -249,12 +207,142 @@ function out = matlab_filename(varin)
 out = varin.region.matfilename;
 
 
-%------------active fraction stats functions---------------------
-function out = region_name(varin)
+function out = domainInd(varin)
 %location name descriptor string
-out = varin.locationName;
+out = varin.idx;
 
 
+function out = region_name1(varin)
+%location name descriptor string
+data = varin.region.domainData;
+locationMarkers = unique(varin.region.location);
+name = [];
+for locationIndex = 1:length(locationMarkers)
+	locationName = varin.region.locationData.data(locationIndex).name;
+	coords = varin.region.coords{strcmp(varin.region.name,locationName)};
+	centr = data.STATS(varin.idx).Centroid;
+	inp = inpolygon(centr(1),centr(2),coords(:,1),coords(:,2));
+	if inp, 
+		name = locationName; 
+		break
+	end
+end
+out = name;
+
+
+function out = region_name2(varin)
+%location name descriptor string
+data = varin.region.domainData;
+locationMarkers = unique(varin.region.location);
+name = [];
+for locationIndex = 1:length(locationMarkers)
+	locationName = varin.region.locationData.data(locationIndex).name;
+	coords = varin.region.coords{strcmp(varin.region.name,locationName)};
+	centr = data.STATS(varin.idx).Centroid;
+	inp = inpolygon(centr(1),centr(2),coords(:,1),coords(:,2));
+	if inp, 
+		name = locationName; 
+	end
+end
+out = name;
+
+
+function out = volume_px(varin)
+%location name descriptor string
+out = varin.region.domainData.STATS(varin.idx).Area;
+
+function out = xwidth_px(varin)
+%location name descriptor string
+out = varin.region.domainData.STATS(varin.idx).BoundingBox(:,4);
+
+function out = ywidth_px(varin)
+%location name descriptor string
+out = varin.region.domainData.STATS(varin.idx).BoundingBox(:,5);
+
+function out = xcentr_px(varin)
+%location name descriptor string
+out = varin.region.domainData.STATS(varin.idx).Centroid(:,1);
+
+function out = ycentr_px(varin)
+%location name descriptor string
+out = varin.region.domainData.STATS(varin.idx).Centroid(:,2);
+
+function out = zcentr_px(varin)
+%location name descriptor string
+out = varin.region.domainData.STATS(varin.idx).Centroid(:,3);
+
+function out = MeanIntensity(varin)
+%location name descriptor string
+out = varin.region.domainData.STATS(varin.idx).MeanIntensity;
+
+function out = MaxIntensity(varin)
+%location name descriptor string
+out = varin.region.domainData.STATS(varin.idx).MaxIntensity;
+
+function out = onset_fr(varin)
+%location name descriptor string
+out = round(varin.region.domainData.STATS(varin.idx).BoundingBox(:,3));
+
+function out = offset_fr(varin)
+%location name descriptor string
+out = round(varin.region.domainData.STATS(varin.idx).BoundingBox(:,3)) + round(varin.region.domainData.STATS(varin.idx).BoundingBox(:,6));
+
+function out = Duration_s(varin)
+%location name descriptor string
+out = round(varin.region.domainData.STATS(varin.idx).BoundingBox(:,6)) * varin.region.timeres;
+
+
+%========domainFreq_hz====================================================================
+function out = nDomains(varin)
+if isfield(varin.region,'domainData')
+	data = varin.region.domainData;
+	if isfield(data.STATS,'descriptor')
+		roiBoundingBox = [];  
+		ObjectIndices = [];
+		j = 0;
+		for i = 1:data.CC.NumObjects  
+		   if ~strcmp(data.STATS(i).descriptor, 'artifact')  
+			   j = j + 1;
+	%		   roiBoundingBox(j,:) = STATS(i).BoundingBox;
+			   ObjectIndices = [ObjectIndices i];        
+		   end        
+		end 
+	else
+		ObjectIndices = 1:data.CC.NumObjects;        
+	end
+ 
+ 	coords = varin.region.coords{strcmp(varin.region.name,varin.locationName)};
+	count = 0;
+	for i = ObjectIndices	
+		centr = data.STATS(i).Centroid;
+		inp = inpolygon(centr(1),centr(2),coords(:,1),coords(:,2));
+		if inp, count = count + 1; end
+	end	
+	out = count;
+else
+	out = NaN;
+end
+
+function out = domainFreq_hz(varin)
+out = nDomains(varin);
+if ~isnan(out)
+	data = varin.region.domainData;
+	out = out / (data.CC.ImageSize(3) * varin.region.timeres);
+else
+	out = NaN;
+end
+%=========================================================================================
+
+
+
+
+
+
+
+
+
+
+%-------------unused functions-----------------------------------
 function out = actvPeriodType(varin)  
 %active period type descriptor string
 out = varin.periodType;
@@ -305,12 +393,6 @@ function out = nPixelsActivePerSec(varin)
 data = varin.region.locationData.data;
 out = sum(data(varin.locationIndex).nPixelsByFrame(varin.on:varin.off)) / (numel(varin.on:varin.off)*varin.region.timeres);
 
-function out = domainFreq_hz(varin)
-if isfield(varin.region,domainData)
-	out = 
-else
-	out = NaN;
-end
 
 function out = maxFraction(varin)  
 %maximum fraction of all pixels active at one time (default is by frame, TODO: change/add in future by binned time?)
@@ -374,94 +456,3 @@ data = varin.region.locationData.data;
 out = nonActvFrames(varin)/length(data(varin.locationIndex).activeFractionByFrame);
 
 
-%------------actvPeriod duration stats functions---------------------
-function out = maxDuration_s(varin)
-out = max((varin.offsets-varin.onsets).*varin.region.timeres);
-
-
-function out = minDuration_s(varin)
-out = min((varin.offsets-varin.onsets).*varin.region.timeres);
-
-
-function out = medianDuration_s(varin)
-out = median((varin.offsets-varin.onsets).*varin.region.timeres);
-
-
-function out = meanDuration_s(varin)
-out = mean((varin.offsets-varin.onsets).*varin.region.timeres);
-
-
-function out = sdDuration_s(varin)
-out = std((varin.offsets-varin.onsets).*varin.region.timeres);
-
-
-function out = sumDuration_s(varin)
-out = sum((varin.offsets-varin.onsets).*varin.region.timeres);
-
-
-
-%------------Find active period functions---------------
-function pulseSignal = makeActivePulseSignal(rawSignal)
-pulseSignal = rawSignal;
-pulseSignal(rawSignal>0) = 1;
-
-
-function pulseSignal = makeNonActivePulseSignal(rawSignal)
-pulseSignal = rawSignal;
-pulseSignal(rawSignal>0) = -1;
-pulseSignal(pulseSignal>-1) = 1;
-pulseSignal(pulseSignal<1) = 0;
-
-
-function [wvonsets, wvoffsets] = getPulseOnsetsOffsets(rawSignal,pulseSignal,plotTitles,locationName,makePlots)
-if nargin < 5 || isempty(makePlots), makePlots = 0; end
-if nargin < 4 || isempty(locationName), locationName = 'unknown location'; end
-if nargin < 3 || isempty(plotTitles), plotTitles{1} = ['active fraction by frame for ' locationName]; plotTitles{2} = 'active periods to positive pulse'; plotTitles{3} = 'derivative of active pulse'; end
-
-x = pulseSignal;
-sig = rawSignal;
-%ax = axesHandles;
-dx = diff(x);
-dx2 = [dx 0];  %because diff makes the vector one data point shorter.
-
-if makePlots > 0
-	figure, 
-	ax(1)=subplot(3,1,1);
-	plot(sig); title(plotTitles{1})
-
-	ax(2)=subplot(3,1,2);
-	plot(x); title(plotTitles{2})		
-
-	ax(3)=subplot(3,1,3);
-	plot(dx2); title(plotTitles{3})		
-	linkaxes(ax,'x')
-	zoom xon
-end
-wvonsets = find(dx > 0);
-wvoffsets = find(dx < 0);
-
-%figure out if an offset was at last frame of movie (no. of onsets and offsets not equal)
-if wvonsets(1) > wvoffsets(1)
-   wvonsets = [1 wvonsets];
-end
-
-if wvoffsets(end) < wvonsets(end)
-   wvoffsets = [wvoffsets size(sig,2)];
-end
-
-if makePlots > 0 
-	axes(ax(1))
-	hold on
-	plot(wvonsets,sig(wvonsets),'og');
-	plot(wvoffsets,sig(wvoffsets),'or');
-
-	axes(ax(2))
-	hold on
-	plot(wvonsets,x(wvonsets),'og');
-	plot(wvoffsets,x(wvoffsets),'or');
-
-	axes(ax(3))
-	hold on
-	plot(wvonsets,dx2(wvonsets),'og');
-	plot(wvoffsets,dx2(wvoffsets),'or');
-end

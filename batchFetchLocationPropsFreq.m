@@ -1,11 +1,11 @@
-function batchFetchLocationProps(filelist,region, datafilename, useStimuli, stimuliIndices)
-%batchFetchLocationProps - A wrapper and output generator for getting information on active pixel fraction per location during the movie, after 'locationData' data structure has been returned and saved into 'region' from wholeBrain_activeFraction.m
+function batchFetchLocationPropsFreq(filelist,region, datafilename, useStimuli, stimuliIndices)
+%batchFetchLocationPropsFreq - A wrapper and output generator for getting information on active pixel fraction per location during the movie, after 'locationData' data structure has been returned and saved into 'region' from wholeBrain_activeFraction.m
 %Examples:
-% >> batchFetchLocationProps(filelist);
-% >> batchFetchLocationProps({filename},region);
-% >> batchFetchLocationProps(filelist,[],[], 'true', {'motor.state.active' 'motor.state.quiet'});
-% >> batchFetchLocationProps({fnm},[],[], 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
-% >> batchFetchLocationProps({filename},region,'dLocationProps.txt', 'true', [2 3]);
+% >> batchFetchLocationPropsFreq(filelist);
+% >> batchFetchLocationPropsFreq({filename},region);
+% >> batchFetchLocationPropsFreq(filelist,[],[], 'true', {'motor.state.active' 'motor.state.quiet'});
+% >> batchFetchLocationPropsFreq({fnm},[],[], 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
+% >> batchFetchLocationPropsFreq({filename},region,'dLocationProps.txt', 'true', [2 3]);
 %
 %**USE**
 %Must provide one input:
@@ -39,11 +39,11 @@ function batchFetchLocationProps(filelist,region, datafilename, useStimuli, stim
 
 if nargin< 5 || isempty(stimuliIndices); stimuliIndices = []; end 
 if nargin< 4 || isempty(useStimuli); useStimuli = 'false'; end
-if nargin< 3 || isempty(datafilename); datafilename = 'dLocationProps.txt'; end
+if nargin< 3 || isempty(datafilename); datafilename = 'dLocationPropsFreq.txt'; end
 if nargin< 2 || isempty(region); region = []; end
 
 %---**functionHandles.workers and functionHandles.main must be valid functions in this program or in matlabpath to provide an array of function_handles
-functionHandles.workers = {@filename @matlab_filename @region_name @actvFraction @maxFraction @minFraction @meanFraction @sdFraction @meanActvFraction @sdActvFraction @actvFrames @actvTimeFraction @nonActvFrames @nonActvTimeFraction @stimulusDesc @nstimuli @stimOn @stimOff @nMaskPixels @nPixelsActiveTotal @nPixelsActive @nPixelsActivePerSec};
+functionHandles.workers = {@filename @matlab_filename @region_name @nDomains @domainFreq_hz};
 functionHandles.main = @wholeBrain_getActiveFractionStats;
 %tableHeaders = {'filename' 'matlab.filename' 'region.name' 'roi.number' 'nrois' 'roi.height.px' 'roi.width.px' 'xloca.px' 'yloca.px' 'xloca.norm' 'yloca.norm' 'freq.hz' 'intvls.s' 'onsets.s' 'durs.s' 'ampl.df'};
 %filename %roi no. %region.name %roi size %normalized xloca %normalized yloca %region.stimuli{numStim}.description %normalized responseFreq %absolutefiringFreq(dFreq) %meanLatency %meanAmpl %meanDur
@@ -305,12 +305,47 @@ function out = nPixelsActivePerSec(varin)
 data = varin.region.locationData.data;
 out = sum(data(varin.locationIndex).nPixelsByFrame(varin.on:varin.off)) / (numel(varin.on:varin.off)*varin.region.timeres);
 
-function out = domainFreq_hz(varin)
-if isfield(varin.region,domainData)
-	out = 
+%========domainFreq_hz====================================================================
+function out = nDomains(varin)
+if isfield(varin.region,'domainData')
+	data = varin.region.domainData;
+	if isfield(data.STATS,'descriptor')
+		roiBoundingBox = [];  
+		ObjectIndices = [];
+		j = 0;
+		for i = 1:data.CC.NumObjects  
+		   if ~strcmp(data.STATS(i).descriptor, 'artifact')  
+			   j = j + 1;
+	%		   roiBoundingBox(j,:) = STATS(i).BoundingBox;
+			   ObjectIndices = [ObjectIndices i];        
+		   end        
+		end 
+	else
+		ObjectIndices = 1:data.CC.NumObjects;        
+	end
+ 
+ 	coords = varin.region.coords{strcmp(varin.region.name,varin.locationName)};
+	count = 0;
+	for i = ObjectIndices	
+		centr = data.STATS(i).Centroid;
+		inp = inpolygon(centr(1),centr(2),coords(:,1),coords(:,2));
+		if inp, count = count + 1; end
+	end	
+	out = count;
 else
 	out = NaN;
 end
+
+function out = domainFreq_hz(varin)
+out = nDomains(varin);
+if ~isnan(out)
+	data = varin.region.domainData;
+	out = out / (data.CC.ImageSize(3) * varin.region.timeres);
+else
+	out = NaN;
+end
+%=========================================================================================
+
 
 function out = maxFraction(varin)  
 %maximum fraction of all pixels active at one time (default is by frame, TODO: change/add in future by binned time?)
