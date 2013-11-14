@@ -281,11 +281,11 @@ out = varin.region.domainData.STATS(varin.idx).MaxIntensity;
 
 function out = onset_fr(varin)
 %location name descriptor string
-out = round(varin.region.domainData.STATS(varin.idx).BoundingBox(:,3));
+out = ceil(varin.region.domainData.STATS(varin.idx).BoundingBox(:,3));
 
 function out = offset_fr(varin)
 %location name descriptor string
-out = round(varin.region.domainData.STATS(varin.idx).BoundingBox(:,3)) + round(varin.region.domainData.STATS(varin.idx).BoundingBox(:,6));
+out = ceil(varin.region.domainData.STATS(varin.idx).BoundingBox(:,3)) + (ceil(varin.region.domainData.STATS(varin.idx).BoundingBox(:,6))-1);
 
 function out = Duration_s(varin)
 %location name descriptor string
