@@ -28,7 +28,19 @@ function batchFetchLocationPropsActvPeriod(filelist,region, datafilename)
 %-----------------------------------------------------------------------------------------
 %- Set up options and default parameters
 %-----------------------------------------------------------------------------------------
-if nargin< 3 || isempty(datafilename); datafilename = 'dLocationProps.txt'; end
+if nargin< 3 || isempty(datafilename), 
+	datafilename = 'dLocationPropsActvPeriod.txt';
+	matlabUserPath = userpath;  
+	matlabUserPath = matlabUserPath(1:end-1);  
+	datafilename = fullfile(matlabUserPath,datafilename);
+else
+	[pathstr, name, ext] = fileparts(datafilename);   %test whether a fullfile path was specified	
+	if isempty(pathstr)  %if one was not specified, save the output datafilename into the users matlab home startup directory
+		matlabUserPath = userpath;  
+		matlabUserPath = matlabUserPath(1:end-1);  
+		datafilename = fullfile(matlabUserPath,datafilename);		
+	end
+end
 if nargin< 2 || isempty(region); region = []; end
 
 

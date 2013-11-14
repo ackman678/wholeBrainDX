@@ -39,7 +39,19 @@ function batchFetchLocationPropsFreq(filelist,region, datafilename, useStimuli, 
 
 if nargin< 5 || isempty(stimuliIndices); stimuliIndices = []; end 
 if nargin< 4 || isempty(useStimuli); useStimuli = 'false'; end
-if nargin< 3 || isempty(datafilename); datafilename = 'dLocationPropsFreq.txt'; end
+if nargin< 3 || isempty(datafilename), 
+	datafilename = 'dLocationPropsFreq.txt';
+	matlabUserPath = userpath;  
+	matlabUserPath = matlabUserPath(1:end-1);  
+	datafilename = fullfile(matlabUserPath,datafilename);
+else
+	[pathstr, name, ext] = fileparts(datafilename);   %test whether a fullfile path was specified	
+	if isempty(pathstr)  %if one was not specified, save the output datafilename into the users matlab home startup directory
+		matlabUserPath = userpath;  
+		matlabUserPath = matlabUserPath(1:end-1);  
+		datafilename = fullfile(matlabUserPath,datafilename);		
+	end
+end
 if nargin< 2 || isempty(region); region = []; end
 
 %---**functionHandles.workers and functionHandles.main must be valid functions in this program or in matlabpath to provide an array of function_handles

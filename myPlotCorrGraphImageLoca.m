@@ -97,7 +97,7 @@ case 'pvalue'
 	edgeData = [edgeList pvalues];  %make Nx3 list of pairs and their edgeAesthetic (physical distance or p-value)
 	mx = max(pvalues); mn = min(pvalues);
 case 'rvalue'
-	edgeData = [edgeList rvalues];  %make Nx3 list of pairs and their edgeAesthetic (physical distance or p-value)
+	edgeData = [edgeList rvalues pvalues dist];  %make Nx3 list of pairs and their edgeAesthetic (physical distance or p-value)
 	mx = max(rvalues); mn = min(rvalues);
 end
 
