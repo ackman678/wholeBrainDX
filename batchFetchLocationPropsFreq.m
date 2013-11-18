@@ -4,8 +4,8 @@ function batchFetchLocationPropsFreq(filelist,region, datafilename, useStimuli, 
 % >> batchFetchLocationPropsFreq(filelist);
 % >> batchFetchLocationPropsFreq({filename},region);
 % >> batchFetchLocationPropsFreq(filelist,[],[], 'true', {'motor.state.active' 'motor.state.quiet'});
-% >> batchFetchLocationPropsFreq({fnm},[],[], 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
-% >> batchFetchLocationPropsFreq({filename},region,'dLocationProps.txt', 'true', [2 3]);
+% >> batchFetchLocationPropsFreq({fnm},region,[], 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
+% >> batchFetchLocationPropsFreq({filename},region,'dLocationPropsFreq.txt', 'true', [2 3]);
 %
 %**USE**
 %Must provide one input:
@@ -75,8 +75,9 @@ function datafilename=setupDataTable(tableHeaders, datafilename)
 %---Generic table setup function---------------------
 if nargin < 2 || isempty(datafilename), datafilename = ['dataTable_' datestr(now,'yyyymmdd-HHMMSS') '.txt']; end
 if nargin < 1 || isempty(tableHeaders), error('Must provide tableHeaders cell array of strings'); end
-localpath_datafilename = ['./' datafilename];
-setupHeaders = exist(localpath_datafilename,'file');
+%localpath_datafilename = ['./' datafilename];
+%setupHeaders = exist(localpath_datafilename,'file');
+setupHeaders = exist(datafilename,'file');
 if setupHeaders < 1
 	%write headers to file----
 	appendCellArray2file(datafilename,tableHeaders)

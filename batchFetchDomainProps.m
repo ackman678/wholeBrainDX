@@ -3,9 +3,7 @@ function batchFetchDomainProps(filelist,region, datafilename, useStimuli, stimul
 %Examples:
 % >> batchFetchDomainProps(filelist);
 % >> batchFetchDomainProps({filename},region);
-% >> batchFetchDomainProps(filelist,[],[], 'true', {'motor.state.active' 'motor.state.quiet'});
-% >> batchFetchDomainProps({fnm},[],[], 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
-% >> batchFetchDomainProps({filename},region,'dLocationProps.txt', 'true', [2 3]);
+% >> batchFetchDomainProps({filename},region,'dDomainProps.txt');
 %
 %**USE**
 %Must provide one input:
@@ -75,8 +73,9 @@ function datafilename=setupDataTable(tableHeaders, datafilename)
 %---Generic table setup function---------------------
 if nargin < 2 || isempty(datafilename), datafilename = ['dataTable_' datestr(now,'yyyymmdd-HHMMSS') '.txt']; end
 if nargin < 1 || isempty(tableHeaders), error('Must provide tableHeaders cell array of strings'); end
-localpath_datafilename = ['./' datafilename];
-setupHeaders = exist(localpath_datafilename,'file');
+%localpath_datafilename = ['./' datafilename];
+%setupHeaders = exist(localpath_datafilename,'file');
+setupHeaders = exist(datafilename,'file');
 if setupHeaders < 1
 	%write headers to file----
 	appendCellArray2file(datafilename,tableHeaders)

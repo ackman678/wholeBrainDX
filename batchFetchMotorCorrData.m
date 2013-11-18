@@ -1,9 +1,9 @@
-function batchFetchCorrData(filelist,region, datafilename, datasetSelector)
-%batchFetchCorrData - A wrapper and output generator for getting information on active pixel fraction per location during the movie, after 'locationData' data structure has been returned and saved into 'region' from wholeBrain_activeFraction.m
+function batchFetchMotorCorrData(filelist,region, datafilename, datasetSelector)
+%batchFetchMotorCorrData - A wrapper and output generator for getting information on active pixel fraction per location during the movie, after 'locationData' data structure has been returned and saved into 'region' from wholeBrain_activeFraction.m
 %Examples:
-% >> batchFetchCorrData(filelist);
-% >> batchFetchCorrData({filename},region);
-% >> batchFetchCorrData({filename},region,'dCorr.txt');
+% >> batchFetchMotorCorrData(filelist);
+% >> batchFetchMotorCorrData({filename},region);
+% >> batchFetchMotorCorrData({filename},region,'dMotorCorr.txt');
 %
 %**USE**
 %Must provide one input:
@@ -38,7 +38,7 @@ function batchFetchCorrData(filelist,region, datafilename, datasetSelector)
 
 if nargin< 4 || isempty(datasetSelector), datasetSelector = 1; end   %if there is more than one corr_pairs dataset, this will select which one to use
 if nargin< 3 || isempty(datafilename), 
-	datafilename = 'dCorr.txt';
+	datafilename = 'dMotorCorr.txt';
 	matlabUserPath = userpath;  
 	matlabUserPath = matlabUserPath(1:end-1);  
 	datafilename = fullfile(matlabUserPath,datafilename);
@@ -53,7 +53,7 @@ end
 if nargin< 2 || isempty(region); region = []; end
 
 %---**functionHandles.workers and functionHandles.main must be valid functions in this program or in matlabpath to provide an array of function_handles
-functionHandles.workers = {@filename @matlab_filename @node1 @node2 @rvalue @pvalue @dist_px};
+functionHandles.workers = {@filename @matlab_filename @node1 @node2 @rvalue @pvalue};
 functionHandles.main = @wholeBrain_getCorrStats;
 %tableHeaders = {'filename' 'matlab.filename' 'region.name' 'roi.number' 'nrois' 'roi.height.px' 'roi.width.px' 'xloca.px' 'yloca.px' 'xloca.norm' 'yloca.norm' 'freq.hz' 'intvls.s' 'onsets.s' 'durs.s' 'ampl.df'};
 %filename %roi no. %region.name %roi size %normalized xloca %normalized yloca %region.stimuli{numStim}.description %normalized responseFreq %absolutefiringFreq(dFreq) %meanLatency %meanAmpl %meanDur
@@ -193,51 +193,35 @@ out = varin.edgeData(varin.idx,5);
 function [edgeData, names] = getEdgeData(varin)
 region = varin.region;
 datasetSelector = varin.datasetSelector;
-data = region.userdata.corr{datasetSelector}.corr_pairs{1};
+data = region.userdata.motorCorr{datasetSelector}.corr_pairs{1};
 
 %--setup roi height width ratio--------------
 %The following is important for getting the distances right if the data pixel dimensions are not equivalent
 %And below the scripts will assume wherever 'rXY' is used, that it is szX (m dimension) which must be scaled up.
 %the following assumes that the modulus of raster scanned data is 0 (equally divisible image size) and that for CCD images the ratio of image dimensions is either equivalent or not equally divisible
-[szX,szY] = size(region.image);  %assuming szY is the largest dimension and szX may or may not need to be scaled.
-szZ = size(region.traces,2);
-if mod(max([szY szX]),min([szY szX])) == 0
-    rXY=szY/szX;
-    szX=szY;  %to make the resulting images square, in case the data was raster scanned with less lines in one dimension--
-else
-    rXY = 1;
-end
 %-- end setup roi height width ratio---------
 %--START loop to get edgeData----------------
-dist=[];
 edgeList=[];
 pvalues = [];
 rvalues = [];
-names = region.userdata.corr{datasetSelector}.names;
+names = region.userdata.motorCorr{datasetSelector}.names;
 % i = 1;
-distAll =[];
 for i = 1:size(data,1)
 	name1 = names{data(i,1)};
 	name2 = names{data(i,2)};
 
-    centr1 = centroid(region.coords{strcmp(name1,region.name)});  %Get centroid location for cell 1
-    centr2 = centroid(region.coords{strcmp(name2,region.name)});  %Get centroid location for cell 2
-
-	distAll = [distAll; sqrt((abs(centr1(1)-centr2(1)))^2+(abs(centr1(2)*rXY-centr2(2)*rXY))^2)];
-	%             if region.location(data(i,1)) == numLoca && region.location(data(i,2)) == numLoca
 	edgeList = [edgeList; data(i,:)];	
-	if isfield(region.userdata.corr{datasetSelector},'pvalCorrMatrix')
-		output1 = getPvalues(i,data,region.userdata.corr{datasetSelector});
-		output2 = getRvalues(i,data,region.userdata.corr{datasetSelector});
+	if isfield(region.userdata.motorCorr{datasetSelector},'pvalCorrMatrix')
+		output1 = getPvalues(i,data,region.userdata.motorCorr{datasetSelector});
+		output2 = getRvalues(i,data,region.userdata.motorCorr{datasetSelector});
 		pvalues = [pvalues; output1];
 		rvalues = [rvalues; output2];
 	else
 		error('pvalCorrMatrix not found')		
 	end
-	dist = [dist; sqrt((abs(centr1(1)-centr2(1)))^2+(abs(centr1(2)*rXY-centr2(2)*rXY))^2)];
 	%             end
 end
-edgeData = [edgeList rvalues pvalues dist];
+edgeData = [edgeList rvalues pvalues];
 edgeData = sortrows(edgeData,3);   %sort the Nx5 list of pairs on lowest to highest rvalue
 %--END loop to get edgeData----------------
 
