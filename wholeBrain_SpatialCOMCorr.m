@@ -1,4 +1,4 @@
-function region = wholeBrain_SpatialCOMCorr(fnm,region,names)
+function region = wholeBrain_SpatialCOMCorr(fnm,region,names,makePlots)
 %wholeBrain_SpatialCOMCorr - Generate cross-correlation plots and values for Cortical Spatial Center of Mass corr between hemispheres
 %Examples:
 % region = wholeBrain_SpatialCOMCorr(fnm,region)
@@ -24,13 +24,14 @@ else
 end
 
 %Setup defaults: 
+if nargin < 4 || isempty(makePlots), makePlots = 0; end
+
 if nargin < 3 || isempty(names)
 	names = {region.locationData.data.name};
 end
 
 if isfield(region,'userdata') & isfield(region.userdata,'spatialMLCorr')
 	datasetSelector = length(region.userdata.spatialMLCorr) + 1;
-	datasetSelector = length(region.userdata.spatialAPCorr) + 1;
 else	
 	datasetSelector = 1;
 end	
@@ -43,44 +44,64 @@ region.userdata.spatialAPCorr{datasetSelector}.pvalCorrMatrix = zeros(length(nam
 region.userdata.spatialAPCorr{datasetSelector}.rvalCorrMatrix = zeros(length(names),length(names));   
 region.userdata.spatialAPCorr{datasetSelector}.names = names;
 
+%Make the plots:
+for i = 1:length(names)
+	y1 = data(strcmp({data.name},names{i})).meanActivePixelLocaNormML;  
+  	y3 = data(strcmp({data.name},names{i})).meanActivePixelLocaNormAP;
+    
+	for j = 1:length(names)	
+		y2 = data(strcmp({data.name},names{j})).meanActivePixelLocaNormML;  
+		y4 = data(strcmp({data.name},names{j})).meanActivePixelLocaNormAP;
+	
+		if makePlots
+			figure;
+			ax(1) = subplot(2,1,1);  
+			plot(y1(~isnan(y1)&~isnan(y2)),'-'); xlabel('frame no.'); ylabel('Norm ML dist');   
+			hold all  
+			plot(y2(~isnan(y1)&~isnan(y2)),'-'); xlabel('frame no.'); ylabel('Norm ML dist');   
+			legend({data(i).name data(j).name})  
+		end
+		disp(['===xy pearson corr coef spatialML ' names{i} ' x ' names{j} '==='])    
+		tmp1 = y1(~isnan(y1)&~isnan(y2));
+		tmp2 = y2(~isnan(y1)&~isnan(y2));
+		disp(numel(tmp1))
+		if numel(tmp1) > 1
+			[r,p]=corrcoef(tmp1,tmp2)  
+		else
+			r = nan(2,2);
+			p = nan(2,2);
+		end
+		disp(['p(2,1) = ' num2str(p(2,1))])  
+		region.userdata.spatialMLCorr{datasetSelector}.pvalCorrMatrix(i,j) = p(2,1);
+		region.userdata.spatialMLCorr{datasetSelector}.rvalCorrMatrix(i,j) = r(2,1);
 
-i = (1:length(names))';
-j = ones(length(names),1);
+		if makePlots
+			ax(2) = subplot(2,1,2);    
+			plot(y3(~isnan(y3)&~isnan(y4)),'-'); xlabel('frame no.'); ylabel('Norm AP dist');   
+			hold all  
+			plot(y4(~isnan(y3)&~isnan(y4)),'-'); xlabel('frame no.'); ylabel('Norm AP dist');   
+			linkaxes(ax,'x')  
+			zoom xon  
+			legend({data(i).name data(j).name})
+		end	  
+		disp(['===xy pearson corr coef spatialAP ' names{i} ' x ' names{j} '==='])
+		tmp1 = y3(~isnan(y3)&~isnan(y4));
+		tmp2 = y4(~isnan(y3)&~isnan(y4));
+		disp(numel(tmp1))
+		if numel(tmp1) > 1
+			[r,p]=corrcoef(tmp1,tmp2)  
+		else
+			r = nan(2,2);
+			p = nan(2,2);
+		end
+		disp(['p(2,1) = ' num2str(p(2,1))]) 
+		region.userdata.spatialAPCorr{datasetSelector}.pvalCorrMatrix(i,j) = p(2,1);
+		region.userdata.spatialAPCorr{datasetSelector}.rvalCorrMatrix(i,j) = r(2,1);
+	end
+end
+
+[i,j] = find(tril(region.userdata.spatialMLCorr{datasetSelector}.rvalCorrMatrix,-1) ~= 0);  %this will take all pairs, no threshold for comparison  
 region.userdata.spatialMLCorr{datasetSelector}.corr_pairs{1} = [i j];  
 
-[r,p]=corrcoef(decY2,decY2);
-region.userdata.spatialMLCorr{datasetSelector}.pvalCorrMatrix(1,1) = p(2,1);
-region.userdata.spatialMLCorr{datasetSelector}.rvalCorrMatrix(1,1) = r(2,1);
-
-%Make the plots:
-strcmp({data.name},'cortex.L')
-for j = 1:numel(st)  
-    str = st(j).str; 
-
-	figure;   
-	y1 = data(1).meanActivePixelLocaNormML;  
-	y2 = data(2).meanActivePixelLocaNormML;  
-	ax(1) = subplot(2,1,1);  
-	plot(y1(~isnan(y1)&~isnan(y2)),'-'); xlabel('frame no.'); ylabel('Norm ML dist');   
-	hold all  
-	plot(y2(~isnan(y1)&~isnan(y2)),'-'); xlabel('frame no.'); ylabel('Norm ML dist');   
-	legend({data(1).name data(2).name})  
-	disp('===xy pearson corr coef===')    
-	[r,p]=corrcoef(y1(~isnan(y1)&~isnan(y2)),y2(~isnan(y1)&~isnan(y2)))  
-	disp(['p(2,1) = ' num2str(p(2,1))])  
-
-	ax(2) = subplot(2,1,2);  
-	y1 = data(1).meanActivePixelLocaNormAP;  
-	y2 = data(2).meanActivePixelLocaNormAP;  
-	plot(y1(~isnan(y1)&~isnan(y2)),'-'); xlabel('frame no.'); ylabel('Norm AP dist');   
-	hold all  
-	plot(y2(~isnan(y1)&~isnan(y2)),'-'); xlabel('frame no.'); ylabel('Norm AP dist');   
-	linkaxes(ax,'x')  
-	zoom xon  
-	legend({data(1).name data(2).name})  
-	disp('===xy pearson corr coef===')    
-	[r,p]=corrcoef(y1(~isnan(y1)&~isnan(y2)),y2(~isnan(y1)&~isnan(y2)))  
-	disp(['p(2,1) = ' num2str(p(2,1))]) 
-
-
-end
+[i,j] = find(tril(region.userdata.spatialAPCorr{datasetSelector}.rvalCorrMatrix,-1) ~= 0);  %this will take all pairs, no threshold for comparison  
+region.userdata.spatialAPCorr{datasetSelector}.corr_pairs{1} = [i j];  
