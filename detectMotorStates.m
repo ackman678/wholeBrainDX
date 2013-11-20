@@ -4,7 +4,7 @@ function [motorOns, motorOffs] = detectMotorStates(region, y, deltaspacing, hand
 %James Ackman, 2013-05-02 14:31:11
 %need to have 'region' data structure loaded into workspace
 % INPUTS: 
-%	region - struct, a valid region data structure, see hippo
+%	region - struct, a valid region data structure, see calciumdx
 %	y - the low pass filtered, moving average motor signal you want to detect the states with. 
 %	deltaspacing - since numeric, rolling window detection spacing in seconds. Should be set to approximately half of the time interval for the signal you want to detect
 %	handles - numeric vector of motor state offset times as frame indices.
@@ -13,10 +13,10 @@ function [motorOns, motorOffs] = detectMotorStates(region, y, deltaspacing, hand
 %	[motorOns, motorOffs] = 	detectMotorStates(region, rateChannels(5).y, deltaspacing);
 %	detectMotorStates(region, y, 100);
 %
-% See also: batchmakeStimParamsWaveonsets, getStimParams, myFrameTriggerDetect, hippo, myBatchFilter
+% See also: batchmakeStimParamsWaveonsets, getStimParams, myFrameTriggerDetect, calciumdx, myBatchFilter
 %
 % Author: James B. Ackman 2013-05-06 12:49:44
-%based on hippoDetectWaves.m by James B. Ackman
+%based on calciumdxDetectWaves.m by James B. Ackman
 
 
 if nargin < 4 || isempty(handles), handles = []; end  %in case this is being called multiple times for multiple plots

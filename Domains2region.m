@@ -1,10 +1,10 @@
 function region = Domains2region(domains, CC,STATS,region,hemisphereIndices)
 %region = Domains2region(domains, CC,STATS,region)
-%convert domain assignments from a 3D connected components array to hippo region data structure that can be used for rasterplots, and all down stream analysis functions
+%convert domain assignments from a 3D connected components array to calciumdx region data structure that can be used for rasterplots, and all down stream analysis functions
 % need CC, connected components and STATS, the structure returned by regionprops and dummy 'region' file with any regions.coords and .names that you might want to use to label the domains
 % James B. Ackman 2013-01-04 22:39:23
 
-if nargin < 5 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end  %index location of the hemisphere region outlines in the 'region.location' hippo struct
+if nargin < 5 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end  %index location of the hemisphere region outlines in the 'region.location' calciumdx struct
 
 region.onsets = {};
 region.offsets = {};

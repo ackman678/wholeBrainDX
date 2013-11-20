@@ -87,15 +87,15 @@ else
 end
 
 if lenVarargin < 3 || isempty(varargin{3}),
-    if exist('hippoprefs.mat','file') == 2
-        load('hippoprefs')
+    if exist('calciumdxprefs.mat','file') == 2
+        load('calciumdxprefs')
     else
         pathname = pwd;
     end
     [filename, pathname] = uigetfile('*.mat','Select file to load',pathname);
     fname = fullfile(pathname,filename);
     matfile=load(fname);
-    save('hippoprefs.mat', 'pathname','filename');
+    save('calciumdxprefs.mat', 'pathname','filename');
     if isfield(matfile.region,'locationData')
 %         handles.plot3.data=region.locationData.data;
         handles.plot3=setupActiveFractionHandles(region);

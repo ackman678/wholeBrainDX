@@ -82,7 +82,7 @@ ylim([0 CC.ImageSize(1)])
 % set(gca,'ydir','reverse','ytick',[],'xtick',[])
 set(gca,'ydir','reverse','ytick',[],'xtick',[])
 
-% num=1;  %placeholder from HippoCalciumDextran gui code  
+% num=1;  %placeholder from CalciumDX gui code  
 % handlCoord{num} = [];  
 % hold on
 % for numcoords = 1:length(region.coords)
@@ -132,7 +132,7 @@ ylim([0 CC.ImageSize(1)])
 % set(gca,'ydir','reverse','ytick',[],'xtick',[])
 set(gca,'ydir','reverse','ytick',[],'xtick',[])
 
-% num=1;  %placeholder from HippoCalciumDextran gui code  
+% num=1;  %placeholder from CalciumDX gui code  
 % handlCoord{num} = [];  
 % hold on
 % for numcoords = 1:length(region.coords)

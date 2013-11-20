@@ -4,7 +4,7 @@ function region = makeDrugStateStimParams(region, drugOns, drugOffs, drugString)
 %James Ackman, 2013-05-02 14:31:11
 %need to have 'region' data structure loaded into workspace
 % INPUTS: 
-%	region - struct, a valid region data structure, see hippo
+%	region - struct, a valid region data structure, see calciumdx
 %	drugOns - numeric vector of motor state onset times as frame indices. The number of motor onsets and motor offsets should be the same. 
 %	drugOffs - numeric vector of motor state offset times as frame indices.
 %	drugString - string descriptor
@@ -13,7 +13,7 @@ function region = makeDrugStateStimParams(region, drugOns, drugOffs, drugString)
 %	[region] = makeStimParams(region,region.wavedata{2}.waveonsets,'waveonsets.VCtx')
 %	[region] = makeStimParams(region,region.wavedata{3}.waveonsets,'waveonsets.SC')
 %
-% See also: batchmakeStimParamsWaveonsets, getStimParams, myFrameTriggerDetect, hippo, myBatchFilter
+% See also: batchmakeStimParamsWaveonsets, getStimParams, myFrameTriggerDetect, calciumdx, myBatchFilter
 %
 % Author: James B. Ackman 2013-05-06 12:21:06
 %based on makeStimParams.m 2/20/2012 11:55:49 by James B. Ackman

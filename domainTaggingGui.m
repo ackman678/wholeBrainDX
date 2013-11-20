@@ -102,7 +102,7 @@ function pushbutton2_Callback(hObject, eventdata, handles)
 handles = addBorder(handles);
 guidata(hObject, handles);
 %determineRegions(handles)
-% HippoDetermineRegions
+% calciumdxDetermineRegions
 
 
 function handles = addBorder(handles)

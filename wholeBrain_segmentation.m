@@ -7,8 +7,8 @@ function [A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemi
 %modified 2013-03-28 14:25:44 by J.B.A.
 
 if nargin < 5 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)
-if nargin < 4 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end  %index location of the hemisphere region outlines in the 'region' hippo struct
-if nargin < 3 || isempty(region), region = myOpen; end  %to load the hemisphere region outlines from 'region' hippo struct
+if nargin < 4 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end  %index location of the hemisphere region outlines in the 'region' calciumdx struct
+if nargin < 3 || isempty(region), region = myOpen; end  %to load the hemisphere region outlines from 'region' calciumdx struct
 if nargin < 2 || isempty(backgroundRemovRadius); backgroundRemovRadius = 60; end   %radius in pixels, should be a few times larger than the biggest object of interest in the image
 
 
@@ -37,7 +37,7 @@ if nargin < 1 || isempty(fnm)
         end
     end
     fnm = [pathname filename];
-    save('hippoprefs.mat', 'pathname','filename')
+    save('calciumdxprefs.mat', 'pathname','filename')
 end
 
 fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_segmentation_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 

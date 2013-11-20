@@ -1,6 +1,6 @@
 function [idx1, idx2] = getNonActiveFrameDurations_v1(x)
 %2013-04-08  James B. Ackman   
-%This version is based on the hippoDetectWaves.m algorithm for onsets and offsets
+%This version is based on the calciumdxDetectWaves.m algorithm for onsets and offsets
 %of signals.  This one works but not 100%, which should be possible since
 %in the first few lines we convert the active pixel signals into square
 %wave pulses. Coded a new one algorithm based on diff() the next day. Same

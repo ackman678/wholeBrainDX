@@ -28,7 +28,7 @@ if nargin < 1 || isempty(fnm)
         end
     end
     fnm = [pathname filename];
-    save('hippoprefs.mat', 'pathname','filename')
+    save('calciumdxprefs.mat', 'pathname','filename')
 end
 
 

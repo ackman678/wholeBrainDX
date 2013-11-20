@@ -83,7 +83,7 @@ ylim([0 CC.ImageSize(1)])
 % axis tight
 % set(gca,'ydir','reverse','ytick',[],'xtick',[])
 
-% num=1;  %placeholder from HippoCalciumDextran gui code  
+% num=1;  %placeholder from CalciumDX gui code  
 % handlCoord{num} = [];  
 % hold on
 % for numcoords = 1:length(region.coords)
