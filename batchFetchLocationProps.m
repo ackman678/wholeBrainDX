@@ -318,12 +318,6 @@ function out = nPixelsActivePerSec(varin)
 data = varin.region.locationData.data;
 out = sum(data(varin.locationIndex).nPixelsByFrame(varin.on:varin.off)) / (numel(varin.on:varin.off)*varin.region.timeres);
 
-function out = domainFreq_hz(varin)
-if isfield(varin.region,domainData)
-	out = 
-else
-	out = NaN;
-end
 
 function out = maxFraction(varin)  
 %maximum fraction of all pixels active at one time (default is by frame, TODO: change/add in future by binned time?)
