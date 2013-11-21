@@ -1,4 +1,4 @@
-function [motorOns, motorOffs] = detectMotorStates(region, y, deltaspacing, handles)
+function [motorOns, motorOffs] = detectMotorStates(region, y, deltaspacing, handles, manualRefine)
 %detectMotorStates -- Convert motor period onsets and offsets as frame indices to stimuli and append to stimulusParams
 %detect slow oscillatory signals in the motor photodiode signal, y. Detects motor onsets and offsets for active periods. The complement is motor quiet periods. 
 %James Ackman, 2013-05-02 14:31:11
@@ -18,7 +18,7 @@ function [motorOns, motorOffs] = detectMotorStates(region, y, deltaspacing, hand
 % Author: James B. Ackman 2013-05-06 12:49:44
 %based on calciumdxDetectWaves.m by James B. Ackman
 
-
+if nargin < 5 || isempty(manualRefine), manualRefine = 'true'; end
 if nargin < 4 || isempty(handles), handles = []; end  %in case this is being called multiple times for multiple plots
 if nargin < 3 || isempty(deltaspacing), deltaspacing = 30; end  %deltaspacing in secs
 
@@ -34,14 +34,24 @@ mpd=round(deltaspacing/region.timeres); %wave onsets
 if ~isempty(handles)
 	ax = handles.axes_current;
 else
-	figure;
-	ax = subplot(1,1,1);
+	hFig = figure;
+	scrsize = get(0,'screensize');
+	set(hFig,'Position',scrsize);
+	set(hFig,'color',[1 1 1]);
+	set(hFig,'PaperType','usletter');
+	set(hFig,'PaperPositionMode','auto');
+	handles.hFig = hFig;
 end
 
+ax(1) = subplot(2,1,1);    
+plot(region.motorSignal,'-k'); ylabel('Motor activity (uV)'); grid minor
 
-plot(ax, data(1,:));
+ax(2) = subplot(2,1,2);
+handles.axes_current = ax(2);
+handles.ax = ax;
+plot(ax(2), data(1,:));
 hold on;
-plot(ax, idx,data(idx),'ok');
+plot(ax(2), idx,data(idx),'ok');
 %hold off;
 %a(2) = subplot(2,1,2);
 %imagesc(dfoverf(region.traces));
@@ -57,7 +67,7 @@ for pkind = 1:(length(pks) - 1)
 end
 %axes(ax)
 %hold on
-plot(ax, minima,data(minima),'or');
+plot(ax(2), minima,data(minima),'or');
 
 wvonsets = [];
 %thresholdlevel = 0.05;
@@ -75,10 +85,11 @@ for pkind = 1:(length(minima) - 1)
 end
 %axes(ax)
 %hold on
-plot(ax, wvonsets,data(wvonsets),'og');
+plot(ax(2), wvonsets,data(wvonsets),'og');
 
 wvoffsets = [];
-thresholdlevel = 0.20;
+%thresholdlevel = 0.20;
+thresholdlevel = 0.50;
 for pkind = 1:(length(idx))
     thresh = abs(data(minima(pkind+1)) - data(idx(pkind))) * thresholdlevel;
     datasegment = find(data(idx(pkind):minima(pkind+1)) < thresh+data(minima(pkind+1)));
@@ -92,7 +103,13 @@ for pkind = 1:(length(idx))
 end
 %axes(ax)
 %hold on
-plot(ax, wvoffsets,data(wvoffsets),'ob');
+plot(ax(2), wvoffsets,data(wvoffsets),'ob');
+hold off
+
+ylabel('Motor activity filt (uV)'); grid minor
+xlabel('Time (movie fr)')
+linkaxes(ax,'x'); zoom xon    
+set(ax,'YGrid','off') 
 
 idx1 = wvonsets;
 idx2 = wvoffsets;
@@ -113,4 +130,7 @@ end
 
 motorOns=idx1;
 motorOffs=idx2;
+
+if strcmp(manualRefine,'true')
+	[motorOns,motorOffs] = DetectMotorStatesRefine(data,motorOns,motorOffs,idx,minima,handles);
 end

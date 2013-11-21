@@ -26,14 +26,18 @@ region = appendStimulusParams(region, motorOns, motorOffs, desc)
 
 desc = 'motor.state.quiet';
 
-q_onsets = [1 motorOffs + 1 size(region.traces,2)];
-q_offsets = [1 motorOns - 1 size(region.traces,2)];
+if ~isfield(region,'nframes')
+	error('region.nframes (movieLength) needed')
+end
+
+q_onsets = [1 motorOffs + 1 region.nframes];
+q_offsets = [1 motorOns - 1 region.nframes];
 
 q_onsets = intersect(setxor(q_onsets,motorOns),q_onsets);
 q_offsets = intersect(setxor(q_offsets,motorOffs),q_offsets);
 
-q_onsets = unique(q_onsets(q_onsets < size(region.traces,2) & q_onsets >= 1));
-q_offsets = unique(q_offsets(q_offsets <= size(region.traces,2) & q_offsets > 1));
+q_onsets = unique(q_onsets(q_onsets < region.nframes & q_onsets >= 1));
+q_offsets = unique(q_offsets(q_offsets <= region.nframes & q_offsets > 1));
 
 if length(q_onsets) ~= length(q_offsets)
 	error('The number of quiet onsets and offsets is not the same')

@@ -20,18 +20,23 @@ y = channels{chanNum}.adc(:,1)';
 %So to get a factor of 5000 reduction we can run 4 times, with r = 10, 10, 10, 5.
 
 r =  Fs / Fs_imaging; %typically 5000 if Fs = 25000, and Fs_imaging = 5;
-ri = floor(log10(r))  % this gives no. of decimation iterations with a decimation factor of 10  (10^ri = r) ==> log10(10^ri) = log10(r);
+ri = floor(log10(r));  % this gives no. of decimation iterations with a decimation factor of 10  (10^ri = r) ==> log10(10^ri) = log10(r);
 rRem = r/(10^ri); %this gives the decimation factor for the last iteration
 
 rectY = abs(y);    %rectify the signal
 decY = rectY;
-for i = ri
+for i = 1:ri
 	decY = decimate(decY,10);  
 end
 decY = decimate(decY,rRem);  
 decX = 1:length(decY);  
 
-hFig = figure,       
+hFig = figure;
+scrsize = get(0,'screensize');
+set(hFig,'Position',scrsize);
+set(hFig,'color',[1 1 1]);
+set(hFig,'PaperType','usletter');
+set(hFig,'PaperPositionMode','auto');       
 ax(1) = subplot(3,1,1);      
 dsplot(x/Fs, y, [], hFig, ax(1));      
 ax(2) = subplot(3,1,2);      
@@ -48,4 +53,5 @@ else
 	error('region.nframes not found, motor signal likely not same length as movie')
 end
 
+decY2(decY2<0) = 0;
 region.motorSignal = decY2;
