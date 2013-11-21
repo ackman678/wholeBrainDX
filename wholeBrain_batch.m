@@ -109,8 +109,8 @@ if ~isfield(region.domainData.STATS, 'descriptor')
 	end      
 end      
 
-hemisphereIndices = unique(region.location);
-region = Domains2region(domains, region.domainData.CC,region.domainData.STATS,region,hemisphereIndices)
+locationIndices = find(~strcmp(region.name,'field') & ~strcmp(region.name,'craniotomy'));  %because region.location may be empty to this point (usually gets tagged only as a lut for cells are grid rois)
+region = Domains2region(domains, region.domainData.CC,region.domainData.STATS,region,locationIndices)
 
 fnm = fnm2;  
 fnm = [fnm(1:end-4) '_d2r' '.mat'];       
@@ -142,8 +142,8 @@ print(gcf, '-depsc', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.eps']);
 
 %==5==Get correlation matrix and plots======================== 
 exclude = {'cortex.L' 'cortex.R'};
-region = wholeBrain_corrData(region, exclude);  %will also print and save corr matrix and raster plot of the traces (activeFraction) that went into the corr matrix
-save(fnm,'region')
+region = wholeBrain_corrData(fnm, region, exclude);  %will also print and save corr matrix and raster plot of the traces (activeFraction) that went into the corr matrix
+save(fnm,'region');
 
 %==6==Get cortical - motor corr results and plots=============
 if isfield(region,'motorSignal')
@@ -160,12 +160,12 @@ if isfield(region,'motorSignal')
 	st(10).str = {'cortex.L' 'cortex.R'};	
 	
 	region = wholeBrain_MotorSignalCorr(fnm,region,st);
-	save(fnm,'region')
+	save(fnm,'region');
 end
 
 %==7==Get spatial correlation results and plots==============
-region = wholeBrain_SpatialCOMCorr(fnm,region,{'cortex.L' 'cortex.R'},1)
-save(fnm,'region')
+region = wholeBrain_SpatialCOMCorr(fnm,region,{'cortex.L' 'cortex.R'},1);
+save(fnm,'region');
 
 %==8==More Plots=========================
 %--Single contour activity map-----

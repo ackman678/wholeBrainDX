@@ -1,4 +1,4 @@
-function region = wholeBrain_corrData(region, exclude)
+function region = wholeBrain_corrData(fnm, region, exclude)
 %wholeBrain_corrData - Generate Pearson correlation matrix for all pairs of locations in the region data structure.
 %Examples:
 % region = wholeBrain_corrData(region)
@@ -14,7 +14,7 @@ function region = wholeBrain_corrData(region, exclude)
 %James B. Ackman, 2013-11-15 11:27:43
 
 
-if nargin < 2 || isempty(exclude), exclude = {'cortex.L' 'cortex.R'}; end
+if nargin < 3 || isempty(exclude), exclude = {'cortex.L' 'cortex.R'}; end
 
 data = region.locationData.data;  
 names = {region.locationData.data.name};
@@ -51,7 +51,7 @@ set(handles.figHandle,'color',[1 1 1]);
 set(handles.figHandle,'PaperType','usletter');
 set(handles.figHandle,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
 
-myColors = jet(256)
+myColors = jet(256);
 myColors(1,:) = [1 1 1];
 colormap(myColors);
 imagesc(X')
