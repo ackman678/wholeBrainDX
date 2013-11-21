@@ -1,4 +1,4 @@
-function [A3, CC, STATS] = wholeBrain_kmeans(A2,A,Nclusters,showFigure,fnm)
+function [A3, CC, STATS] = wholeBrain_kmeans(A2,A,Nclusters,showFigure,fnm,region,hemisphereIndices)
 %PURPOSE -- use kmeans clustering to clean up segmentation from wholeBrain_segmentation.m
 %INPUTS -- 
 %A2: the binary array returned from wholeBrain_segmentation  
@@ -11,6 +11,18 @@ function [A3, CC, STATS] = wholeBrain_kmeans(A2,A,Nclusters,showFigure,fnm)
 % update 2013-10-31 15:42:02 JBA to used mean, duration, diameter for clustering and to remove single frame activations in the largest cluster
 
 %-----setup default parameters-------
+%assuming [2 3] are the region.name location indices for 'cortex.L' and 'cortex.R'
+if nargin < 7 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end
+if nargin < 6 || isempty(region), 
+	motorSignal = []; 
+else
+	if isfield(region,'motorSignal')
+		motorSignal = region.motorSignal;
+	else
+		motorSignal = [];
+	end
+end  %a downsampled motorSignal same length as n movie frames can be input to help clustering
+
 if nargin < 5 || isempty(fnm),
 	fnm2 = ['wholeBrain_kmeans_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
 else
@@ -33,6 +45,14 @@ STATS = regionprops(CC,A,'Area','BoundingBox', 'Centroid', 'MaxIntensity', 'MinI
 
 %Get measurements that will be used as inputs to kmeans---
 centr = vertcat(STATS.Centroid);
+centrZ = round(centr(:,3));
+
+if ~isempty(motorSignal)
+	rateChan = rateChannels(region,[],0);  %region.motorSignal processed in rateChannels to give moving average timecourse
+	%motorAmpl = region.motorSignal(centrZ);
+	motorAmpl = rateChan(1).y(centrZ);
+end
+
 roiArea=[STATS.Area];  %Scalar; the actual number of pixels in the region. (This value might differ slightly from the value returned by bwarea, which weights different patterns of pixels differently.
 %figure; hist(roiArea,20); title('area')  %can see two separate populations
 
@@ -64,34 +84,33 @@ diameters = mean([roiBoundingBox(:,4) roiBoundingBox(:,5)], 2);
 
 %----TESTING-- following lines are to find distance from edge of hemisphere. Not needed/not useful. Rationale outlined in [[2013-01-30_wholeBrain_analysis.txt]].
 %Assuming region is loaded into workspace
-%hemisphereIndices = [2 3];
-%sz = size(A2);
-%regionMask1 = poly2mask(region.coords{hemisphereIndices(1)}(:,1),region.coords{hemisphereIndices(1)}(:,2),sz(1),sz(2));
-%regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{hemisphereIndices(2)}(:,2),sz(1),sz(2));
-%%figure; imshow(regionMask1); 	figure; imshow(regionMask2);
-%bothMasks = regionMask1|regionMask2;  %makes a combined image mask of the two hemispheres
-%bwBorders = bwperim(bothMasks);
-%%figure; imshow(bwBorders) %TESTING
-%[row,col] = find(bwBorders);
-%edgeSubIdx = [col row];   %n x 2 array of subarray indices for hemisphere outlines.
-%
-%edgeDistances=zeros(size(centr,1),1);
-%for i=1:size(centr,1)
-%	vCentr=repmat(centr(i,1:2), size(edgeSubIdx,1),1);
-%	vSqDist=sum((vCentr-edgeSubIdx).^2,2);
-%	minSqDist=min(vSqDist);
-%	euclDist=sqrt(minSqDist);
-%	edgeDistances(i,1)=euclDist;
-%end
+sz = size(region.image);
+regionMask1 = poly2mask(region.coords{hemisphereIndices(1)}(:,1),region.coords{hemisphereIndices(1)}(:,2),sz(1),sz(2));
+regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{hemisphereIndices(2)}(:,2),sz(1),sz(2));
+%figure; imshow(regionMask1); 	figure; imshow(regionMask2);
+bothMasks = regionMask1|regionMask2;  %makes a combined image mask of the two hemispheres
+bwBorders = bwperim(bothMasks);
+%figure; imshow(bwBorders) %TESTING
+[row,col] = find(bwBorders);
+edgeSubIdx = [col row];   %n x 2 array of subarray indices for hemisphere outlines.
+
+edgeDistances=zeros(size(centr,1),1);
+for i=1:size(centr,1)
+	vCentr=repmat(centr(i,1:2), size(edgeSubIdx,1),1);
+	vSqDist=sum((vCentr-edgeSubIdx).^2,2);
+	minSqDist=min(vSqDist);
+	euclDist=sqrt(minSqDist);
+	edgeDistances(i,1)=euclDist;
+end
 %
 %sqDist = edgeDistances .^ 2;
 %sqDist = abs(max(sqDist)-sqDist);
 %figure; plot3(centr(:,1),centr(:,2),sqDist(:,1),'o')  %TESTING, to check that the distribution is correct
 %title('raw squared distances inverted')
 %
-%sqDist = edgeDistances .^ 2;
-%sqDist = abs(max(sqDist)-sqDist);
-%sqDist=(sqDist/max(sqDist));
+sqDist = edgeDistances .^ 2;
+sqDist = abs(max(sqDist)-sqDist);
+sqDist=(sqDist/max(sqDist));
 %figure; plot3(centr(:,1),centr(:,2),sqDist(:,1),'o')  %TESTING, to check that the distribution is correct
 %title('normalized inverted squared distances within [0,1]')
 %
@@ -106,8 +125,16 @@ diameters = mean([roiBoundingBox(:,4) roiBoundingBox(:,5)], 2);
 %X = [sqDist (durations/max(durations)) (roiArea/max(roiArea))'];
 %X = [(roiMean/max(roiMean))' (durations/max(durations)) (roiArea/max(roiArea))' (roiMax/max(roiMax))' sqDist];  %make data matrix to pass to kmeans for clustering  
 
-X = [(roiMean/max(roiMean))' (durations/max(durations)) (diameters/max(diameters))];  %make data matrix to pass to kmeans for clustering  
-xlab = 'roiMean'; ylab = 'duration'; zlab = 'diameters'; 
+if isempty(motorSignal)
+	%2013-10
+	X = [(roiMean/max(roiMean))' (durations/max(durations)) (diameters/max(diameters))];  %make data matrix to pass to kmeans for clustering  
+	xlab = 'roiMean'; ylab = 'duration'; zlab = 'diameters'; 
+
+else
+	%2013-11-21 12:02:10
+	X = [sqDist (durations/max(durations))  (motorAmpl/max(motorAmpl))' (diameters/max(diameters)) (roiMean/max(roiMean))'];  %make data matrix to pass to kmeans for clustering  
+	xlab = 'sqDist'; ylab = 'duration'; zlab = 'motorAmpl'; %zlab = 'diameters'; 
+end
 
 cidx = kmeans(X,Nclusters,'replicates',Nreplicates);   %we want two clusters and the default clustering method (sq euclidean)  
 
@@ -202,7 +229,8 @@ print(gcf, '-dpng', [fnm2(1:end-4) 'kmeans' datestr(now,'yyyymmdd-HHMMSS') '-3.p
 
 %---Make plots of all clusters---
 NoiseClusterIdx = find(NumObjects == max(NumObjects));
-badComponents = find(durations<2 & cidx==NoiseClusterIdx);
+%badComponents = find(durations<2 & cidx==NoiseClusterIdx);  %if Removing only 1fr activation domains from the NoiseClusterIdx
+badComponents = find(cidx==NoiseClusterIdx);  %if Removing all domains from the NoiseClusterIdx
 ObjectIndices =  setdiff(1:length(durations),badComponents);
 
 tmp = {};
@@ -211,7 +239,7 @@ tmp{2} = num2str(numel(ObjectIndices));
 disp(tmp)
 
 %---Make plot of only good clusters---
-figure; plot(centr(ObjectIndices,1),centr(ObjectIndices,2),'o','Color',myColors(1,:)); title('durations > 1fr')
+figure; plot(centr(ObjectIndices,1),centr(ObjectIndices,2),'o','Color',myColors(1,:)); title('Noise cluster removed') %title('durations > 1fr')
 axis image; axis ij; %axis off
 ylim([1 sz(1)]); xlim([1 sz(2)]); colormap(myColors); colorbar; 
 print(gcf, '-dpng', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '-3.png']);
@@ -254,11 +282,11 @@ CCnew=CC;
 
 %Transform the binary array into a matlab specific 'movie' data structure that can be written as an motion JPEG .avi to disk.
 if showFigure > 0
-	for fr=1:size(A3,3)
-	imshow(A3(:,:,fr))
-	M(fr) = getframe;
-	end
-else
+%	for fr=1:size(A3,3)
+%	imshow(A3(:,:,fr))
+%	M(fr) = getframe;
+%	end
+%else
 	for fr=1:size(A3,3)
 	I=mat2gray(A3(:,:,fr));
 	[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)

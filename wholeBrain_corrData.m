@@ -45,11 +45,11 @@ end
 
 %--Raster plot----
 handles.figHandle = figure;
-scrsize = get(0,'screensize');
-set(handles.figHandle,'Position',scrsize);
+%scrsize = get(0,'screensize');
+%set(handles.figHandle,'Position',scrsize);
 set(handles.figHandle,'color',[1 1 1]);
-set(handles.figHandle,'PaperType','usletter');
-set(handles.figHandle,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
+%set(handles.figHandle,'PaperType','usletter');
+%set(handles.figHandle,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
 
 myColors = jet(256);
 myColors(1,:) = [1 1 1];

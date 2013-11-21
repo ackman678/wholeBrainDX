@@ -1,4 +1,4 @@
-function [A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure)
+function [A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies)
 %PURPOSE -- segment functional domains in wholeBrain calcium imaging movies into ROIs
 %USAGE -- A2 = wholeBrain_segmentation(fnm,[],region)
 %James B. Ackman
@@ -6,6 +6,7 @@ function [A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemi
 %updated, improved algorithm with watershed separation and gaussian smooth 2013-02-01 by J.B.A.
 %modified 2013-03-28 14:25:44 by J.B.A.
 
+if nargin < 6 || isempty(makeMovies), makeMovies = 1; end
 if nargin < 5 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)
 if nargin < 4 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end  %index location of the hemisphere region outlines in the 'region' calciumdx struct
 if nargin < 3 || isempty(region), region = myOpen; end  %to load the hemisphere region outlines from 'region' calciumdx struct
@@ -277,28 +278,23 @@ parfor fr = 1:szZ;
 end
 
 %Optional--Export .avi movie if desired
-%if showFigure > 0
-%	vidObj = VideoWriter(['wholeBrain_' datestr(now,'yyyymmdd-HHMMSS') '.avi'])
-%	open(vidObj)
-%	for i =1:numel(M)
-%		writeVideo(vidObj,M(i));
-%	end
-%	close(vidObj)
-%end
-
-
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
-%vidObj = VideoWriter(fnm2)
-%open(vidObj)
-%for i =1:numel(M)
-%writeVideo(vidObj,M(i));
-%end
-%close(vidObj)
-
-%write the motion JPEG .avi to disk using auto-generated datestring based filename
-vidObj = VideoWriter(fnm2)
-open(vidObj)
-for i =1:numel(F)
-writeVideo(vidObj,F(i));
+if makeMovies
+	fnm3 = [fnm2(1:length(fnm2)-4) '-dFoF' '.avi']; 
+	vidObj = VideoWriter(fnm3)
+	open(vidObj)
+	for i =1:numel(M)
+		writeVideo(vidObj,M(i));
+	end
+	close(vidObj)
 end
-close(vidObj)
+%write the motion JPEG .avi to disk using auto-generated datestring based filename
+if makeMovies
+	fnm3 = [fnm2(1:length(fnm2)-4) '-mask' '.avi']; 
+	vidObj = VideoWriter(fnm3)
+	open(vidObj)
+	for i =1:numel(F)
+		writeVideo(vidObj,F(i));
+	end
+	close(vidObj)
+end

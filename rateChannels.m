@@ -1,9 +1,10 @@
-function rateChannels = rateChannels(region,cActvFraction)
+function rateChan = rateChannels(region,cActvFraction,makePlots)
 %rateChannels(region)
 %Fetches a series of moving average timeseries for Cortical and/or Motor Activity Signals
 %Author - James B. Ackman 2013-11-20 15:59:22  
 
 y = region.motorSignal;
+if nargin<3 || isempty(makePlots), makePlots = 1; end
 if nargin<2 || isempty(cActvFraction),
 	x = [];
 	N = length(y);
@@ -19,16 +20,20 @@ end
 %   hold on; plot(spkChan, 'ob')  %TESTING  
 
 maxlagsAll = 50:50:500;  
-rateChannels = getCorticalRateChannel(maxlagsAll,x,region);
-rateChannels = getMotorRateChannel(rateChannels,maxlagsAll,y,region);
+rateChan = getCorticalRateChannel(maxlagsAll,x,region);
+rateChan = getMotorRateChannel(rateChan,maxlagsAll,y,region);
 
 myColors = jet(length(maxlagsAll));      
-hFig = figure;
-scrsize = get(0,'screensize');
-set(hFig,'Position',scrsize);
-set(hFig,'color',[1 1 1]);
-set(hFig,'PaperType','usletter');
-set(hFig,'PaperPositionMode','auto'); 
+
+if makePlots
+	hFig = figure;
+	set(hFig,'color',[1 1 1]);
+	if ismac | ispc
+		scrsize = get(0,'screensize');
+		set(hFig,'Position',scrsize);
+		set(hFig,'PaperType','usletter');
+		set(hFig,'PaperPositionMode','auto'); 
+	end
 
 if ~isempty(x)
 	ax(1) = subplot(4,1,1); xlim([ 0 N]);    
@@ -41,12 +46,12 @@ if ~isempty(x)
 	ax(4) = subplot(4,1,4); xlim([ 0 N]); hold all; ylabel('Avg motor activity (uV)'); grid minor    
 
 	for i = 1:length(maxlagsAll)    
-		plot(ax(3),rateChannels(i).x, '-', 'Color', myColors(i,:)); 
+		plot(ax(3),rateChan(i).x, '-', 'Color', myColors(i,:)); 
 		h(1).leg{i} = num2str(maxlagsAll(i));    
 	end  
 
 	for i = 1:length(maxlagsAll)    
-		plot(ax(4),rateChannels(i).y, '-', 'Color', myColors(i,:));    
+		plot(ax(4),rateChan(i).y, '-', 'Color', myColors(i,:));    
 		h(2).leg{i} = num2str(maxlagsAll(i));    
 	end    
 
@@ -65,7 +70,7 @@ else
 	ax(2) = subplot(2,1,2); xlim([ 0 N]); hold all; ylabel('Avg motor activity (uV)'); grid minor    
 
 	for i = 1:length(maxlagsAll)    
-		plot(ax(2),rateChannels(i).y, '-', 'Color', myColors(i,:));    
+		plot(ax(2),rateChan(i).y, '-', 'Color', myColors(i,:));    
 		h(1).leg{i} = num2str(maxlagsAll(i));    
 	end    
 
@@ -74,9 +79,10 @@ else
 	set(ax,'YGrid','off')  
 end
 
+end
 
 
-function rateChannels = getCorticalRateChannel(maxlagsAll,x,region)
+function rateChan = getCorticalRateChannel(maxlagsAll,x,region)
 for i = 1:length(maxlagsAll);  
     maxlags = maxlagsAll(i);
     maxlagsTime = maxlags .* region.timeres;  
@@ -84,25 +90,25 @@ for i = 1:length(maxlagsAll);
     if ~isempty(x)
 		data = x';  
 		filtData = filtfilt(ones(1,maxlags)/maxlags,1,data);  
-		rateChannels(i).x = filtData';
+		rateChan(i).x = filtData';
     else 
-		rateChannels(i).x = [];
+		rateChan(i).x = [];
     end
 
 end 
 
 
 
-function rateChannels = getMotorRateChannel(rateChannels,maxlagsAll,y,region)
+function rateChan = getMotorRateChannel(rateChan,maxlagsAll,y,region)
 for i = 1:length(maxlagsAll);  
     maxlags = maxlagsAll(i);
     maxlagsTime = maxlags .* region.timeres;  
 
     data = y';  
     filtData = filtfilt(ones(1,maxlags)/maxlags,1,data);  
-    rateChannels(i).y = filtData';
+    rateChan(i).y = filtData';
 
-	%rateChannels(i).y = fliplr(rateChannels(i).y);  %if you run the rolling window backwards  
+	%rateChan(i).y = fliplr(rateChannels(i).y);  %if you run the rolling window backwards  
 end 
 
 

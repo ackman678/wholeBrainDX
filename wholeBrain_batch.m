@@ -84,12 +84,13 @@ function fnm = wholeBrain_workflow(fnm,region)
 %load('120518_07_dummyHemis2.mat');
 
 tic;              
-[A2, A] = wholeBrain_segmentation(fnm,60,region);         
+hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
+[A2, A] = wholeBrain_segmentation(fnm,60,region,hemisphereIndices,0,1);         
 toc;  
 
 %==2==Detection============================
 tic;             
-[A3, CC, STATS] = wholeBrain_kmeans(A2,A,3,[],fnm);        %3clusters
+[A3, CC, STATS] = wholeBrain_kmeans(A2,A,3,1,fnm,region,hemisphereIndices);        %3clusters and using motorSignal with sqDistance for kmeans
 fnm2 = [fnm(1:length(fnm)-4) '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 toc;        
 save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3')  
@@ -187,12 +188,12 @@ if isfield(region,'stimuli');
 			end
 		end
 	end
-
-	wholeBrainActivityMapFig(region,[],2,5,ind); 
-	fnm2 = [fnm(1:end-4) 'ActivityMapFig' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
-	print(gcf, '-dpng', [fnm2(1:end-4) '.png']);            
-	print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);  
-	
+	if ~isempty(ind)
+		wholeBrainActivityMapFig(region,[],2,5,ind); 
+		fnm2 = [fnm(1:end-4) 'ActivityMapFig' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
+		print(gcf, '-dpng', [fnm2(1:end-4) '.png']);            
+		print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);  
+	end	
 	%--Motor state contour activity maps if applicable		
 	stimuliIndices = {'motor.state.active' 'motor.state.quiet'};
 	ind = [];
@@ -203,11 +204,12 @@ if isfield(region,'stimuli');
 			end
 		end
 	end
-
-	wholeBrainActivityMapFig(region,[],2,5,ind); 
-	fnm2 = [fnm(1:end-4) 'ActivityMapFig' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
-	print(gcf, '-dpng', [fnm2(1:end-4) '.png']);            
-	print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);  		
+	if ~isempty(ind)
+		wholeBrainActivityMapFig(region,[],2,5,ind); 
+		fnm2 = [fnm(1:end-4) 'ActivityMapFig' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
+		print(gcf, '-dpng', [fnm2(1:end-4) '.png']);            
+		print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);  		
+	end
 end
 
 %==9==Batch fetch datasets=======================
