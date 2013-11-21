@@ -135,6 +135,8 @@ data = wholeBrain_activeFraction(A3,region);
 region.locationData.data = data;    
 save(fnm,'region')    
 
+disp('-----')
+
 wholeBrain_activeFraction(A3,region,[2 3]); %Assuming 'cortex.L' and 'cortex.R' are at positons 2 & 3 in region.name, print just these traces instead of all locations
 fnm2 = [fnm(1:end-4) 'actvFraction' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 print(gcf, '-dpng', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.png']);      
