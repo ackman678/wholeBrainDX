@@ -1,9 +1,9 @@
-function [A3, CC, STATS] = wholeBrain_kmeans(A2,A,Nclusters,showFigure,fnm,region,hemisphereIndices)
+function [A3, CC, STATS] = wholeBrain_kmeans(A2,A,NclustersAll,showFigure,fnm,region,hemisphereIndices)
 %PURPOSE -- use kmeans clustering to clean up segmentation from wholeBrain_segmentation.m
 %INPUTS -- 
 %A2: the binary array returned from wholeBrain_segmentation  
 %A: the raw dF/F image array that was returned from and passed to wholeBrain_segmentation.m originally
-%Nclusters: optional integer stating how many k-clusters to detect
+%NclustersAll: optional integer vector stating how many k-clusters to detect for each pass
 %USAGE -- [A3, CC] = wholeBrain_kmeans(A2,A)
 %SEE AlSO -- kmeans, wholeBrain_segmentation.m
 %James B. Ackman
@@ -32,9 +32,15 @@ end
 
 if nargin < 4 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)
 
-if nargin < 3 || isempty(Nclusters), Nclusters = 3; end %default Number of k-means clusters to optimize
+if nargin < 3 || isempty(NclustersAll), 
+	NclustersAll = 3;
+end %default Number of k-means clusters to optimize
 
-myColors = lines(Nclusters);  %if more more than 8 clusters, then change this colormap accordingly 
+if length(NclustersAll) < 2,
+	NclustersAll = repmat(Nclusters,1,2);
+end
+
+myColors = lines(max(NclustersAll));  %if more more than 8 clusters, then change this colormap accordingly 
 %Nclusters = 3;
 Nreplicates = 5;  %5 repetitions is typically fine.
 sz = size(A2);
@@ -52,7 +58,7 @@ xlab = 'sqDist'; ylab = 'duration'; zlab = 'motorAmpl'; %zlab = 'diameters';
 %	X = [(roiMean/max(roiMean))' (durations/max(durations))  (motorAmpl/max(motorAmpl))' (diameters/max(diameters))];  %make data matrix to pass to kmeans for clustering    
 %	xlab = 'roiMean'; ylab = 'duration'; zlab = 'motorAmpl'; %zlab = 'diameters'; 
 
-
+Nclusters = NclustersAll(1);
 [cidx,ctrs] = kmeans(X,Nclusters,'replicates',Nreplicates);   %we want two clusters and the default clustering method (sq euclidean)  
 
 NumObjects = [];
@@ -62,10 +68,24 @@ end
 disp(NumObjects)
 
 plotDomainCentroids(cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,'1st pass domain centroid location');
-plotClusters(cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,'1st pass kmeans inputs distribution');
+plotClusters(X,cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,'1st pass kmeans inputs distribution');
 
 %-------Figure out which clusters to keep and get vector of object indices------- 
-[mx,NoiseClusterIdx] = max(ctrs(:,3));  %3rd column from input matrix X above is the motor signal amplitudes. We want the cluster centroid having the max motor signal to be the noise cluster idx in this 1st pass.
+%[mx,NoiseClusterIdx] = max(ctrs(:,3));  %3rd column from input matrix X above is the motor signal amplitudes. We want the cluster centroid having the max motor signal to be the noise cluster idx in this 1st pass.
+%[mx,NoiseClusterIdx] = max(ctrs(:,1));  %1st column from input matrix X above is the sqDist. We want the cluster centroid having the max motor signal to be the noise cluster idx in this 1st pass.
+%Find the cluster that is closest to the max sqDist, and min duration, and max motorAmpl:
+edgeSubIdx = [1 0 1];  %sqDist is 1st col, dur is 2nd col, motorAmpl is 3rd col;
+
+ctrs2 = ctrs(:,1:3);  %1st 3 columns of cluster centers
+edgeDistances=zeros(size(ctrs2,1),1);
+for i=1:size(ctrs2,1)
+	vCentr=repmat(ctrs2(i,1:3), size(edgeSubIdx,1),1);
+	vSqDist=sum((vCentr-edgeSubIdx).^2,2);
+	minSqDist=min(vSqDist);
+	euclDist=sqrt(minSqDist);
+	edgeDistances(i,1)=euclDist;
+end
+[mn,NoiseClusterIdx] = min(edgeDistances);
 
 %NoiseClusterIdx = find(NumObjects == max(NumObjects));
 
@@ -112,6 +132,7 @@ end
 X = [(roiMean/max(roiMean))' (durations/max(durations)) (diameters/max(diameters))];  %make data matrix to pass to kmeans for clustering  
 xlab = 'roiMean'; ylab = 'duration'; zlab = 'diameters'; 
 
+Nclusters = NclustersAll(2);
 [cidx,ctrs] = kmeans(X,Nclusters,'replicates',Nreplicates);   %we want two clusters and the default clustering method (sq euclidean)  
 
 NumObjects = [];
@@ -121,11 +142,14 @@ end
 disp(NumObjects)
 
 plotDomainCentroids(cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,'2nd pass domain centroid location');
-plotClusters(cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,'2nd pass kmeans inputs distribution');
+plotClusters(X,cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,'2nd pass kmeans inputs distribution');
 
 %-------Figure out which clusters to keep and get vector of object indices------- 
 %Single frame activation noise removal on big cluster algorithm
-NoiseClusterIdx = find(NumObjects == max(NumObjects));
+%NoiseClusterIdx = find(NumObjects == max(NumObjects));
+
+%Find the cluster with the shortest average durations, and choose that as the candidate noise cluster:
+[mn,NoiseClusterIdx] = min(ctrs(:,2));  %2nd column from input matrix X is the durations, 
 
 badComponents = find(durations<2 & cidx==NoiseClusterIdx);  %if Removing only 1fr activation domains from the NoiseClusterIdx
 ObjectIndices =  setdiff(1:length(durations),badComponents);
@@ -164,7 +188,7 @@ else
 	STATS = regionprops(CC,'Area','BoundingBox', 'Centroid', 'FilledArea', 'FilledImage', 'Image', 'PixelIdxList', 'PixelList', 'SubarrayIdx'); %all the properties in regionprops that work on n-D arrays
 end
 
-A3 = getMovie(CC,A2,fnm2,sz);
+A3 = getMovie(CC,A2,fnm2,sz,showFigure);
 
 
 
@@ -262,7 +286,7 @@ end
 
 
 
-function A3 = getMovie(CC,A2,fnm2,sz)
+function A3 = getMovie(CC,A2,fnm2,sz,showFigure)
 %Now make a binary movie array based on the segmented functional signal domains
 A3 = zeros(sz,'uint8');
 for i = 1:CC.NumObjects
@@ -331,7 +355,7 @@ print(gcf, '-depsc', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '.eps']);
 
 
 
-function plotClusters(cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,titleStr)
+function plotClusters(X,cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,titleStr)
 
 sortNumObj = sort(NumObjects,'descend');
 
