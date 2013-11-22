@@ -42,7 +42,7 @@ sz = size(A2);
 CC = bwconncomp(A2);
 
 %---1st pass----------------------------------------------------------------------------
-[centr,centrZ,motorAmpl,roiArea,roiMean,roiMax,durations,diameters,sqDist] = getMetrics(CC,A,region,motorSignal);
+[centr,centrZ,motorAmpl,roiArea,roiMean,roiMax,durations,diameters,sqDist] = getMetrics(CC,A,region,motorSignal,hemisphereIndices);
 
 if ~isempty(region) & ~isempty(motorSignal)	
 %2013-11-21 12:02:10
@@ -99,7 +99,7 @@ end
 
 
 %---2nd pass----------------------------------------------------------------------------
-[centr,centrZ,motorAmpl,roiArea,roiMean,roiMax,durations,diameters,sqDist] = getMetrics(CC,A,region,motorSignal);
+[centr,centrZ,motorAmpl,roiArea,roiMean,roiMax,durations,diameters,sqDist] = getMetrics(CC,A,region,motorSignal,hemisphereIndices);
 
 %------Do the clustering procedure------------------
 %X = [(roiMean/max(roiMean))' (durations/max(durations)) (roiArea/max(roiArea))' (roiMax/max(roiMax))' (edgeDistances/max(edgeDistances))];  %make data matrix to pass to kmeans for clustering  
@@ -174,7 +174,7 @@ A3 = getMovie(CC,A2,fnm2,sz);
 
 
 
-function [centr,centrZ,motorAmpl,roiArea,roiMean,roiMax,durations,diameters,sqDist] = getMetrics(CC,A,region,motorSignal)
+function [centr,centrZ,motorAmpl,roiArea,roiMean,roiMax,durations,diameters,sqDist] = getMetrics(CC,A,region,motorSignal,hemisphereIndices)
 %-----Get 3D connected components structure and some STATS available for n-D arrays-----
 STATS = regionprops(CC,A,'Area','BoundingBox', 'Centroid', 'MaxIntensity', 'MinIntensity', 'MeanIntensity');  %some of the properties in regionprops that work on n-D arrays
 %STATS = regionprops(CC,A,'Area','BoundingBox', 'Centroid', 'MaxIntensity', 'MinIntensity', 'MeanIntensity', 'FilledArea', 'FilledImage', 'Image', 'PixelIdxList', 'PixelList', 'SubarrayIdx'); %all the properties in regionprops that work on n-D arrays
