@@ -155,11 +155,16 @@ for j=1:numel(fnms)
     disp('--------------------------------------------------------------------')
 	%myEventProps(region,rowinfo);
 	functionHandles.main(region, functionHandles.workers, datafilename, stimuliIndices)
-    h = waitbar(j/numel(fnms));
+	if ismac | ispc
+		h = waitbar(j/numel(fnms));
+	else
+		disp([num2str(j) '/' num2str(numel(fnms))])		
+    end
 end
 %data=results;
-close(h)
-
+if ismac | ispc
+	close(h)
+end
 
 
 %-----------------------------------------------------------------------------------------

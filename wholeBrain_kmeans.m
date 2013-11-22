@@ -132,8 +132,11 @@ if isempty(motorSignal)
 
 else
 	%2013-11-21 12:02:10
-	X = [sqDist (durations/max(durations))  (motorAmpl/max(motorAmpl))' (diameters/max(diameters)) (roiMean/max(roiMean))'];  %make data matrix to pass to kmeans for clustering  
-	xlab = 'sqDist'; ylab = 'duration'; zlab = 'motorAmpl'; %zlab = 'diameters'; 
+%	X = [sqDist (durations/max(durations))  (motorAmpl/max(motorAmpl))' (diameters/max(diameters)) (roiMean/max(roiMean))'];  %make data matrix to pass to kmeans for clustering  
+%	xlab = 'sqDist'; ylab = 'duration'; zlab = 'motorAmpl'; %zlab = 'diameters'; 
+	
+	X = [(roiMean/max(roiMean))' (durations/max(durations))  (motorAmpl/max(motorAmpl))' (diameters/max(diameters))];  %make data matrix to pass to kmeans for clustering    
+	xlab = 'roiMean'; ylab = 'duration'; zlab = 'motorAmpl'; %zlab = 'diameters'; 
 end
 
 cidx = kmeans(X,Nclusters,'replicates',Nreplicates);   %we want two clusters and the default clustering method (sq euclidean)  
@@ -282,11 +285,6 @@ CCnew=CC;
 
 %Transform the binary array into a matlab specific 'movie' data structure that can be written as an motion JPEG .avi to disk.
 if showFigure > 0
-%	for fr=1:size(A3,3)
-%	imshow(A3(:,:,fr))
-%	M(fr) = getframe;
-%	end
-%else
 	for fr=1:size(A3,3)
 	I=mat2gray(A3(:,:,fr));
 	[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
@@ -311,12 +309,14 @@ end
 
 
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
-vidObj = VideoWriter(fnm2)
-open(vidObj)
-for i =1:numel(M)
-writeVideo(vidObj,M(i));
+if showFigure > 0
+	vidObj = VideoWriter(fnm2)
+	open(vidObj)
+	for i =1:numel(M)
+	writeVideo(vidObj,M(i));
+	end
+	close(vidObj)
 end
-close(vidObj)
 
 
 
