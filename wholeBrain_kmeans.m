@@ -27,7 +27,7 @@ end  %a downsampled motorSignal same length as n movie frames can be input to he
 if nargin < 5 || isempty(fnm),
 	fnm2 = ['wholeBrain_kmeans_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
 else
-	fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_kmeans_' '.avi']; 
+	fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_kmeans_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
 end
 
 if nargin < 4 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)

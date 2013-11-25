@@ -18,7 +18,7 @@ end
 %Transform the binary array into a matlab specific 'movie' data structure that can be written as an motion JPEG .avi to disk.
 for fr=1:size(A,3)
 	I=mat2gray(A(:,:,fr));
-	[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
+	[I2, map] = gray2ind(I, graylevels); %figure; imshow(I2,map)
 	M(fr) = im2frame(I2,map);
 end
 

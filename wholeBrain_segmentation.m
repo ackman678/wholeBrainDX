@@ -265,17 +265,17 @@ parfor fr = 1:szZ;
 		imshow(label2rgb(L));	
 		M(fr) = getframe;
 	else
-		I=mat2gray(A2(:,:,fr));
-		[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
-		%[I2, map] = gray2ind(I, 256); %figure; imshow(I2,map)
+		I=mat2gray(A(:,:,fr));
+		[I2, map] = gray2ind(I, 256); %figure; imshow(I2,map)
 		M(fr) = im2frame(I2,map);
 		
-		I=mat2gray(g5);
+		I=mat2gray(A2(:,:,fr));
 		[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
 		F(fr) = im2frame(I2,map);
 	end
 	
 end
+
 
 %Optional--Export .avi movie if desired
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
