@@ -37,7 +37,7 @@ if nargin < 3 || isempty(NclustersAll),
 end %default Number of k-means clusters to optimize
 
 if length(NclustersAll) < 2,
-	NclustersAll = repmat(Nclusters,1,2);
+	NclustersAll = repmat(NclustersAll,1,2);
 end
 
 myColors = lines(max(NclustersAll));  %if more more than 8 clusters, then change this colormap accordingly 

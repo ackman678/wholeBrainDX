@@ -90,7 +90,7 @@ toc;
 
 %==2==Detection============================
 tic;             
-[A3, CC, STATS] = wholeBrain_kmeans(A2,A,3,1,fnm,region,hemisphereIndices);        %3clusters and using motorSignal with sqDistance for kmeans
+[A3, CC, STATS] = wholeBrain_kmeans(A2,A,[4 3],1,fnm,region,hemisphereIndices);        %3clusters and using motorSignal with sqDistance for kmeans
 fnm2 = [fnm(1:length(fnm)-4) '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 toc;        
 save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3')  
