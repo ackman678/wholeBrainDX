@@ -18,8 +18,9 @@ if nargin < 3 || isempty(exclude), exclude = {'cortex.L' 'cortex.R'}; end
 
 data = region.locationData.data;  
 namesAll = {region.locationData.data.name};
+names = namesAll;
 for i = 1:length(exclude)
-	names = namesAll(~strcmp(namesAll,exclude(i)));
+	names = names(~strcmp(names,exclude(i)));
 end
 X = zeros(length(data(1).activeFractionByFrame), length(names));  
 for i = 1:length(names)  
