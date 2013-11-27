@@ -17,13 +17,13 @@ function region = wholeBrain_corrData(fnm, region, exclude)
 if nargin < 3 || isempty(exclude), exclude = {'cortex.L' 'cortex.R'}; end
 
 data = region.locationData.data;  
-names = {region.locationData.data.name};
+namesAll = {region.locationData.data.name};
 for i = 1:length(exclude)
-	names = names(~strcmp(names,exclude(i)));
+	names = namesAll(~strcmp(namesAll,exclude(i)));
 end
 X = zeros(length(data(1).activeFractionByFrame), length(names));  
 for i = 1:length(names)  
-	X(:,i) = data(strcmp(names,names(i))).activeFractionByFrame';    
+	X(:,i) = data(strcmp(namesAll,names(i))).activeFractionByFrame';    
 end    
 [r,p]=corrcoef(X); 
 

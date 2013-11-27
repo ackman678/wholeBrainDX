@@ -151,7 +151,8 @@ plotClusters(X,cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,cent
 %Find the cluster with the shortest average durations, and choose that as the candidate noise cluster:
 [mn,NoiseClusterIdx] = min(ctrs(:,2));  %2nd column from input matrix X is the durations, 
 
-badComponents = find(durations<2 & cidx==NoiseClusterIdx);  %if Removing only 1fr activation domains from the NoiseClusterIdx
+%badComponents = find(durations<2 & cidx==NoiseClusterIdx);  %if Removing only 1fr activation domains from the NoiseClusterIdx
+badComponents = find(durations<2);  %if Removing only 1fr activation domains from the NoiseClusterIdx
 ObjectIndices =  setdiff(1:length(durations),badComponents);
 
 tmp = {};

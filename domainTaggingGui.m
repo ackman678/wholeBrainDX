@@ -196,7 +196,9 @@ for i = 1:length(hTmp)
      centrInd = sub2ind([sz(1) sz(2)],centr(1),centr(2));
      patchCentrInd(i) = centrInd; 
 end
-
+%assignin('base', 'mask', mask)
+%assignin('base', 'patchCentrInd', patchCentrInd)
+%disp(patchCentrInd)
 if ~isfield(handles.region.domainData.STATS, 'descriptor')
     for i = 1:length(handles.region.domainData.STATS)
         handles.region.domainData.STATS(i).descriptor = '';
@@ -214,8 +216,9 @@ for i = 1:nDomains
     centr = round([centr(1) centr(2)]);
     if mask(centr(2),centr(1))
         handles.region.domainData.STATS(i).descriptor = 'artifact';
-        for j = find(mask(patchCentrInd));
-            set(hTmp(j),'EdgeColor','none', 'FaceColor','none');   %optional for blanking patch objects. Doesn't work, patch objects not drawn in order.
+        [C,ia,ib]=intersect(find(mask)',patchCentrInd);
+        for j = ib
+			set(hTmp(j),'EdgeColor','none', 'FaceColor','none');   %optional for blanking patch objects. Doesn't work, patch objects not drawn in order.
         end
         %disp('artifact!')
     end
