@@ -97,6 +97,7 @@ F(size(A,3)) = struct('cdata',[],'colormap',[]);
 A2=zeros(size(A),'int8');
 A2=logical(A2);
 szZ=sz(3);
+Iarr=zeros(size(A));
 
 %------Start core for loop-------------------------
 %figure;
@@ -123,6 +124,8 @@ parfor fr = 1:szZ;
 	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
 	I2 = I - background;  %subtract background
 %	figure; imshow(I2,[]); title('I2')
+	
+	Iarr(:,:,fr) = I2;
 	
 	I2 = gaussSmooth(I2,5,'same');
 %		figure, imshow(img2,[])
@@ -264,14 +267,14 @@ parfor fr = 1:szZ;
 	if showFigure > 0
 		imshow(label2rgb(L));	
 		M(fr) = getframe;
-	else
-		I=mat2gray(A(:,:,fr));
-		[I2, map] = gray2ind(I, 256); %figure; imshow(I2,map)
-		M(fr) = im2frame(I2,map);
-		
-		I=mat2gray(A2(:,:,fr));
-		[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
-		F(fr) = im2frame(I2,map);
+%	else
+%		I=mat2gray(A(:,:,fr));
+%		[I2, map] = gray2ind(I, 256); %figure; imshow(I2,map)
+%		M(fr) = im2frame(I2,map);
+%		
+%		I=mat2gray(A2(:,:,fr));
+%		[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
+%		F(fr) = im2frame(I2,map);
 	end
 	
 end
@@ -280,6 +283,16 @@ end
 %Optional--Export .avi movie if desired
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
 if makeMovies
+	for fr=1:szZ
+		I=mat2gray(Iarr(:,:,fr));
+		[I2, map] = gray2ind(I, 256); %figure; imshow(I2,map)
+		M(fr) = im2frame(I2,map);
+
+		I=mat2gray(A2(:,:,fr));
+		[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
+		F(fr) = im2frame(I2,map);
+	end
+
 	fnm3 = [fnm2(1:length(fnm2)-4) '-dFoF' '.avi']; 
 	vidObj = VideoWriter(fnm3)
 	open(vidObj)
@@ -287,9 +300,8 @@ if makeMovies
 		writeVideo(vidObj,M(i));
 	end
 	close(vidObj)
-end
+
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
-if makeMovies
 	fnm3 = [fnm2(1:length(fnm2)-4) '-mask' '.avi']; 
 	vidObj = VideoWriter(fnm3)
 	open(vidObj)
