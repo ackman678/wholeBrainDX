@@ -1,4 +1,4 @@
-function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, stimuliToPlot, levels)
+function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, levels, stimuliToPlot)
 %wholeBrainActivityMapFig(region, frames, plotType, figType, stimuliToPlot)
 % Plots the normalized pixel activation frequency image for a wholeBrain movie
 % Examples
@@ -20,17 +20,24 @@ function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, 
 %	4: Make multiplot figures with summary projections for m stimuli types on individual scales
 %	5: Make multiplot figures with summary projections for m stimuli types on same normalized scale
 %	6: Make multiplot figures with summary projections for m stimuli types on a differential normalized scale
-% stimuliToPlot -- a two element integer vector indicating the indices, i of the region.stimuli{i} you want to plot
+% stimuliToPlot -- a multi element integer vector indicating the indices, i of the region.stimuli{i} you want to plot
 % levels -- the number of contour levels you want. If the input is 0, then a raw image of the normalized sumProjection is plotted instead of a contour plot
 % James B. Ackman 2013-10-10 14:31:28
 
 if (nargin < 2 || isempty(frames)), frames = []; end
 if (nargin < 3 || isempty(plotType)), plotType = 1; end
 if (nargin < 4 || isempty(figType)), figType = 1; end
-if (nargin < 5 || isempty(stimuliToPlot)) && ~isempty(region.stimuli) && figType > 2, 
+if nargin < 5 || isempty(levels)
+	levels = 20;
+elseif levels < 1
+	levels = [];
+else 
+	return
+end
+if (nargin < 6 || isempty(stimuliToPlot)) && ~isempty(region.stimuli) && figType > 2, 
 	stimuliToPlot=1:numel(region.stimuli); 
 end
-if nargin < 6 || isempty(levels), levels = 20; end
+
 
 %------------------------------------------------------------------------
 

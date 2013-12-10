@@ -86,12 +86,13 @@ function fnm = wholeBrain_workflow(fnm,region)
 tic;              
 hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
 backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction.
-[A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,1);         
+makeMovies = 0;
+[A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies);         
 toc;  
 
 %==2==Detection============================
 tic;             
-[A3, CC, STATS] = wholeBrain_kmeans(A2,A,[4 3],1,fnm,region,hemisphereIndices);        %3clusters and using motorSignal with sqDistance for kmeans
+[A3, CC, STATS] = wholeBrain_kmeans(A2,A,[4 3],makeMovies,fnm,region,hemisphereIndices);        %3clusters and using motorSignal with sqDistance for kmeans
 fnm2 = [fnm(1:length(fnm)-4) '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 toc;        
 save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3')  
@@ -150,11 +151,14 @@ wholeBrainActivityMapFig(region,[],2,1);
 fnm2 = [fnm(1:end-4) 'ActivityMapFigContour' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
 print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
 print(gcf, '-depsc', [fnm2(1:end-4) '.eps']); 
+disp('complete: wholeBrainActivityMapFig(region,[],2,1);')
 
-wholeBrainActivityMapFig(region,[],2,1,[],0);
+wholeBrainActivityMapFig(region,[],2,1,0);
 fnm2 = [fnm(1:end-4) 'ActivityMapFigRawProj' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
 print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
 print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
+disp('complete: wholeBrainActivityMapFig(region,[],2,1,0);')
+
 
 %--Drug state contour activity maps if applicable
 if isfield(region,'stimuli');
@@ -191,10 +195,10 @@ if isfield(region,'stimuli');
 	end
 end 
 
-DomainPatchesPlot(region.domainData.domains, region.domainData.CC, region.domainData.STATS,1,[],1)
-fnm2 = [fnm(1:end-4) 'DomainPatchesPlot' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
-print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
-print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
+%DomainPatchesPlot(region.domainData.domains, region.domainData.CC, region.domainData.STATS,1,[],1)   %DomainPatchesPlot won't work on a linux server because of a segmentation fault with drawing alpha transparency in matlab
+%fnm2 = [fnm(1:end-4) 'DomainPatchesPlot' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
+%print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
+%print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
 
 %--Maximum intensity projections of movie--
 	
