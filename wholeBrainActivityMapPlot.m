@@ -58,9 +58,12 @@ xlimits = [1 size(img,2)];
 
 %***contour plot***    
 contour(flipud(img),contourLevels); caxis(handles.clims) 
-myColors = jet(contourLevels);
+myColors = jet(256);
 myColors(1,:) = [0 0 0];
 colormap(myColors);
+myColors = jet(contourLevels);
+colormap(myColors);
+
 
 title([handles.axesTitle num2str(maxSig) ',' frTxt ',' num2str(contourLevels) 'levels']); 
 colorbar('location','eastoutside'); 

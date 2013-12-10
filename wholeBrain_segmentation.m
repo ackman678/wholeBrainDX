@@ -10,7 +10,10 @@ if nargin < 6 || isempty(makeMovies), makeMovies = 1; end
 if nargin < 5 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)
 if nargin < 4 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end  %index location of the hemisphere region outlines in the 'region' calciumdx struct
 if nargin < 3 || isempty(region), region = myOpen; end  %to load the hemisphere region outlines from 'region' calciumdx struct
-if nargin < 2 || isempty(backgroundRemovRadius); backgroundRemovRadius = 60; end   %radius in pixels, should be a few times larger than the biggest object of interest in the image
+if nargin < 2 || isempty(backgroundRemovRadius)
+	%radius in pixels, should be a few times larger than the biggest object of interest in the image
+	backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction. This was empirically determined during testing with a range of sizes in spring 2013 on 120518–07.tif and 120703–01.tif. At 11.35 µm/px this would be a 60px radius.
+end
 
 
 %{
@@ -78,8 +81,9 @@ regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{h
 bothMasks = regionMask1|regionMask2;  %makes a combined image mask of the two hemispheres
 
 %------Make pixelindex lists for background component removal within for loop below-----------
-x = [10 sz(2)-10 sz(2)-10 10 10];  %make image border outline 10 px wide to intersect 
-y = [10 10 sz(1)-10 sz(1)-10 10];  %make image border outline 10 px wide to intersect 
+borderJitter = 113.5/region.spaceres; %for making image border outline 10 px wide (at 11.35 µm/px) to intersect 
+x = [borderJitter sz(2)-borderJitter sz(2)-borderJitter borderJitter borderJitter];  %make image border outline borderJitter px wide (at 11.35 µm/px) to intersect 
+y = [borderJitter borderJitter sz(1)-borderJitter sz(1)-borderJitter borderJitter];  %make image border outline borderJitter px wide (at 11.35 µm/px) to intersect 
 ImageBordermask = poly2mask(x,y,sz(1),sz(2));  %make image border mask
 %figure, imshow(mask)
 imageBorderIndices = find(~ImageBordermask);
@@ -98,6 +102,8 @@ A2=zeros(size(A),'int8');
 A2=logical(A2);
 szZ=sz(3);
 Iarr=zeros(size(A));
+
+nPixelThreshold = round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
 
 %------Start core for loop-------------------------
 %figure;
@@ -135,11 +141,10 @@ parfor fr = 1:szZ;
  	[level,est] = graythresh(I3);  %Otsu's threshold
 	bw = im2bw(I3,level);  %Make binary based on Otsu's threshold
 %	figure; imshow(bw,[]); title('bw')
-	bw = bwareaopen(bw, 50);  %remove background single isolated pixel noise. 50 is matlab default value?
+	bw = bwareaopen(bw, nPixelThreshold);  %remove background single isolated pixel noise. 50 is matlab default value in documentation example for image with , removes all binary objects containing less than 50 pixels. 
 %	figure; imshow(bw,[]); title('bwareaopen 50')
 
-	%-------Begin new algorithm-----------------------
-	se = strel('disk',2);
+	se = strel('disk',2); %smooth edges, has not much effect with gaussSmooth used above
 	bw2 = imdilate(bw,se);
 	%bw2 = imfill(bw2,'holes');
 	%figure, imshow(bw2,[]); title('fill')

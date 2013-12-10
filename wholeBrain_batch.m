@@ -85,7 +85,8 @@ function fnm = wholeBrain_workflow(fnm,region)
 
 tic;              
 hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
-[A2, A] = wholeBrain_segmentation(fnm,60,region,hemisphereIndices,0,1);         
+backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction.
+[A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,1);         
 toc;  
 
 %==2==Detection============================
@@ -143,39 +144,17 @@ fnm2 = [fnm(1:end-4) 'actvFraction' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 print(gcf, '-dpng', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.png']);      
 print(gcf, '-depsc', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.eps']);   
 
-%==5==Get correlation matrix and plots======================== 
-exclude = {'cortex.L' 'cortex.R'};
-region = wholeBrain_corrData(fnm, region, exclude);  %will also print and save corr matrix and raster plot of the traces (activeFraction) that went into the corr matrix
-save(fnm,'region');
-
-%==6==Get cortical - motor corr results and plots=============
-if isfield(region,'motorSignal')
-	clear st  
-	st(1).str = {'HL.L' 'HL.R' 'T.L' 'T.R' 'FL.L' 'FL.R'};    
-	st(2).str = {'M1.L' 'M1.R' 'M2.L' 'M2.R'};    
-	st(3).str = {'barrel.L' 'barrel.R' 'AS.L' 'AS.R'};    
-	st(4).str = {'barrel.L' 'barrel.R'};    
-	st(5).str = {'RSA.L' 'RSA.R'};    
-	st(6).str = {'PPC.L' 'PPC.R'};    
-	st(7).str = {'V1.L' 'V1.R'};    
-	st(8).str = {'V2L.L' 'V2L.R' 'V2M.L' 'V2M.R'};    
-	st(9).str = {'V2L.L' 'V2L.R' 'V2M.L' 'V2M.R' 'V1.L' 'V1.R'};    
-	st(10).str = {'cortex.L' 'cortex.R'};	
-	
-	region = wholeBrain_MotorSignalCorr(fnm,region,st);
-	save(fnm,'region');
-end
-
-%==7==Get spatial correlation results and plots==============
-region = wholeBrain_SpatialCOMCorr(fnm,region,{'cortex.L' 'cortex.R'},1);
-save(fnm,'region');
-
-%==8==More Plots=========================
+%==5==More Plots=========================
 %--Single contour activity map-----
 wholeBrainActivityMapFig(region,[],2,1);  
 fnm2 = [fnm(1:end-4) 'ActivityMapFigContour' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
 print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
 print(gcf, '-depsc', [fnm2(1:end-4) '.eps']); 
+
+wholeBrainActivityMapFig(region,[],2,1,[],0);
+fnm2 = [fnm(1:end-4) 'ActivityMapFigRawProj' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
+print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
+print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
 
 %--Drug state contour activity maps if applicable
 if isfield(region,'stimuli');
@@ -210,12 +189,77 @@ if isfield(region,'stimuli');
 		print(gcf, '-dpng', [fnm2(1:end-4) '.png']);            
 		print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);  		
 	end
-end
+end 
 
-%==9==Batch fetch datasets=======================
+DomainPatchesPlot(region.domainData.domains, region.domainData.CC, region.domainData.STATS,1,[],1)
+fnm2 = [fnm(1:end-4) 'DomainPatchesPlot' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
+print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
+print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
+
+%--Maximum intensity projections of movie--
+	
+%-------Make movie array with with raw intensity values within the functional ROIs--------    
+A4 = A;    
+A4(A3<1) = 0;  %A3 is binary movie from above with any 'artifact' tagged domains removed (usually none on first batch analysis pass)
+A4=mat2gray(A4);    
+	
+%----Maxproj of detected domains -----
+A5 = max(A4,[],3);   
+figure;  
+imagesc(mat2gray(A5)); title('maxproj of raw detected domains array'); colorbar('location','eastoutside'); axis image   
+fnm2 = [fnm(1:length(fnm)-4) '_maxProj_' datestr(now,'yyyymmdd-HHMMSS')];    
+print('-dpng', [fnm2 '.png'])
+print('-depsc', [fnm2 '.eps']) 
+
+%----Maxproj of raw array -----
+A5 = max(A,[],3);   
+figure;  
+imagesc(mat2gray(A5)); title('maxproj of raw movie array'); colorbar('location','eastoutside'); axis image   
+fnm2 = [fnm(1:length(fnm)-4) '_maxProj_' datestr(now,'yyyymmdd-HHMMSS')];    
+print('-dpng', [fnm2 '.png'])
+print('-depsc', [fnm2 '.eps']) 
+
+
+%==6==Batch fetch datasets=======================
 batchFetchDomainProps({fnm},region,'dDomainProps.txt');
 batchFetchLocationProps({fnm},region,'dLocationProps.txt', 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
 batchFetchLocationPropsFreq({fnm},region,'dLocationPropsFreq.txt', 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});	
-batchFetchCorrData({fnm},region,'dCorr.txt',1);
-batchFetchMotorCorrData({fnm},region,'dMotorCorr.txt',1);
+
+
+%==7==Get spatial correlation results and plots==============
+region = wholeBrain_SpatialCOMCorr(fnm,region,{'cortex.L' 'cortex.R'},1);
+save(fnm,'region');
 batchFetchSpatialCOMCorrData({fnm},region,'dSpatialCorr.txt',1);
+
+
+%===If region contains coords for more than just 'field', 'cortex.L', and 'cortex.R' proceed to fetch data and plots making use of these parcellations (functional correlation matrices, motor corr, etc)
+if length(region.name) > 3
+
+	%==8==Get correlation matrix and plots======================== 
+	exclude = {'cortex.L' 'cortex.R'};
+	region = wholeBrain_corrData(fnm, region, exclude);  %will also print and save corr matrix and raster plot of the traces (activeFraction) that went into the corr matrix
+	save(fnm,'region');
+
+	%==9==Get cortical - motor corr results and plots=============
+	if isfield(region,'motorSignal')
+		clear st  
+		st(1).str = {'HL.L' 'HL.R' 'T.L' 'T.R' 'FL.L' 'FL.R'};    
+		st(2).str = {'M1.L' 'M1.R' 'M2.L' 'M2.R'};    
+		st(3).str = {'barrel.L' 'barrel.R' 'AS.L' 'AS.R'};    
+		st(4).str = {'barrel.L' 'barrel.R'};    
+		st(5).str = {'RSA.L' 'RSA.R'};    
+		st(6).str = {'PPC.L' 'PPC.R'};    
+		st(7).str = {'V1.L' 'V1.R'};    
+		st(8).str = {'V2L.L' 'V2L.R' 'V2M.L' 'V2M.R'};    
+		st(9).str = {'V2L.L' 'V2L.R' 'V2M.L' 'V2M.R' 'V1.L' 'V1.R'};    
+		st(10).str = {'cortex.L' 'cortex.R'};	
+	
+		region = wholeBrain_MotorSignalCorr(fnm,region,st);
+		save(fnm,'region');
+	end
+
+	%==10==Batch fetch remaining datasets=============
+	batchFetchCorrData({fnm},region,'dCorr.txt',1);
+	batchFetchMotorCorrData({fnm},region,'dMotorCorr.txt',1);
+
+end

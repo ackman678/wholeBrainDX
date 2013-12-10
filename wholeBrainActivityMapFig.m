@@ -1,5 +1,6 @@
-function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, stimuliToPlot)
+function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, stimuliToPlot, levels)
 %wholeBrainActivityMapFig(region, frames, plotType, figType, stimuliToPlot)
+% Plots the normalized pixel activation frequency image for a wholeBrain movie
 % Examples
 %	wholeBrainActivityMapFig(region);
 %	wholeBrainActivityMapFig(region, [], 1);
@@ -20,6 +21,7 @@ function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, 
 %	5: Make multiplot figures with summary projections for m stimuli types on same normalized scale
 %	6: Make multiplot figures with summary projections for m stimuli types on a differential normalized scale
 % stimuliToPlot -- a two element integer vector indicating the indices, i of the region.stimuli{i} you want to plot
+% levels -- the number of contour levels you want. If the input is 0, then a raw image of the normalized sumProjection is plotted instead of a contour plot
 % James B. Ackman 2013-10-10 14:31:28
 
 if (nargin < 2 || isempty(frames)), frames = []; end
@@ -28,6 +30,7 @@ if (nargin < 4 || isempty(figType)), figType = 1; end
 if (nargin < 5 || isempty(stimuliToPlot)) && ~isempty(region.stimuli) && figType > 2, 
 	stimuliToPlot=1:numel(region.stimuli); 
 end
+if nargin < 6 || isempty(levels), levels = 20; end
 
 %------------------------------------------------------------------------
 
@@ -52,7 +55,7 @@ switch figType
 		disp(['mx normA3proj = ' num2str(mxNormSig)])
 		
 		handles.clims = [0 mxNormSig];
-		wholeBrainActivityMapPlot(img, mxNormSig, handles, 20)
+		wholeBrainActivityMapPlot(img, mxNormSig, handles, levels)
 
 	case 2
 		handles.figHandle = figure;
@@ -318,7 +321,7 @@ switch figType
 			maxSig = MxresponseNorm(j);
 
 %			handles.clims = [0 max([mxNormAllproj mxNormGoodproj mxNormBadproj])];
-			wholeBrainActivityMapPlot(responseNorm{j}, maxSig, handles, 20)
+			wholeBrainActivityMapPlot(responseNorm{j}, maxSig, handles, levels)
 		end
 
 	case 6  %Differential plot with normalized scale
@@ -416,18 +419,18 @@ switch figType
 end
 
 
-function handles = setupPlot(figHandle,nRows,nCols)
-if nargin < 1 || isempty(figHandle), figHandle = figure; end
-if nargin < 2 || isempty(nRows), nRows = 1; end
-if nargin < 3 || isempty(nCols), nCols = 1; end
-
-handles.figHandle = figHandle;
-
-for i = 1:nRows
-handles.ax(i) = subplot()
-end
-
-for i = 1:nCols
-
-end
+%function handles = setupPlot(figHandle,nRows,nCols)
+%if nargin < 1 || isempty(figHandle), figHandle = figure; end
+%if nargin < 2 || isempty(nRows), nRows = 1; end
+%if nargin < 3 || isempty(nCols), nCols = 1; end
+%
+%handles.figHandle = figHandle;
+%
+%for i = 1:nRows
+%handles.ax(i) = subplot()
+%end
+%
+%for i = 1:nCols
+%
+%end
 %}
