@@ -204,22 +204,35 @@ end
 	
 %-------Make movie array with with raw intensity values within the functional ROIs--------    
 A4 = A;    
-A4(A3<1) = 0;  %A3 is binary movie from above with any 'artifact' tagged domains removed (usually none on first batch analysis pass)
-A4=mat2gray(A4);    
+A4(~A3) = 0;  %A3 is binary movie from above with any 'artifact' tagged domains removed (usually none on first batch analysis pass)
+%A4=mat2gray(A4);    
+bw = max(A3,[],3);
 	
 %----Maxproj of detected domains -----
-A5 = max(A4,[],3);   
+A5 = max(A4,[],3);
+tmp = A5(bw);
+LOW_HIGH = stretchlim(tmp);
+A6 = imadjust(A5,LOW_HIGH,[]);
 figure;  
-imagesc(mat2gray(A5)); title('maxproj of raw detected domains array'); colorbar('location','eastoutside'); axis image   
-fnm2 = [fnm(1:length(fnm)-4) '_maxProj_' datestr(now,'yyyymmdd-HHMMSS')];    
+imagesc(A6); title('maxproj of raw detected domains array'); colorbar('location','eastoutside'); axis image   
+fnm2 = [fnm(1:length(fnm)-4) '_maxProj1_' datestr(now,'yyyymmdd-HHMMSS')];    
 print('-dpng', [fnm2 '.png'])
 print('-depsc', [fnm2 '.eps']) 
 
-%----Maxproj of raw array -----
-A5 = max(A,[],3);   
+%----Maxproj of raw dFoF array -----
+A5 = max(B,[],3);
+A6 = imadjust(A5,LOW_HIGH,[]);   
 figure;  
-imagesc(mat2gray(A5)); title('maxproj of raw movie array'); colorbar('location','eastoutside'); axis image   
-fnm2 = [fnm(1:length(fnm)-4) '_maxProj_' datestr(now,'yyyymmdd-HHMMSS')];    
+imagesc(A6); title('maxproj of dFoF movie array detected adjust'); colorbar('location','eastoutside'); axis image   
+fnm2 = [fnm(1:length(fnm)-4) '_maxProj2_' datestr(now,'yyyymmdd-HHMMSS')];    
+print('-dpng', [fnm2 '.png'])
+print('-depsc', [fnm2 '.eps']) 
+
+%----Maxproj of raw dFoF array -----
+figure;  
+A6 = imadjust(A5);
+imagesc(A6); title('maxproj of dFoF movie array raw adjust'); colorbar('location','eastoutside'); axis image   
+fnm2 = [fnm(1:length(fnm)-4) '_maxProj3_' datestr(now,'yyyymmdd-HHMMSS')];    
 print('-dpng', [fnm2 '.png'])
 print('-depsc', [fnm2 '.eps']) 
 
