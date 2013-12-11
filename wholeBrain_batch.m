@@ -86,7 +86,7 @@ function fnm = wholeBrain_workflow(fnm,region)
 tic;              
 hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
 backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction.
-makeMovies = 0;
+makeMovies = 1;
 [A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies);         
 toc;  
 
@@ -172,8 +172,8 @@ if isfield(region,'stimuli');
 		end
 	end
 	if ~isempty(ind)
-		wholeBrainActivityMapFig(region,[],2,5,ind); 
-		fnm2 = [fnm(1:end-4) 'ActivityMapFig' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
+		wholeBrainActivityMapFig(region,[],2,5,20,ind); 
+		fnm2 = [fnm(1:end-4) 'ActivityMapFigDrug' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
 		print(gcf, '-dpng', [fnm2(1:end-4) '.png']);            
 		print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);  
 	end	
@@ -188,8 +188,8 @@ if isfield(region,'stimuli');
 		end
 	end
 	if ~isempty(ind)
-		wholeBrainActivityMapFig(region,[],2,5,ind); 
-		fnm2 = [fnm(1:end-4) 'ActivityMapFig' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
+		wholeBrainActivityMapFig(region,[],2,5,20,ind); 
+		fnm2 = [fnm(1:end-4) 'ActivityMapFigMotor' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
 		print(gcf, '-dpng', [fnm2(1:end-4) '.png']);            
 		print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);  		
 	end
@@ -220,7 +220,7 @@ print('-dpng', [fnm2 '.png'])
 print('-depsc', [fnm2 '.eps']) 
 
 %----Maxproj of raw dFoF array -----
-A5 = max(B,[],3);
+A5 = max(A,[],3);
 A6 = imadjust(A5,LOW_HIGH,[]);   
 figure;  
 imagesc(A6); title('maxproj of dFoF movie array detected adjust'); colorbar('location','eastoutside'); axis image   
@@ -279,4 +279,9 @@ if length(region.name) > 3
 	batchFetchCorrData({fnm},region,'dCorr.txt',1);
 	batchFetchMotorCorrData({fnm},region,'dMotorCorr.txt',1);
 
+else
+	if isfield(region,'motorSignal')
+		st(1).str = {'cortex.L' 'cortex.R'};	
+		wholeBrain_MotorSignalCorr(fnm,region,st);
+	end
 end
