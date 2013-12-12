@@ -31,8 +31,6 @@ if nargin < 5 || isempty(levels)
 	levels = 20;
 elseif levels < 1
 	levels = [];
-else 
-	return
 end
 if (nargin < 6 || isempty(stimuliToPlot)) && ~isempty(region.stimuli) && figType > 2, 
 	stimuliToPlot=1:numel(region.stimuli); 
