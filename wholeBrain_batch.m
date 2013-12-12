@@ -248,19 +248,22 @@ batchFetchLocationPropsFreq({fnm},region,'dLocationPropsFreq.txt', 'true', {'mot
 
 %==7==Get spatial correlation results and plots==============
 region = wholeBrain_SpatialCOMCorr(fnm,region,{'cortex.L' 'cortex.R'},1);
-save(fnm,'region');
-batchFetchSpatialCOMCorrData({fnm},region,'dSpatialCorr.txt',1);
+batchFetchSpatialCOMCorrData({fnm},region,'dCorticalCorr.txt',1);
 
+%==8==Get temporal correlation results and plots for cortical hemispheres=================
+region = wholeBrain_CorticalActiveFractionCorr(fnm,region,{'cortex.L' 'cortex.R'});
+batchFetchCorticalCorrData({fnm},region,'dCorticalCorr.txt',1);
+save(fnm,'region');
 
 %===If region contains coords for more than just 'field', 'cortex.L', and 'cortex.R' proceed to fetch data and plots making use of these parcellations (functional correlation matrices, motor corr, etc)
 if length(region.name) > 3
 
-	%==8==Get correlation matrix and plots======================== 
+	%==9==Get correlation matrix and plots======================== 
 	exclude = {'cortex.L' 'cortex.R'};
 	region = wholeBrain_corrData(fnm, region, exclude);  %will also print and save corr matrix and raster plot of the traces (activeFraction) that went into the corr matrix
 	save(fnm,'region');
 
-	%==9==Get cortical - motor corr results and plots=============
+	%==10==Get cortical - motor corr results and plots=============
 	if isfield(region,'motorSignal')
 		clear st  
 		st(1).str = {'HL.L' 'HL.R' 'T.L' 'T.R' 'FL.L' 'FL.R'};    
@@ -278,7 +281,7 @@ if length(region.name) > 3
 		save(fnm,'region');
 	end
 
-	%==10==Batch fetch remaining datasets=============
+	%==11==Batch fetch remaining datasets=============
 	batchFetchCorrData({fnm},region,'dCorr.txt',1);
 	batchFetchMotorCorrData({fnm},region,'dMotorCorr.txt',1);
 
