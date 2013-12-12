@@ -212,7 +212,8 @@ bw = max(A3,[],3);
 A5 = max(A4,[],3);
 tmp = A5(bw);
 LOW_HIGH = stretchlim(tmp);
-A6 = imadjust(A5,LOW_HIGH,[]);
+%A6 = imadjust(A5,LOW_HIGH,[]);
+A6 = mat2gray(A5);
 figure;  
 imagesc(A6); title('maxproj of raw detected domains array'); colorbar('location','eastoutside'); axis image   
 fnm2 = [fnm(1:length(fnm)-4) '_maxProj1_' datestr(now,'yyyymmdd-HHMMSS')];    
@@ -221,7 +222,8 @@ print('-depsc', [fnm2 '.eps'])
 
 %----Maxproj of raw dFoF array -----
 A5 = max(A,[],3);
-A6 = imadjust(A5,LOW_HIGH,[]);   
+%A6 = imadjust(A5,LOW_HIGH,[]);   
+A6 = mat2gray(A5);
 figure;  
 imagesc(A6); title('maxproj of dFoF movie array detected adjust'); colorbar('location','eastoutside'); axis image   
 fnm2 = [fnm(1:length(fnm)-4) '_maxProj2_' datestr(now,'yyyymmdd-HHMMSS')];    
@@ -230,7 +232,8 @@ print('-depsc', [fnm2 '.eps'])
 
 %----Maxproj of raw dFoF array -----
 figure;  
-A6 = imadjust(A5);
+%A6 = imadjust(A5);
+A6 = mat2gray(A5);
 imagesc(A6); title('maxproj of dFoF movie array raw adjust'); colorbar('location','eastoutside'); axis image   
 fnm2 = [fnm(1:length(fnm)-4) '_maxProj3_' datestr(now,'yyyymmdd-HHMMSS')];    
 print('-dpng', [fnm2 '.png'])
