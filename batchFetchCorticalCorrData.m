@@ -1,9 +1,9 @@
-function batchFetchSpatialCOMCorrData(filelist,region, datafilename, datasetSelector)
-%batchFetchSpatialCOMCorrData - A wrapper and output generator for getting information on active pixel fraction per location during the movie, after 'locationData' data structure has been returned and saved into 'region' from wholeBrain_activeFraction.m
+function batchFetchCorticalCorrData(filelist,region, datafilename, datasetSelector)
+%batchFetchCorticalCorrData - A wrapper and output generator for getting information on active pixel fraction per location during the movie, after 'locationData' data structure has been returned and saved into 'region' from wholeBrain_activeFraction.m
 %Examples:
-% >> batchFetchSpatialCOMCorrData(filelist);
-% >> batchFetchSpatialCOMCorrData({filename},region);
-% >> batchFetchSpatialCOMCorrData({filename},region,'dMotorCorr.txt');
+% >> batchFetchCorticalCorrData(filelist);
+% >> batchFetchCorticalCorrData({filename},region);
+% >> batchFetchCorticalCorrData({filename},region,'dMotorCorr.txt');
 %
 %**USE**
 %Must provide one input:
@@ -154,8 +154,8 @@ varin.datafilename=datafilename;
 varin.region=region;
 varin.datasetSelector = datasetSelector;
 
-varin.CorrType = 'spatialML';
-[edgeData, names] = getEdgeDataML(varin);
+varin.CorrType = 'temporal';
+[edgeData, names] = getEdgeData(varin);
 varin.edgeData = edgeData;
 varin.names = names;
 %The following code will save a dataframe of this adjacency dataset:
@@ -163,17 +163,6 @@ for i = 1:size(edgeData,1)  %Plot the pairs in order based on their sorted edgeA
 	varin.idx = i;
 	printStats(functionHandles, varin)
 end 
-
-varin.CorrType = 'spatialAP';
-[edgeData, names] = getEdgeDataAP(varin);
-varin.edgeData = edgeData;
-varin.names = names;
-%The following code will save a dataframe of this adjacency dataset:
-for i = 1:size(edgeData,1)  %Plot the pairs in order based on their sorted edgeAesthetic and color their connections with the colormap  
-	varin.idx = i;
-	printStats(functionHandles, varin)
-end
-
 
 function out = filename(varin) 
 %movie .tif filename descriptor string
@@ -209,10 +198,10 @@ function out = dist_px(varin)
 out = varin.edgeData(varin.idx,5); 
 
 
-function [edgeData, names] = getEdgeDataML(varin)
+function [edgeData, names] = getEdgeData(varin)
 region = varin.region;
 datasetSelector = varin.datasetSelector;
-data = region.userdata.spatialMLCorr{datasetSelector}.corr_pairs{1};
+data = region.userdata.corticalCorr{datasetSelector}.corr_pairs{1};
 
 %--setup roi height width ratio--------------
 %The following is important for getting the distances right if the data pixel dimensions are not equivalent
@@ -223,52 +212,16 @@ data = region.userdata.spatialMLCorr{datasetSelector}.corr_pairs{1};
 edgeList=[];
 pvalues = [];
 rvalues = [];
-names = region.userdata.spatialMLCorr{datasetSelector}.names;
+names = region.userdata.corticalCorr{datasetSelector}.names;
 % i = 1;
 for i = 1:size(data,1)
 	name1 = names{data(i,1)};
 	name2 = names{data(i,2)};
 
 	edgeList = [edgeList; data(i,:)];	
-	if isfield(region.userdata.spatialMLCorr{datasetSelector},'pvalCorrMatrix')
-		output1 = getPvalues(i,data,region.userdata.spatialMLCorr{datasetSelector});
-		output2 = getRvalues(i,data,region.userdata.spatialMLCorr{datasetSelector});
-		pvalues = [pvalues; output1];
-		rvalues = [rvalues; output2];
-	else
-		error('pvalCorrMatrix not found')		
-	end
-	%             end
-end
-edgeData = [edgeList rvalues pvalues];
-edgeData = sortrows(edgeData,3);   %sort the Nx5 list of pairs on lowest to highest rvalue
-%--END loop to get edgeData----------------
-
-
-function [edgeData, names] = getEdgeDataAP(varin)
-region = varin.region;
-datasetSelector = varin.datasetSelector;
-data = region.userdata.spatialAPCorr{datasetSelector}.corr_pairs{1};
-
-%--setup roi height width ratio--------------
-%The following is important for getting the distances right if the data pixel dimensions are not equivalent
-%And below the scripts will assume wherever 'rXY' is used, that it is szX (m dimension) which must be scaled up.
-%the following assumes that the modulus of raster scanned data is 0 (equally divisible image size) and that for CCD images the ratio of image dimensions is either equivalent or not equally divisible
-%-- end setup roi height width ratio---------
-%--START loop to get edgeData----------------
-edgeList=[];
-pvalues = [];
-rvalues = [];
-names = region.userdata.spatialAPCorr{datasetSelector}.names;
-% i = 1;
-for i = 1:size(data,1)
-	name1 = names{data(i,1)};
-	name2 = names{data(i,2)};
-
-	edgeList = [edgeList; data(i,:)];	
-	if isfield(region.userdata.spatialAPCorr{datasetSelector},'pvalCorrMatrix')
-		output1 = getPvalues(i,data,region.userdata.spatialAPCorr{datasetSelector});
-		output2 = getRvalues(i,data,region.userdata.spatialAPCorr{datasetSelector});
+	if isfield(region.userdata.corticalCorr{datasetSelector},'pvalCorrMatrix')
+		output1 = getPvalues(i,data,region.userdata.corticalCorr{datasetSelector});
+		output2 = getRvalues(i,data,region.userdata.corticalCorr{datasetSelector});
 		pvalues = [pvalues; output1];
 		rvalues = [rvalues; output2];
 	else

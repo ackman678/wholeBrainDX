@@ -95,13 +95,13 @@ for i = 1:length(names)
 			p = nan(2,2);
 		end
 		disp(['p(2,1) = ' num2str(p(2,1))]) 
-		region.userdata.spatialAPCorr{datasetSelector}.pvalCorrMatrix(i,j) = p(2,1);
-		region.userdata.spatialAPCorr{datasetSelector}.rvalCorrMatrix(i,j) = r(2,1);
+		region.userdata.spatialAPCorr{datasetSelector}.pvalCorrMatrix(i,j) = p(1,2);
+		region.userdata.spatialAPCorr{datasetSelector}.rvalCorrMatrix(i,j) = r(1,2);
 	end
 end
 
-[i,j] = find(tril(region.userdata.spatialMLCorr{datasetSelector}.rvalCorrMatrix,-1) ~= 0);  %this will take all pairs, no threshold for comparison  
+[i,j] = find(triu(region.userdata.spatialMLCorr{datasetSelector}.rvalCorrMatrix,1) ~= 0);  %this will take all pairs, no threshold for comparison  
 region.userdata.spatialMLCorr{datasetSelector}.corr_pairs{1} = [i j];  
 
-[i,j] = find(tril(region.userdata.spatialAPCorr{datasetSelector}.rvalCorrMatrix,-1) ~= 0);  %this will take all pairs, no threshold for comparison  
+[i,j] = find(triu(region.userdata.spatialAPCorr{datasetSelector}.rvalCorrMatrix,1) ~= 0);  %this will take all pairs, no threshold for comparison  
 region.userdata.spatialAPCorr{datasetSelector}.corr_pairs{1} = [i j];  
