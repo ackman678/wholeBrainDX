@@ -50,6 +50,7 @@ else
 	error('TIFF movie filename required in 1st column, region dummy filename required in 2rd column of space-delimited filelist')
 end
 
+levels = zeros(1,numel(fnms));
 for j=1:numel(fnms)
 	load(fnms{j},'region');  %load the dummy file containing parcellations, motor signal, etc
 	[pathstr, name, ext] = fileparts(fnms2{j});  
@@ -61,11 +62,33 @@ for j=1:numel(fnms)
     sprintf(fnms{j})    
     disp('--------------------------------------------------------------------')
     disp(['Processing ' num2str(j) '/' num2str(numel(fnms)) ' files...'])
-	fnm = wholeBrain_workflow(fnms2{j},region);
+
+	makeThresh = 1;
+	ind = detectDrugStimuli(region)
+	if ~isempty(ind)
+		makeThresh = 0;
+		region.graythresh = mean(levels);
+	end	
+	[fnm,thresh] = wholeBrain_workflow(fnms2{j},region,makeThresh);
+	levels(1,j) = thresh;
 	appendCellArray2file(datafilename,{fnm})
     close all
 end
 
+function ind = detectDrugStimuli(region,stimuliIndices)
+if nargin < 2 || isempty(stimuliIndices), stimuliIndices = {'drug.state.control' 'drug.state.isoflurane'}; end
+if isfield(region,'stimuli');
+	ind = [];
+	for i = 1:length(region.stimuli)
+		for k = 1:length(stimuliIndices)
+			if strcmp(region.stimuli{i}.description,stimuliIndices{k})
+				ind = [ind i];
+			end
+		end
+	end
+else
+	ind = [];
+end
 
 function appendCellArray2file(filename,output)
 %---Generic output function-------------
@@ -78,7 +101,7 @@ fprintf(fid,[repmat('%s\t',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %tab delimited
 fclose(fid);
 
 
-function fnm = wholeBrain_workflow(fnm,region)
+function [fnm,thresh] = wholeBrain_workflow(fnm,region,makeThresh)
 %==1==Segmentation============================
 %fnm = '120518_07.tif';
 %load('120518_07_dummyHemis2.mat');
@@ -87,8 +110,14 @@ tic;
 hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
 backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction.
 makeMovies = 1;
-[A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies);         
+switch makeThresh
+case 1
+	[A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,[]);         
+case 0
+	[A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,region.graythresh);         
+end
 toc;  
+region.graythresh = thresh;
 
 %==2==Detection============================
 tic;             
@@ -113,11 +142,11 @@ if ~isfield(region.domainData.STATS, 'descriptor')
 end      
 
 locationIndices = find(~strcmp(region.name,'field') & ~strcmp(region.name,'craniotomy'));  %because region.location may be empty to this point (usually gets tagged only as a lut for cells are grid rois)
-region = Domains2region(domains, region.domainData.CC,region.domainData.STATS,region,locationIndices)
+region = Domains2region(domains, region.domainData.CC,region.domainData.STATS,region,locationIndices);
 
 fnm = fnm2;  
 fnm = [fnm(1:end-4) '_d2r' '.mat'];       
-save(fnm,'region')  
+save(fnm,'region','-v7.3')   
 
 
 %==4==Get active fraction signals=============================
@@ -136,7 +165,7 @@ end
 data = wholeBrain_activeFraction(A3,region);   
 
 region.locationData.data = data;    
-save(fnm,'region')    
+save(fnm,'region','-v7.3')     
 
 disp('-----')
 
@@ -163,14 +192,7 @@ disp('complete: wholeBrainActivityMapFig(region,[],2,1,0);')
 %--Drug state contour activity maps if applicable
 if isfield(region,'stimuli');
 	stimuliIndices = {'drug.state.control' 'drug.state.isoflurane'};
-	ind = [];
-	for i = 1:length(region.stimuli)
-		for k = 1:length(stimuliIndices)
-			if strcmp(region.stimuli{i}.description,stimuliIndices{k})
-				ind = [ind i];
-			end
-		end
-	end
+	ind = detectDrugStimuli(region,stimuliIndices);
 	if ~isempty(ind)
 		wholeBrainActivityMapFig(region,[],2,5,20,ind); 
 		fnm2 = [fnm(1:end-4) 'ActivityMapFigDrug' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
@@ -179,14 +201,7 @@ if isfield(region,'stimuli');
 	end	
 	%--Motor state contour activity maps if applicable		
 	stimuliIndices = {'motor.state.active' 'motor.state.quiet'};
-	ind = [];
-	for i = 1:length(region.stimuli)
-		for k = 1:length(stimuliIndices)
-			if strcmp(region.stimuli{i}.description,stimuliIndices{k})
-				ind = [ind i];
-			end
-		end
-	end
+	ind = detectDrugStimuli(region,stimuliIndices);
 	if ~isempty(ind)
 		wholeBrainActivityMapFig(region,[],2,5,20,ind); 
 		fnm2 = [fnm(1:end-4) 'ActivityMapFigMotor' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
@@ -253,7 +268,7 @@ batchFetchSpatialCOMCorrData({fnm},region,'dCorticalCorr.txt',1);
 %==8==Get temporal correlation results and plots for cortical hemispheres=================
 region = wholeBrain_CorticalActiveFractionCorr(fnm,region,{'cortex.L' 'cortex.R'});
 batchFetchCorticalCorrData({fnm},region,'dCorticalCorr.txt',1);
-save(fnm,'region');
+save(fnm,'region','-v7.3') ;
 
 %===If region contains coords for more than just 'field', 'cortex.L', and 'cortex.R' proceed to fetch data and plots making use of these parcellations (functional correlation matrices, motor corr, etc)
 if length(region.name) > 3
@@ -261,7 +276,7 @@ if length(region.name) > 3
 	%==9==Get correlation matrix and plots======================== 
 	exclude = {'cortex.L' 'cortex.R'};
 	region = wholeBrain_corrData(fnm, region, exclude);  %will also print and save corr matrix and raster plot of the traces (activeFraction) that went into the corr matrix
-	save(fnm,'region');
+	save(fnm,'region','-v7.3') ;
 
 	%==10==Get cortical - motor corr results and plots=============
 	if isfield(region,'motorSignal')
@@ -278,7 +293,7 @@ if length(region.name) > 3
 		st(10).str = {'cortex.L' 'cortex.R'};	
 	
 		region = wholeBrain_MotorSignalCorr(fnm,region,st);
-		save(fnm,'region');
+		save(fnm,'region','-v7.3') ;
 	end
 
 	%==11==Batch fetch remaining datasets=============

@@ -1,4 +1,4 @@
-function [A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies)
+function [A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh)
 %PURPOSE -- segment functional domains in wholeBrain calcium imaging movies into ROIs
 %USAGE -- A2 = wholeBrain_segmentation(fnm,[],region)
 %James B. Ackman
@@ -6,6 +6,11 @@ function [A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemi
 %updated, improved algorithm with watershed separation and gaussian smooth 2013-02-01 by J.B.A.
 %modified 2013-03-28 14:25:44 by J.B.A.
 
+if nargin < 7 || isempty(thresh), 
+	makeThresh = 1; 
+else
+	makeThresh = 0;
+end
 if nargin < 6 || isempty(makeMovies), makeMovies = 1; end
 if nargin < 5 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)
 if nargin < 4 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end  %index location of the hemisphere region outlines in the 'region' calciumdx struct
@@ -104,24 +109,27 @@ szZ=sz(3);
 Iarr=zeros(size(A));
 
 nPixelThreshold = round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
+sigma = 56.75/region.spaceres;  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a 5px sigma. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
+edgeSmooth = ceil(22.70/region.spaceres); %22.70µm at 11.35um/px to give 2px smooth for the morphological dilation.
+edgeSmooth2 = ceil(34.050/region.spaceres);  %34.0500 at 11.35um/px to give 3px smooth for the second morphological dilation after detection
 
 %------Start core for loop-------------------------
 %figure;
+levels = zeros(1,szZ);
 parfor fr = 1:szZ;
 %	I = (double(A(:,:,fr)) - Amean)./Amean;   %for big array testing, make double
-%	I = I + abs(min(I(:)));   %***Doing the minvalue addition in this step makes the background levels fluctuate severely from frame to frame!
 
 	I = A(:,:,fr);
 %	I(~bothMasks) = 0;
 %	figure, imshow(I,[])
 %	
-%	bwNoise = imnoise(I,'gaussian');  %add gaussian background noise, so that corr value can always be calculated
+%	bwNoise = imnoise(I,'gaussian'); 
 %	figure, imshow(bwNoise,[])
 
 %	I = A(:,:,fr);  %get frame  %original
 %	figure; imshow(I,[]); title('I')	
+
 	%Perform tophat filtering (background subtraction)
-	
 %	ballRadius = 120;
 %	ballHeight = 5;
 %	se = strel('ball',ballRadius,ballHeight);
@@ -131,20 +139,30 @@ parfor fr = 1:szZ;
 	I2 = I - background;  %subtract background
 %	figure; imshow(I2,[]); title('I2')
 	
-	Iarr(:,:,fr) = I2;
+%	Iarr(:,:,fr) = I2;
 	
-	I2 = gaussSmooth(I2,5,'same');
+	I2 = gaussSmooth(I2,sigma,'same');
 %		figure, imshow(img2,[])
-		
+			Iarr(:,:,fr) = I2;
 	%Adjust filtered image contrast, estimate Otsu's threshold, then binarize the frame, and remove single pixel noise
-	I3 = imadjust(I2);  %increase image contrast, saturating 1% of data at both low and high intensities.
- 	[level,est] = graythresh(I3);  %Otsu's threshold
+%	I3 = imadjust(I2);  %increase image contrast, saturating 1% of data at both low and high intensities.
+	I3 = I2;
+	
+	[level,est] = graythresh(I3);  %Otsu's threshold from Image Processing Toolbox  
+%	switch makeThresh
+%	case 1
+%%		[level,est] = graythresh(I3(bothMasks));  %Otsu's threshold from Image Processing Toolbox  
+%		[level,est] = graythresh(I3);  %Otsu's threshold from Image Processing Toolbox  
+% 	case 0
+%		level = thresh;
+% 	end
+ 	levels(1,fr) = level;
 	bw = im2bw(I3,level);  %Make binary based on Otsu's threshold
 %	figure; imshow(bw,[]); title('bw')
 	bw = bwareaopen(bw, nPixelThreshold);  %remove background single isolated pixel noise. 50 is matlab default value in documentation example for image with , removes all binary objects containing less than 50 pixels. 
 %	figure; imshow(bw,[]); title('bwareaopen 50')
 
-	se = strel('disk',2); %smooth edges, has not much effect with gaussSmooth used above
+	se = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
 	bw2 = imdilate(bw,se);
 	%bw2 = imfill(bw2,'holes');
 	%figure, imshow(bw2,[]); title('fill')
@@ -202,7 +220,7 @@ parfor fr = 1:szZ;
 
 %	figure, imshow(g4&bothMasks)   %TESTING
 
-	se = strel('disk',3);
+	se = strel('disk',edgeSmooth2);
 	g5 = imclose(g4,se);
 	bwFrame = g5&bothMasks;
 %	figure; imshow(bwFrame); title('bw close')   %TESTING
@@ -284,18 +302,26 @@ parfor fr = 1:szZ;
 	
 end
 
+thresh = mean(levels);
 
 %Optional--Export .avi movie if desired
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
 if makeMovies
+	Iarr=mat2gray(Iarr);   %scale the whole array
+	bothMasksArr = repmat(bothMasks,[1 1 szZ]);
+	tmp = Iarr(bothMasksArr);
+	LOW_HIGH = stretchlim(tmp);
 	for fr=1:szZ
-		I=mat2gray(Iarr(:,:,fr));
-		[I2, map] = gray2ind(I, 256); %figure; imshow(I2,map)
-		M(fr) = im2frame(I2,map);
+		Iarr(:,:,fr) = imadjust(Iarr(:,:,fr),LOW_HIGH,[]);
+	end
+	[I2arr, map] = gray2ind(Iarr, 256); %convert the whole array to 8bit indexed
+		
+	for fr=1:szZ
+		M(fr) = im2frame(I2arr(:,:,fr),map);  %setup the indexed raw dFoF movie
 
-		I=mat2gray(A2(:,:,fr));
-		[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
-		F(fr) = im2frame(I2,map);
+		I=mat2gray(A2(:,:,fr));  %makes each binary frame into gray image for gray2ind function
+		[I2, map2] = gray2ind(I, 8); %figure; imshow(I2,map)
+		F(fr) = im2frame(I2,map2);  %setup the binary segmented mask movie
 	end
 
 	fnm3 = [fnm2(1:length(fnm2)-4) '-dFoF' '.avi']; 
