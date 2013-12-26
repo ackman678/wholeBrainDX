@@ -110,11 +110,12 @@ tic;
 hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
 backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction.
 makeMovies = 1;
+pthr = 0.99;
 switch makeThresh
 case 1
-	[A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,[]);         
+	[A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,[],pthr);         
 case 0
-	[A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,region.graythresh);         
+	[A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,region.graythresh,pthr);         
 end
 toc;  
 region.graythresh = thresh;
