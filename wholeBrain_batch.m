@@ -106,6 +106,9 @@ function [fnm,thresh] = wholeBrain_workflow(fnm,region,makeThresh)
 %fnm = '120518_07.tif';
 %load('120518_07_dummyHemis2.mat');
 
+dirname = datestr(now,'yyyy-mm-dd-HHMMSS');
+mkdir(dirname);
+
 tic;              
 hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
 backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction.
@@ -119,6 +122,7 @@ case 0
 end
 toc;  
 region.graythresh = thresh;
+cd(dirname);
 
 %==2==Detection============================
 tic;             

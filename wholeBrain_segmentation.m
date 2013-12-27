@@ -108,6 +108,8 @@ A2=zeros(size(A),'int8');
 A2=logical(A2);
 szZ=sz(3);
 Iarr=zeros(size(A));
+G=zeros(size(A));
+bothMasks3D = repmat(bothMasks,[1 1 szZ]);
 
 nPixelThreshold = round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
 sigma = 56.75/region.spaceres;  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a 5px sigma. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
@@ -116,15 +118,14 @@ edgeSmooth2 = ceil(34.050/region.spaceres);  %34.0500 at 11.35um/px to give 3px 
 
 %------Start core for loop-------------------------
 %figure;
-levels = zeros(1,szZ);
+%levels = zeros(1,szZ);
 
 switch makeThresh
 case 1 %make otsu thresholds (normal)
 
 parfor fr = 1:szZ;
-
 	I = A(:,:,fr);
-		
+	
 	se = strel('disk',backgroundRemovRadius);
 	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
 	I2 = I - background;  %subtract background
@@ -145,36 +146,50 @@ parfor fr = 1:szZ;
 	gx = imfilter(f,sx,'replicate');
 	gy = imfilter(f,sy,'replicate');
 	grad = sqrt(gx.*gx + gy.*gy);
-	grad = grad/max(grad(:));
+	G(:,:,fr) = grad;
+end	
+	
+%	grad = grad/max(grad(:));
+	mxG = max(G,[],3);
+	mx = max(mxG(:));
+	G = G/mx;
 
-	grad(~bothMasks) = 0; %Make all edges outside of hemispheres to black level pixels so they don't influence the histogram calculation
+%	grad(~bothMasks) = 0; %Make all edges outside of hemispheres to black level pixels so they don't influence the histogram calculation
+	G(~bothMasks3D) = 0;
 	if showFigure > 0; figure; imshow(grad,[]); end
 
-	[h, ~] = imhist(grad); %For indexed images, imhist returns the histogram counts for each colormap entry so the length of counts is the same as the length of the colormap.
+%	[h, ~] = imhist(grad); %For indexed images, imhist returns the histogram counts for each colormap entry so the length of counts is the same as the length of the colormap.
+	
+	[h, ~] = imhist(reshape(G,numel(G),1));
+	
 	if showFigure > 0; figure; imhist(grad); end
 %	pthr = 0.99;
 	Q = percentile2i(h,pthr);
-	markerImage = grad > Q;
+%	markerImage = grad > Q;
+	markerImage = G > Q;
 %	[level,est] = graythresh(grad);  %Otsu's threshold from Image Processing Toolbox  
 %	markerImage = im2bw(grad,level);  %Make binary based on Otsu's threshold
 	if showFigure > 0; figure; imshow(markerImage,[]); end
 
-	fp = f.*markerImage; 
+%	fp = f.*markerImage; 
+	fp = Iarr.*markerImage; 
 
 	if showFigure > 0
 	figure, imshow(fp,[])  
 	figure, imhist(fp)
 	end
-	[hp, ~] = imhist(fp);
+	[hp, ~] = imhist(reshape(fp,numel(fp),1));
 
 	hp(1) = 0;
 	if showFigure > 0; figure; bar(hp,0); end
 	T = otsuthresh(hp);
 %	T*(numel(hp) - 1)
 
+parfor fr = 1:szZ;
+	f = Iarr(:,:,fr);
 	bw = im2bw(f, T);
 	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
- 	levels(1,fr) = T;
+% 	levels(1,fr) = T;
 
 %	figure; imshow(bw,[]); title('bw')
 	bw = bwareaopen(bw, nPixelThreshold);  %remove background single isolated pixel noise. 50 is matlab default value in documentation example for image with , removes all binary objects containing less than 50 pixels. 
@@ -236,9 +251,8 @@ end
 case 0 %use preexisting otsu threshold (for drug movies)
 	T = thresh;
 parfor fr = 1:szZ;
-
 	I = A(:,:,fr);
-		
+	
 	se = strel('disk',backgroundRemovRadius);
 	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
 	I2 = I - background;  %subtract background
@@ -252,9 +266,8 @@ parfor fr = 1:szZ;
 	%Adjust filtered image contrast, estimate Otsu's threshold, then binarize the frame, and remove single pixel noise
 %	I3 = imadjust(I2);  %increase image contrast, saturating 1% of data at both low and high intensities.
 %	I3 = I2;
-
 	f = I2;
-	bw = im2bw(f, T);
+		bw = im2bw(f, T);
 	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
  	levels(1,fr) = T;
 
@@ -312,13 +325,12 @@ parfor fr = 1:szZ;
 		imshow(label2rgb(L));	
 		M(fr) = getframe;
 	end
-	
+end	
 end
-end
 
 
 
-thresh = mean(levels);
+thresh = T;
 
 %Optional--Export .avi movie if desired
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
