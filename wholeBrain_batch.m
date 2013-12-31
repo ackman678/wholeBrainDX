@@ -50,14 +50,23 @@ else
 	error('TIFF movie filename required in 1st column, region dummy filename required in 2rd column of space-delimited filelist')
 end
 
+currdir = pwd;  %This assumes that the script calling wholeBrain_batch has already cd'd into the flat directory containing both .tif movie files and dummy .mat files
+%Otherwise this currdir can be changed within this mainfcnloop and the paths to the files for loading .mat and .tif files ('f' and 'fn' below inside 'mainfcnloop') can be changed
+dirname = datestr(now,'yyyy-mm-dd-HHMMSS');
+mkdir(dirname);
+cd(dirname);
+
 levels = zeros(1,numel(fnms));
 for j=1:numel(fnms)
-	load(fnms{j},'region');  %load the dummy file containing parcellations, motor signal, etc
-	[pathstr, name, ext] = fileparts(fnms2{j});  
-	region.filename = [name ext]; %set the .tif file name
-
 	[pathstr, name, ext] = fileparts(fnms{j});
 	region.matfilename = [name ext]; 
+	f = fullfile(currdir,region.matfilename);
+	load(f,'region');  %load the dummy file at fnms{j} containing parcellations, motor signal, etc
+
+	[pathstr, name, ext] = fileparts(fnms2{j});  
+	region.filename = [name ext]; %set the .tif file name
+	fn = fullfile(currdir,region.filename);
+
 	
     sprintf(fnms{j})    
     disp('--------------------------------------------------------------------')
@@ -69,7 +78,8 @@ for j=1:numel(fnms)
 		makeThresh = 0;
 		region.graythresh = mean(levels);
 	end	
-	[fnm,thresh] = wholeBrain_workflow(fnms2{j},region,makeThresh);
+
+	[fnm,thresh] = wholeBrain_workflow(fn,region,makeThresh);
 	levels(1,j) = thresh;
 	appendCellArray2file(datafilename,{fnm})
     close all
@@ -106,8 +116,8 @@ function [fnm,thresh] = wholeBrain_workflow(fnm,region,makeThresh)
 %fnm = '120518_07.tif';
 %load('120518_07_dummyHemis2.mat');
 
-dirname = datestr(now,'yyyy-mm-dd-HHMMSS');
-mkdir(dirname);
+fn = fnm;  %fullfile path to the .tif file, for passing to wholeBrain_segmentation for opening. All other output saved to local subdirectory
+fnm = region.filename; %set the base .tif file name for making fnm2 filenames below for saving outputs.
 
 tic;              
 hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
@@ -116,13 +126,12 @@ makeMovies = 1;
 pthr = 0.99;
 switch makeThresh
 case 1
-	[A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,[],pthr);         
+	[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,[],pthr);         
 case 0
-	[A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,region.graythresh,pthr);         
+	[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,region.graythresh,pthr);         
 end
 toc;  
 region.graythresh = thresh;
-cd(dirname);
 
 %==2==Detection============================
 tic;             
@@ -261,18 +270,18 @@ print('-depsc', [fnm2 '.eps'])
 
 
 %==6==Batch fetch datasets=======================
-batchFetchDomainProps({fnm},region,'dDomainProps.txt');
-batchFetchLocationProps({fnm},region,'dLocationProps.txt', 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
-batchFetchLocationPropsFreq({fnm},region,'dLocationPropsFreq.txt', 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});	
+batchFetchDomainProps({fnm},region,fullfile(pwd,'dDomainProps.txt'));
+batchFetchLocationProps({fnm},region,fullfile(pwd,'dLocationProps.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
+batchFetchLocationPropsFreq({fnm},region,fullfile(pwd,'dLocationPropsFreq.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});	
 
 
 %==7==Get spatial correlation results and plots==============
 region = wholeBrain_SpatialCOMCorr(fnm,region,{'cortex.L' 'cortex.R'},1);
-batchFetchSpatialCOMCorrData({fnm},region,'dCorticalCorr.txt',1);
+batchFetchSpatialCOMCorrData({fnm},region,fullfile(pwd,'dCorticalCorr.txt'),1);
 
 %==8==Get temporal correlation results and plots for cortical hemispheres=================
 region = wholeBrain_CorticalActiveFractionCorr(fnm,region,{'cortex.L' 'cortex.R'});
-batchFetchCorticalCorrData({fnm},region,'dCorticalCorr.txt',1);
+batchFetchCorticalCorrData({fnm},region,fullfile(pwd,'dCorticalCorr.txt'),1);
 save(fnm,'region','-v7.3') ;
 
 %===If region contains coords for more than just 'field', 'cortex.L', and 'cortex.R' proceed to fetch data and plots making use of these parcellations (functional correlation matrices, motor corr, etc)
@@ -302,8 +311,8 @@ if length(region.name) > 3
 	end
 
 	%==11==Batch fetch remaining datasets=============
-	batchFetchCorrData({fnm},region,'dCorr.txt',1);
-	batchFetchMotorCorrData({fnm},region,'dMotorCorr.txt',1);
+	batchFetchCorrData({fnm},region,fullfile(pwd,'dCorr.txt'),1);
+	batchFetchMotorCorrData({fnm},region,fullfile(pwd,'dMotorCorr.txt'),1);
 
 else
 	if isfield(region,'motorSignal')

@@ -50,7 +50,8 @@ if nargin < 1 || isempty(fnm)
     save('calciumdxprefs.mat', 'pathname','filename')
 end
 
-fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_segmentation_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
+[pathstr, name, ext] = fileparts(fnm);
+fnm2 = [name '_wholeBrain_segmentation_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
 
 [data, series1] = myOpenOMEtiff(fnm);
 A = double(series1);
