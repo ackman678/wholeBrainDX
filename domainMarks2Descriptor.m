@@ -1,11 +1,11 @@
-function region = domainMarks2Descriptor(region, data)
+function region = domainMarks2Descriptor(region, data, desc, dataInd)
 % Add descriptor ('artifact') to tag domains in movie
 % Uses region data file and 'data' returned from the export data function of plotWholeBrainTraces.m where the 'data' contains a list of tagged domains.
 % James B. Ackman 2013-10-09
 
 %setup defaults
-dataInd = 2;
-desc = 'artifact';
+if nargin < 4 || isempty(dataInd), dataInd = 2; end %default location from fetching the points from the matlab gui
+if nargin < 3 || isempty(desc), desc = 'artifact'; end
 
 if ~isfield(region.domainData.STATS, 'descriptor')
     for i = 1:length(region.domainData.STATS)
