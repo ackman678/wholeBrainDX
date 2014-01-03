@@ -1,4 +1,4 @@
-function [A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies)
+function [A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh,pthr)
 %PURPOSE -- segment functional domains in wholeBrain calcium imaging movies into ROIs
 %USAGE -- A2 = wholeBrain_segmentation(fnm,[],region)
 %James B. Ackman
@@ -6,6 +6,12 @@ function [A2, A] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemi
 %updated, improved algorithm with watershed separation and gaussian smooth 2013-02-01 by J.B.A.
 %modified 2013-03-28 14:25:44 by J.B.A.
 
+if nargin < 8 || isempty(pthr), pthr = 0.99; end
+if nargin < 7 || isempty(thresh), 
+	makeThresh = 1; 
+else
+	makeThresh = 0;
+end
 if nargin < 6 || isempty(makeMovies), makeMovies = 1; end
 if nargin < 5 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)
 if nargin < 4 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end  %index location of the hemisphere region outlines in the 'region' calciumdx struct
@@ -44,7 +50,8 @@ if nargin < 1 || isempty(fnm)
     save('calciumdxprefs.mat', 'pathname','filename')
 end
 
-fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_segmentation_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
+[pathstr, name, ext] = fileparts(fnm);
+fnm2 = [name '_wholeBrain_segmentation_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
 
 [data, series1] = myOpenOMEtiff(fnm);
 A = double(series1);
@@ -102,74 +109,99 @@ A2=zeros(size(A),'int8');
 A2=logical(A2);
 szZ=sz(3);
 Iarr=zeros(size(A));
+G=zeros(size(A));
+bothMasks3D = repmat(bothMasks,[1 1 szZ]);
 
 nPixelThreshold = round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
+sigma = 56.75/region.spaceres;  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a 5px sigma. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
+edgeSmooth = ceil(22.70/region.spaceres); %22.70µm at 11.35um/px to give 2px smooth for the morphological dilation.
+edgeSmooth2 = ceil(34.050/region.spaceres);  %34.0500 at 11.35um/px to give 3px smooth for the second morphological dilation after detection
 
 %------Start core for loop-------------------------
 %figure;
+%levels = zeros(1,szZ);
+
+switch makeThresh
+case 1 %make otsu thresholds (normal)
+
 parfor fr = 1:szZ;
-%	I = (double(A(:,:,fr)) - Amean)./Amean;   %for big array testing, make double
-%	I = I + abs(min(I(:)));   %***Doing the minvalue addition in this step makes the background levels fluctuate severely from frame to frame!
-
 	I = A(:,:,fr);
-%	I(~bothMasks) = 0;
-%	figure, imshow(I,[])
-%	
-%	bwNoise = imnoise(I,'gaussian');  %add gaussian background noise, so that corr value can always be calculated
-%	figure, imshow(bwNoise,[])
-
-%	I = A(:,:,fr);  %get frame  %original
-%	figure; imshow(I,[]); title('I')	
-	%Perform tophat filtering (background subtraction)
 	
-%	ballRadius = 120;
-%	ballHeight = 5;
-%	se = strel('ball',ballRadius,ballHeight);
-		
 	se = strel('disk',backgroundRemovRadius);
 	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
 	I2 = I - background;  %subtract background
 %	figure; imshow(I2,[]); title('I2')
 	
-	Iarr(:,:,fr) = I2;
+%	Iarr(:,:,fr) = I2;
 	
-	I2 = gaussSmooth(I2,5,'same');
+	I2 = gaussSmooth(I2,sigma,'same');
 %		figure, imshow(img2,[])
-		
+	Iarr(:,:,fr) = I2;
 	%Adjust filtered image contrast, estimate Otsu's threshold, then binarize the frame, and remove single pixel noise
-	I3 = imadjust(I2);  %increase image contrast, saturating 1% of data at both low and high intensities.
- 	[level,est] = graythresh(I3);  %Otsu's threshold
-	bw = im2bw(I3,level);  %Make binary based on Otsu's threshold
+%	I3 = imadjust(I2);  %increase image contrast, saturating 1% of data at both low and high intensities.
+%	I3 = I2;
+
+	f = I2;
+	sx = fspecial('sobel');
+	sy = sx';
+	gx = imfilter(f,sx,'replicate');
+	gy = imfilter(f,sy,'replicate');
+	grad = sqrt(gx.*gx + gy.*gy);
+	G(:,:,fr) = grad;
+end	
+	
+%	grad = grad/max(grad(:));
+	mxG = max(G,[],3);
+	mx = max(mxG(:));
+	G = G/mx;
+
+%	grad(~bothMasks) = 0; %Make all edges outside of hemispheres to black level pixels so they don't influence the histogram calculation
+	G(~bothMasks3D) = 0;
+	if showFigure > 0; figure; imshow(grad,[]); end
+
+%	[h, ~] = imhist(grad); %For indexed images, imhist returns the histogram counts for each colormap entry so the length of counts is the same as the length of the colormap.
+	
+	[h, ~] = imhist(reshape(G,numel(G),1));
+	
+	if showFigure > 0; figure; imhist(grad); end
+%	pthr = 0.99;
+	Q = percentile2i(h,pthr);
+%	markerImage = grad > Q;
+	markerImage = G > Q;
+%	[level,est] = graythresh(grad);  %Otsu's threshold from Image Processing Toolbox  
+%	markerImage = im2bw(grad,level);  %Make binary based on Otsu's threshold
+	if showFigure > 0; figure; imshow(markerImage,[]); end
+
+%	fp = f.*markerImage; 
+	fp = Iarr.*markerImage; 
+
+	if showFigure > 0
+	figure, imshow(fp,[])  
+	figure, imhist(fp)
+	end
+	[hp, ~] = imhist(reshape(fp,numel(fp),1));
+
+	hp(1) = 0;
+	if showFigure > 0; figure; bar(hp,0); end
+	T = otsuthresh(hp);
+%	T*(numel(hp) - 1)
+
+parfor fr = 1:szZ;
+	f = Iarr(:,:,fr);
+	bw = im2bw(f, T);
+	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
+% 	levels(1,fr) = T;
+
 %	figure; imshow(bw,[]); title('bw')
 	bw = bwareaopen(bw, nPixelThreshold);  %remove background single isolated pixel noise. 50 is matlab default value in documentation example for image with , removes all binary objects containing less than 50 pixels. 
 %	figure; imshow(bw,[]); title('bwareaopen 50')
 
-	se = strel('disk',2); %smooth edges, has not much effect with gaussSmooth used above
+	se = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
 	bw2 = imdilate(bw,se);
 	%bw2 = imfill(bw2,'holes');
 	%figure, imshow(bw2,[]); title('fill')
 
-%------------TESTING 2013-03-27 13:12:53---------------
-%{
-	D = bwdist(~bw2);   %Euclidean distance transform of the binary image
-	%figure, imshow(D,[],'InitialMagnification','fit'); title('Distance transform of ~bw')
-	D = -D;   %invert of distance matrix
-	D(~bw2) = -Inf;   %sets zero level pixels in the binary mask to negative infinity
-	L = watershed(D);  %computes label matrix of the watershed regions
-	rgb = label2rgb(L,'jet',[.5 .5 .5]);    %colorize regions for figure
-%	figure, imshow(rgb,'InitialMagnification','fit'); title('Watershed transform of D')   %TESTING
-
-	w = L == 0;   %shortcut to identify pixels in the L watershed label matrix that are background
-
-	g2 = bw2 & ~w;  %make new binary image that does not include the 
-	%figure, imshow(g2)
-
-	g3 = bwareaopen(g2, 50);  %remove background single isolated pixel noise. 50 is matlab default value?
-	%figure; imshow(g3,[]); title('bwareaopen 50')
-%}
 	g3 = bw2;  %TESTING 2013-03-27 13:12:53
-%-------------END TESTING-------------------------------
-
 
 	%Detect connected components in the frame and return ROI CC data structure
 	CC = bwconncomp(g3);  %
@@ -190,9 +222,8 @@ parfor fr = 1:szZ;
 	end
 	CC.PixelIdxList = newPixelIdxList;
 	CC.NumObjects = length(CC.PixelIdxList);
-	%}
 
-		%Make rgb label matrix from the CC ROIs
+	%Make rgb label matrix from the CC ROIs
 	L = labelmatrix(CC);
 %	figure; imshow(label2rgb(L));	%TESTING
 
@@ -202,100 +233,124 @@ parfor fr = 1:szZ;
 
 %	figure, imshow(g4&bothMasks)   %TESTING
 
-	se = strel('disk',3);
+	se = strel('disk',edgeSmooth2);
 	g5 = imclose(g4,se);
 	bwFrame = g5&bothMasks;
 %	figure; imshow(bwFrame); title('bw close')   %TESTING
 	%-------end new Algorithm-------------------------------------
 
-
-%{
-%--------------begin original algorithm------------------------	
-	%Exclude pixels in the bw image that are outside the hemisphere masks to make new Exclude image mask
-	bwExclude = bw&bothMasks;
-	figure; imshow(bwExclude); title('bwareaopen & mask')
-	
-	%Smooth the new image mask with a 3 px radius disk to fill in most of the small holes in any components in the mask
-	se = strel('disk',3);
-	bw2 = imclose(bwExclude,se);
-	figure; imshow(bwExclude); title('bw close')
-	
-	%Detect connected components in the frame and return ROI CC data structure
-	CC = bwconncomp(bw2);
-	L = labelmatrix(CC);
-	figure; imshow(label2rgb(L));	
-	
-	%Make border mask of the hemispheres and make the border a little bit wider with a square image dilation of 3 px?
-	bwBorders = bwperim(bothMasks);
-	%figure, imshow(bwBorders);
-	se = strel('square',3);
-	bwBorders = imdilate(bwBorders,se);
-	figure, imshow(bwBorders)
-	
-	%Find the pixel indices for those on the border and find out which CC ROI objects overlap with these border pixels and remove them from the CC ROI data structure
-	%This assumes that most of the functional signals on the borders will be edge effect artifacts (like from z-movements, etc). This is probably mostly true, 
-	%but can certainly diminsh the number detected functional signals and domains from areas on the edges, like retrosplenial, cingulate, parts of V1, A1, S2, Ent etc.  
-	%This algorithm is simple and fast but could be improved. These following lines can be commented out if necessary as well.
-%
-	backgroundIndices = find(bwBorders);
-	newPixelIdxList = {};
-	count = 0;
-	for i = 1:CC.NumObjects
-		if	length(intersect(CC.PixelIdxList{i},backgroundIndices)) < 1   %maybe change this threshold, to more than one px intersect like a percentage
-		count = count+1;
-		newPixelIdxList{count} = CC.PixelIdxList{i};
-		end
-	end
-	CC.PixelIdxList = newPixelIdxList;
-	CC.NumObjects = length(CC.PixelIdxList);
-
-
-	%Make rgb label matrix from the CC ROIs
-	L = labelmatrix(CC);
-
-
-	
-	%Concatenate the resulting frame mask into a binary movie array for output
-	bwFrame=im2bw(L,0);
-	%--------------end orig------------------------
-%}
-		
-%	if fr > 1
-%		A2 = cat(3,A2,bwFrame);
-%	else
-%		A2 = bwFrame;
-%	end
-	
 	A2(:,:,fr) = bwFrame;
 	
 	%Optional--Show the frame and prep for .avi movie making if desired
 	if showFigure > 0
 		imshow(label2rgb(L));	
 		M(fr) = getframe;
-%	else
-%		I=mat2gray(A(:,:,fr));
-%		[I2, map] = gray2ind(I, 256); %figure; imshow(I2,map)
-%		M(fr) = im2frame(I2,map);
-%		
-%		I=mat2gray(A2(:,:,fr));
-%		[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
-%		F(fr) = im2frame(I2,map);
 	end
 	
 end
 
+case 0 %use preexisting otsu threshold (for drug movies)
+	T = thresh;
+parfor fr = 1:szZ;
+	I = A(:,:,fr);
+	
+	se = strel('disk',backgroundRemovRadius);
+	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
+	I2 = I - background;  %subtract background
+%	figure; imshow(I2,[]); title('I2')
+	
+%	Iarr(:,:,fr) = I2;
+	
+	I2 = gaussSmooth(I2,sigma,'same');
+%		figure, imshow(img2,[])
+	Iarr(:,:,fr) = I2;
+	%Adjust filtered image contrast, estimate Otsu's threshold, then binarize the frame, and remove single pixel noise
+%	I3 = imadjust(I2);  %increase image contrast, saturating 1% of data at both low and high intensities.
+%	I3 = I2;
+	f = I2;
+		bw = im2bw(f, T);
+	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
+ 	levels(1,fr) = T;
+
+%	figure; imshow(bw,[]); title('bw')
+	bw = bwareaopen(bw, nPixelThreshold);  %remove background single isolated pixel noise. 50 is matlab default value in documentation example for image with , removes all binary objects containing less than 50 pixels. 
+%	figure; imshow(bw,[]); title('bwareaopen 50')
+
+	se = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
+	bw2 = imdilate(bw,se);
+	%bw2 = imfill(bw2,'holes');
+	%figure, imshow(bw2,[]); title('fill')
+
+	g3 = bw2;  %TESTING 2013-03-27 13:12:53
+
+	%Detect connected components in the frame and return ROI CC data structure
+	CC = bwconncomp(g3);  %
+	L = labelmatrix(CC);  %Not used
+	%figure; imshow(label2rgb(L));	
+	STATS = regionprops(CC,'Centroid');  % 
+
+	newPixelIdxList = {};
+	count = 0;
+	for i = 1:CC.NumObjects
+		centrInd = sub2ind(CC.ImageSize(1:2),round(STATS(i).Centroid(2)),round(STATS(i).Centroid(1)));	
+		if	(length(intersect(centrInd,backgroundIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
+	%		if	(length(intersect(centrInd,backgroundIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
+	%		if	(length(intersect(centrInd,backgroundIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},hemisphereBorders)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
+			count = count+1;
+			newPixelIdxList{count} = CC.PixelIdxList{i};
+		end
+	end
+	CC.PixelIdxList = newPixelIdxList;
+	CC.NumObjects = length(CC.PixelIdxList);
+
+	%Make rgb label matrix from the CC ROIs
+	L = labelmatrix(CC);
+%	figure; imshow(label2rgb(L));	%TESTING
+
+	w = L == 0;
+	g4 = g3 & ~w;
+	%figure, imshow(g4)
+
+%	figure, imshow(g4&bothMasks)   %TESTING
+
+	se = strel('disk',edgeSmooth2);
+	g5 = imclose(g4,se);
+	bwFrame = g5&bothMasks;
+%	figure; imshow(bwFrame); title('bw close')   %TESTING
+	%-------end new Algorithm-------------------------------------
+
+	A2(:,:,fr) = bwFrame;
+	
+	%Optional--Show the frame and prep for .avi movie making if desired
+	if showFigure > 0
+		imshow(label2rgb(L));	
+		M(fr) = getframe;
+	end
+end	
+end
+
+
+
+thresh = T;
 
 %Optional--Export .avi movie if desired
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
 if makeMovies
+	Iarr=mat2gray(Iarr);   %scale the whole array
+	bothMasksArr = repmat(bothMasks,[1 1 szZ]);
+	tmp = Iarr(bothMasksArr);
+	LOW_HIGH = stretchlim(tmp);
 	for fr=1:szZ
-		I=mat2gray(Iarr(:,:,fr));
-		[I2, map] = gray2ind(I, 256); %figure; imshow(I2,map)
-		M(fr) = im2frame(I2,map);
+		Iarr(:,:,fr) = imadjust(Iarr(:,:,fr),LOW_HIGH,[]);
+	end
+	[I2arr, map] = gray2ind(Iarr, 256); %convert the whole array to 8bit indexed
+		
+	for fr=1:szZ
+		M(fr) = im2frame(I2arr(:,:,fr),map);  %setup the indexed raw dFoF movie
 
-		I=mat2gray(A2(:,:,fr));
-		[I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
-		F(fr) = im2frame(I2,map);
+		I=mat2gray(A2(:,:,fr));  %makes each binary frame into gray image for gray2ind function
+		[I2, map2] = gray2ind(I, 8); %figure; imshow(I2,map)
+		F(fr) = im2frame(I2,map2);  %setup the binary segmented mask movie
 	end
 
 	fnm3 = [fnm2(1:length(fnm2)-4) '-dFoF' '.avi']; 
