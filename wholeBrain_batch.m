@@ -128,7 +128,8 @@ switch makeThresh
 case 1
 	[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,[],pthr);         
 case 0
-	[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,region.graythresh,pthr);         
+%	[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,region.graythresh,pthr);         
+	[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,[],pthr);         
 end
 toc;  
 region.graythresh = thresh;

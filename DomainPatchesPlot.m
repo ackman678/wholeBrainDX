@@ -116,15 +116,14 @@ case 1
 		case 4
 			durations = roiBoundingBox(:,6); 
 			x = durations;
-			cx = log(x);  %optional
-			if min(cx) < 0, 
-			cx = cx + floor(min(cx));
-			elseif min(cx) == 0
-			cx = cx + 1;
-			else
-			return 
-			end
-		%	cx = x;
+	%		cx = log(x);  %optional
+%			if min(cx) < 0, 
+%			cx = cx + floor(min(cx));
+%			elseif min(cx) == 0
+%			cx = cx + 1;
+%			else
+%			end
+	cx = x;
 			cx = cx/max(cx);
 			cind = ceil(cx .* ncolors);
 
@@ -225,14 +224,14 @@ yticklabs2 = num2str(str2num(yticklabs) .* CC.ImageSize(3));
 set(cbar_handle,'YTickLabel',yticklabs2);
 
 case 4
-yticklabs2 = num2str(exp(str2num(yticklabs) .* max(log(x))) .* region.timeres);  % if x was log transformed
-%yticklabs2 = num2str(str2num(yticklabs) .* max(x) .* region.timeres);  % if normal scale was used
-set(cbar_handle,'YTickLabel',yticklabs2);
+%yticklabs2 = num2str(exp(str2num(yticklabs) .* max(log(x))) .* region.timeres);  % if x was log transformed
+yticklabs2 = num2str(str2num(yticklabs) .* max(x) .* region.timeres);  % if normal scale was used
+set(cbar_handle,'YTickLabel',yticklabs2); title('duration (s)')
 
 case 5
 %yticklabs2 = num2str(exp(str2num(yticklabs) .* max(log(x))) .* region.timeres);  % if x was log transformed
 yticklabs2 = num2str(str2num(yticklabs) .* max(x) .* region.spaceres);  % if normal scale was used
-set(cbar_handle,'YTickLabel',yticklabs2);
+set(cbar_handle,'YTickLabel',yticklabs2); title('diameter (um)')
 
 end
 
