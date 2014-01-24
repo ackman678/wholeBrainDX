@@ -64,6 +64,9 @@ setupCurrentPlot(handles)
 % Choose default command line output for domainTaggingGui
 handles.output = hObject;
 
+handles.bord = [];
+handles.bhand = [];
+
 % Update handles structure
 guidata(hObject, handles);
 
@@ -106,8 +109,6 @@ guidata(hObject, handles);
 
 
 function handles = addBorder(handles)
-handles.bord = [];
-handles.bhand = [];
 
 stl = 1;
 c = 1;
@@ -171,20 +172,20 @@ if isb == 0
     set(h,'xdata',x,'ydata',y);
 end
 
-
-handles.bord{length(handles.bord)+1} = [];
+ind = length(handles.bord)+1;
+handles.bord{ind} = [];
 handles.bord{end} = [get(h,'xdata')' get(h,'ydata')'];
 handles.bhand(end+1) = h;
-handles = markArtifacts(handles);
+handles = markArtifacts(handles,ind);
 % hTmp = findobj(h.axes1,'Type','patch')
 delete(h);
 
-function handles = markArtifacts(handles)
+function handles = markArtifacts(handles,ind)
 %Locate domain centroids and patch object centroids marked as artifacts
 
 sz = handles.region.domainData.CC.ImageSize;
-x = handles.bord{1}(:,1);  %use the data returned from giinput
-y = handles.bord{1}(:,2);  %use the data returned from giinput
+x = handles.bord{ind}(:,1);  %use the data returned from giinput
+y = handles.bord{ind}(:,2);  %use the data returned from giinput
 mask = poly2mask(x,y,sz(1),sz(2));
 
 hTmp = findobj(handles.axes1,'Type','patch');   %optional for blanking patch objects
@@ -254,3 +255,4 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 assignin('base', 'region', handles.region)
+assignin('base', 'taggedCentrBorders',handles.bord)

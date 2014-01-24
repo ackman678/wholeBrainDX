@@ -156,6 +156,10 @@ if ~isfield(region.domainData.STATS, 'descriptor')
 	end      
 end      
 
+if isfield(region, 'taggedCentrBorders')
+	region = tagDomains(region, region.taggedCentrBorders, 'artifact');
+end
+
 locationIndices = find(~strcmp(region.name,'field') & ~strcmp(region.name,'craniotomy'));  %because region.location may be empty to this point (usually gets tagged only as a lut for cells are grid rois)
 region = Domains2region(domains, region.domainData.CC,region.domainData.STATS,region,locationIndices);
 
