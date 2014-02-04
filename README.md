@@ -71,3 +71,13 @@ Demonstrates positive correlation between brain activity and motor signal at sho
 ![](assets/img/Screen_Shot_2013-05-02_at_10.53.40_AM.png)
 
 
+
+
+
+[SyncPushPull]: http://mac.github.com/help.html#faq-sync-push-pull
+
+[matlabSearchPath]: http://www.mathworks.com/help/matlab/matlab_env/what-is-the-matlab-search-path.html
+
+[piotrToolbox]: http://vision.ucsd.edu/~pdollar/toolbox/doc/
+
+[sigtool]: http://sourceforge.net/projects/sigtool/
