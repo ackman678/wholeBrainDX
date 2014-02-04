@@ -13,6 +13,11 @@ TODO:
 
 # Examples
 
+## Instructions
+
+See [wholeBrain_workflow.md](wholeBrain_workflow.md)
+
+
 ## plotWholeBrainDomainsTraces GUI
 This is from 2013-04-01_analysis.txt on 2013-04-18 08:55:30. Shows how to use the plotWholeBrainsDomainsTraces GUI.
 
