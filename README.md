@@ -3,20 +3,36 @@ Date: 2013-07-03 12:16:50
 
 # wholeBrainDX
 
-Image analysis software for whole brain calcium imaging movies (Ackman et al. 2012-2013; *unpublished*).
+Image analysis software for whole brain calcium imaging movies (Ackman et al. 2012-2014;).
+
+Usage instructions at [wholeBrain_workflow.md](wholeBrain_workflow.md)
 
 # Installation
-TODO:
 
-# Dependencies
-TODO:
+1. Clone wholeBrainDX from GitHub into your *MATLAB* user folder.
+2. Add wholeBrainDX to your [matlab path][matlabSearchPath]
+3. *Optional:* Install the non-core dependency toolboxes
+	* download from the respective sites listed above
+	* move the toolboxes into your matlab user home folder
+	* add their folders and subfolders to your matlab path.
+
+# Requirements
+
+## Core dependencies ##
+
+* matlab with the signal processing and image processing toolboxes
+* [piotrImageVideoProcessingToolbox][piotrToolbox]. Uses gaussSmooth and xcorrn from this toolbox.
+* `loci_tools.jar` a java plugin for opening many different microscopy image/tiff file formats 
+	* included in `CalciumDX`, but up-to-date version can be found at [ome website](http://www.loci.wisc.edu/ome/ome-tiff.html) or through the ImageJ plugins page.
+	* should be placed in the `CalciumDX/` folder
+
+## Non-core dependencies ##
+
+* [sigTOOL][sigtool]. Used with the stimulus movies workflow and dealing with motor signals. This program is useful if going to use simultaneously acquired electrophysiology, stimulation data stored in a a data format readable by sigtool, such as CED Spike2 .smr files. This toolbox will read those files and output a .kcl matlab data structure file format.
+
+
 
 # Examples
-
-## Instructions
-
-See [wholeBrain_workflow.md](wholeBrain_workflow.md)
-
 
 ## plotWholeBrainDomainsTraces GUI
 This is from 2013-04-01_analysis.txt on 2013-04-18 08:55:30. Shows how to use the plotWholeBrainsDomainsTraces GUI.

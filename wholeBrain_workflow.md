@@ -1,6 +1,6 @@
 Date: 2014-02-04 10:51:07  
 Author: James B. Ackman  
-Tags: analysis, wholeBrain, programming, matlab, R  
+Tags: analysis, wholeBrain, programming, matlab 
 
 # wholeBrain workflow
 
@@ -257,8 +257,7 @@ plotWholeBrainDomainsTraces:
 	%--In matlab, use 'VideoReader' to make 8bit movie object structure and return frames from the .avi of the raw movie (so we can full frame res, array in memory locally)
 	
 	fnm = '_d2r.mat'  %d2r.mat file from wholeBrain_batch
-	fnm2 = '120518_07_bkgndSubtr-yes_60_dF-yes-20130312-144333-50fps.avi'
-	%fnm3 = '120518_06_20131122-161341_connComponents_BkgndSubtr60.mat'
+	fnm2 = 'dFoF.avi' %.avi file from wholeBrain_segmentation.m or _kmeans.m
 	vidObj = VideoReader(fnm2);   %TODO: change this to desired .avi to read in
 	nFrames = vidObj.NumberOfFrames;
 	vidHeight = vidObj.Height;
