@@ -1,4 +1,4 @@
-function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, levels, stimuliToPlot)
+function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, levels, stimuliToPlot, handles)
 %wholeBrainActivityMapFig(region, frames, plotType, figType, stimuliToPlot)
 % Plots the normalized pixel activation frequency image for a wholeBrain movie
 % Examples
@@ -13,15 +13,15 @@ function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, 
 %	1: plot all detected components (true positive activity domains and false positive artifacts)
 %	2: plot without false positive artifacts tagged in the STATS.descriptor variable in region.STATS
 %	3: plot only the false positive artifacts
-% figType -- an integer of 1, 2, or 3 indicating the type of figure you want 
+% figType -- an integer of 1 - 6 indicating the type of figure you want 
 %	1: Make a single subplot based on plotType all detected components (true positive activity domains and false positive artifacts)
 %	2: Make a multiplot figure for true-false positive comparison plot, ignores the input for plotType
 %	3: Make multiplot figures for n stimuli, of m stimuli types
 %	4: Make multiplot figures with summary projections for m stimuli types on individual scales
 %	5: Make multiplot figures with summary projections for m stimuli types on same normalized scale
 %	6: Make multiplot figures with summary projections for m stimuli types on a differential normalized scale
-% stimuliToPlot -- a multi element integer vector indicating the indices, i of the region.stimuli{i} you want to plot
 % levels -- the number of contour levels you want. If the input is 0, then a raw image of the normalized sumProjection is plotted instead of a contour plot
+% stimuliToPlot -- a multi element integer vector indicating the indices, i of the region.stimuli{i} you want to plot
 % James B. Ackman 2013-10-10 14:31:28
 
 if (nargin < 2 || isempty(frames)), frames = []; end
@@ -36,6 +36,15 @@ if (nargin < 6 || isempty(stimuliToPlot)) && ~isempty(region.stimuli) && figType
 	stimuliToPlot=1:numel(region.stimuli); 
 end
 
+if nargin < 7 || isempty(handles)
+	handles.figHandle = figure;
+	handles.axesHandle = subplot(1,1,1);
+else
+	handles.axesHandle = handles.axes1;
+	axes(handles.axesHandle);
+	handles.figHandle = gcf;
+end
+
 
 %------------------------------------------------------------------------
 
@@ -43,11 +52,10 @@ switch figType
 	case 1
 		[A3proj,frames] = wholeBrainActivityMapProj(region, frames, plotType);
 
-		handles.figHandle = figure;
 		set(handles.figHandle,'color','w');
 		set(handles.figHandle, 'InvertHardCopy', 'off');   %so that black axes background will print
 		handles.frames = frames;
-		handles.axesHandle = subplot(1,1,1);
+%		handles.axesHandle = subplot(1,1,1);
 		handles.axesTitle = 'Signal px count norm to max sig count. MaxSig=';
 
 		mx = max(A3proj(:));
@@ -63,7 +71,6 @@ switch figType
 		wholeBrainActivityMapPlot(img, mxNormSig, handles, levels)
 
 	case 2
-		handles.figHandle = figure;
 
 %        scrsize = get(0,'screensize');
 %        set(handles.figHandle,'Position',scrsize);
@@ -120,10 +127,10 @@ switch figType
 
 		disp('--------------------------------------------------')
 		disp(name)
-		h = figure;
+
 %		scrsize = get(0,'screensize');
 %        set(h,'Position',scrsize);
-        set(h,'color',[1 1 1]);
+        set(handles.figHandle,'color',[1 1 1]);
 %        set(h,'PaperType','usletter');
 %        set(h,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
 
@@ -133,8 +140,6 @@ switch figType
         if rem(numplots,cols) > 0
             rows = rows+1;
         end
-
-		handles.figHandle = h;
 
 		for i=1:numel(nstimuli)
 			disp(['stimulus ' num2str(i)])
@@ -173,13 +178,12 @@ switch figType
 	case 4  %individual scales
 	%----start-------
 		sz=region.domainData.CC.ImageSize;
-		h = figure;
+
 %		scrsize = get(0,'screensize');
 %        set(h,'Position',scrsize);
-        set(h,'color',[1 1 1]);
+        set(handles.figHandle,'color',[1 1 1]);
 %        set(h,'PaperType','usletter');
 %        set(h,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
-		handles.figHandle = h;
 
 		j = 0;
 		for numStim = stimuliToPlot
@@ -239,14 +243,13 @@ switch figType
 	case 5  %normalized scale
 	%----start-------
 		sz=region.domainData.CC.ImageSize;
-		h = figure;
+
 %		scrsize = get(0,'screensize');
 %        set(h,'Position',scrsize);
-        set(h,'color','w');
+        set(handles.figHandle,'color','w');
 %        set(h,'PaperType','usletter');
 %        set(h,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
-        set(h, 'InvertHardCopy', 'off');   %so that black axes background will print
-		handles.figHandle = h;
+        set(handles.figHandle, 'InvertHardCopy', 'off');   %so that black axes background will print
 
 		numplots = numel(stimuliToPlot);
 		cols = 2;
@@ -332,13 +335,12 @@ switch figType
 	case 6  %Differential plot with normalized scale
 	%----start-------
 		sz=region.domainData.CC.ImageSize;
-		h = figure;
+		
 		%scrsize = get(0,'screensize');
 %        set(h,'Position',scrsize);
-        set(h,'color',[1 1 1]);
+        set(handles.figHandle,'color',[1 1 1]);
 %        set(h,'PaperType','usletter');
 %        set(h,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
-		handles.figHandle = h;
 
 		numplots = numel(stimuliToPlot);
 		cols = 2;

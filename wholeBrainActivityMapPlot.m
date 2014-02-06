@@ -36,6 +36,9 @@ end
 
 imagesc(img,handles.clims);
 title([frTxt ',' handles.axesTitle num2str(maxSig)]); 
+myColors = jet(256);
+myColors(1,:) = [0 0 0];
+colormap(myColors);
 colorbar('location','eastoutside'); 
 axis image
 axis tight
