@@ -321,7 +321,9 @@ if length(region.name) > 3
 
 else
 	if isfield(region,'motorSignal')
-		st(1).str = {'cortex.L' 'cortex.R'};	
-		wholeBrain_MotorSignalCorr(fnm,region,st);
+		if ~isempty(region.motorSignal)
+			st(1).str = {'cortex.L' 'cortex.R'};	
+			wholeBrain_MotorSignalCorr(fnm,region,st);
+		end
 	end
 end

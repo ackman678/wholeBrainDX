@@ -136,9 +136,12 @@ Tags: analysis, wholeBrain, programming, matlab
 	domainTaggingGui(region)
 	
 	load(fnms{k},'region')   %load new dummyAreas file
-	if exist(taggedCentrBorders,'var')
-		%region = tagDomains(region,taggedCentrBorders)
-		region.taggedCentrBorders = taggedCentrBorders;
+	if exist('taggedCentrBorders','var')
+		if isfield(region, 'taggedCentrBorders')
+			region.taggedCentrBorders = [region.taggedCentrBorders taggedCentrBorders];
+		else
+			region.taggedCentrBorders = taggedCentrBorders;
+		end
 		save(fnms{k},'region')  %save new dummyAreas file with the marked borders for tagging
 	end
 	

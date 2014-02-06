@@ -75,7 +75,8 @@ guidata(hObject, handles);
 
 
 function setupCurrentPlot(handles)
-DomainPatchesPlot(handles.region.domainData.domains, handles.region.domainData.CC, handles.region.domainData.STATS, 1, handles.axes1)
+%DomainPatchesPlot(handles.region.domainData.domains, handles.region.domainData.CC, handles.region.domainData.STATS, 1, handles.axes1);
+wholeBrainActivityMapFig(handles.region,[],2,1,0,[],handles);
 
 % --- Outputs from this function are returned to the command line.
 function varargout = domainTaggingGui_OutputFcn(hObject, eventdata, handles) 
@@ -158,7 +159,7 @@ while stl
         h = plot(x,y,'bo');    %TODO: Fix the drawing, make temporary
     end
     if c == 2
-        delete(h);
+%        delete(h);
         h = plot(x,y,':+b');  %TODO: Fix the drawing, make temporary
     end
     if c > 2
@@ -178,7 +179,7 @@ handles.bord{end} = [get(h,'xdata')' get(h,'ydata')'];
 handles.bhand(end+1) = h;
 handles = markArtifacts(handles,ind);
 % hTmp = findobj(h.axes1,'Type','patch')
-delete(h);
+%delete(h);
 
 function handles = markArtifacts(handles,ind)
 %Locate domain centroids and patch object centroids marked as artifacts
