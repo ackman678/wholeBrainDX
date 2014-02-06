@@ -1,4 +1,4 @@
-function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, levels, stimuliToPlot, handles)
+function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, levels, stimuliToPlot, handles, mapType)
 %wholeBrainActivityMapFig(region, frames, plotType, figType, stimuliToPlot)
 % Plots the normalized pixel activation frequency image for a wholeBrain movie
 % Examples
@@ -23,6 +23,7 @@ function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, 
 % levels -- the number of contour levels you want. If the input is 0, then a raw image of the normalized sumProjection is plotted instead of a contour plot
 % stimuliToPlot -- a multi element integer vector indicating the indices, i of the region.stimuli{i} you want to plot
 % handles -- figure handles to pass the plot to a previously generated figure window (handles.figHandle, handles.axesHandle)
+% mapType -- string, switch to change summary map type.  'pixelFreq', 'domainFreq', 'domainDur', or 'domainAmpl'. Currently only works with 
 
 % James B. Ackman 2013-10-10 14:31:28
 
@@ -47,25 +48,35 @@ else
 	handles.figHandle = gcf;
 end
 
+if nargin < 8 || isempty(mapType), mapType = 'pixelFreq'; end
+
 
 %------------------------------------------------------------------------
 
 switch figType
 	case 1
-		[A3proj,frames] = wholeBrainActivityMapProj(region, frames, plotType);
+		[A3proj,frames] = wholeBrainActivityMapProj(region, frames, plotType, mapType);
 
 		set(handles.figHandle,'color','w');
 		set(handles.figHandle, 'InvertHardCopy', 'off');   %so that black axes background will print
 		handles.frames = frames;
 		
-		handles.axesTitle = 'Signal px count norm to max sig count. MaxSig=';
-		mx = max(A3proj(:));
-		normValue = mx;
-		img = A3proj./normValue;
 
-		mxNormSig=max(img(:));
+		switch mapType
+			case 'pixelFreq'
+				handles.axesTitle = 'pixelFreq, Signal px count norm to max sig count. MaxSig=';
+				mx = max(A3proj(:));
+				normValue = mx;
+				img = A3proj./normValue;
+				disp(['max A3proj = ' num2str(mx)])
+			case {'domainFreq','domainDur','domainAmpl'}
+				handles.axesTitle = 'domainFreq, No. of domain activations MaxSig=';
+				img = A3proj;	
+			otherwise
+				warning('Unexpected plot type. No plot created.');
+		end	
 		
-		disp(['max A3proj = ' num2str(mx)])
+		mxNormSig=max(img(:));
 		disp(['mx normA3proj = ' num2str(mxNormSig)])
 		
 		handles.clims = [0 mxNormSig];
