@@ -1,7 +1,8 @@
-function wholeBrain_batch(filename)
+function wholeBrain_batch(filename,handles)
 %wholeBrain_batch - A batch processing script for wholeBrain paper
 %Examples:
 % >> wholeBrain_batch('files.txt')
+% >> wholeBrain_batch('files.txt',handles)
 %
 %**USE**
 %Must provide one input:
@@ -10,6 +11,14 @@ function wholeBrain_batch(filename)
 %files.txt should have TIFF movie filenames in first column, dummy region matlab filenames in second column
 %can have an extra columns with descriptor/factor information for the file. This will be the rowinfo that is attached to each measure observation in the following script.
 %depends on  readtext.m file script from matlab central -  readtext('files.txt',' ');
+%
+%Optional:
+% handles - handle structure of input variables
+% 	handles.makeMovies - string of 'all', 'some', or 'none' to indicate if you want to make avis. Do 'none' or 'some' to speed things up.
+% 	handles.hemisphereIndices - 2 element numeric vector, region.coord locations of 'cortex.L' and 'cortex.R'. Default is [2 3]
+% 	handles.backgroundRemovRadius - single numeric in pixels. Default corresponds to 681 µm radius (round(681/region.spaceres)) for the circular structured element used for background subtraction.
+% 	handles.pthr - single numeric. Default is 0.99. Percentile threshold for the sobel edge based detection algorithm in wholeBrain_segmentation.m
+% 	handles.makeThresh - single numeric logical. Default is 1, for estimating the graythreshold using Otsu's method for each movie separately. Alternative is to use previous movie graythresh (like for subsequent recordings).
 %
 % Check the workflow sequence below at wholeBrain_workflow(). Briefly it is:
 %	1. Segmentation
@@ -36,12 +45,13 @@ function wholeBrain_batch(filename)
 %
 %James B. Ackman, 2013-11-19 12:06:20  
 
+if nargin < 2 || isempty(handles), handles = []; end
 filelist = readtext(filename,' ');
 datafilename = ['filesOutput_' datestr(now,'yyyymmdd-HHMMSS') '.txt'];
-mainfcnLoop(filelist,datafilename)
+mainfcnLoop(filelist,datafilename,handles)
 
 
-function mainfcnLoop(filelist,datafilename)
+function mainfcnLoop(filelist,datafilename,handles)
 %start loop through files-----------------------------------------------------------------
 if size(filelist,2) > 1
 	fnms = filelist(:,2);  %Second column is dummy region matfiles
@@ -79,7 +89,8 @@ for j=1:numel(fnms)
 		region.graythresh = mean(levels);
 	end	
 
-	[fnm,thresh] = wholeBrain_workflow(fn,region,makeThresh);
+	handles.makeThresh = makeThresh;
+	[fnm,thresh] = wholeBrain_workflow(fn,region,handles);
 	levels(1,j) = thresh;
 	appendCellArray2file(datafilename,{fnm})
     close all
@@ -111,7 +122,7 @@ fprintf(fid,[repmat('%s\t',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %tab delimited
 fclose(fid);
 
 
-function [fnm,thresh] = wholeBrain_workflow(fnm,region,makeThresh)
+function [fnm,thresh] = wholeBrain_workflow(fnm,region,handles)
 %==1==Segmentation============================
 %fnm = '120518_07.tif';
 %load('120518_07_dummyHemis2.mat');
@@ -119,24 +130,45 @@ function [fnm,thresh] = wholeBrain_workflow(fnm,region,makeThresh)
 fn = fnm;  %fullfile path to the .tif file, for passing to wholeBrain_segmentation for opening. All other output saved to local subdirectory
 fnm = region.filename; %set the base .tif file name for making fnm2 filenames below for saving outputs.
 
-tic;              
-hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
-backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction.
-makeMovies = 1;
-pthr = 0.99;
+if ~isfield(handles,'hemisphereIndices')
+	hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
+end
+
+if ~isfield(handles,'backgroundRemovRadius')
+	backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction.
+end
+
+if ~isfield(handles,'makeMovies'), makeMovies = 'all'; end
+
+if ~isfield(handles,'pthr'), pthr = 0.99; end
+
+if ~isfield(handles,'makeThresh'), makeThresh = 1; end
+
 switch makeThresh
 case 1
-	[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,[],pthr);         
+	grayThresh = [];
 case 0
-%	[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,region.graythresh,pthr);         
-	[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeMovies,[],pthr);         
+	%grayThresh = region.graythresh;
+	grayThresh = [];
 end
+
+switch makeMovies
+case 'all'
+	makeInitMovies = 1; 
+case 'some'
+	makeInitMovies = 0;
+case 'none'
+	makeInitMovies = 0;
+end
+
+tic;
+[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr);
 toc;  
 region.graythresh = thresh;
 
 %==2==Detection============================
 tic;             
-[A3, CC, STATS] = wholeBrain_kmeans(A2,A,[4 3],makeMovies,fnm,region,hemisphereIndices);        %3clusters and using motorSignal with sqDistance for kmeans
+[A3, CC, STATS] = wholeBrain_kmeans(A2,A,[4 3],makeInitMovies,fnm,region,hemisphereIndices);        %3clusters and using motorSignal with sqDistance for kmeans
 fnm2 = [fnm(1:length(fnm)-4) '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 toc;        
 save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3')  
@@ -180,6 +212,10 @@ for i = 1:region.domainData.CC.NumObjects
 		A3(region.domainData.CC.PixelIdxList{i}) = 1;      
 	end          
 end      
+
+if isfield(region, 'taggedCentrBorders') && (strcmp(makeMovies,'all') | strcmp(makeMovies,'some'))
+	myMovie2avi(A3,fnm)
+end
 
 data = wholeBrain_activeFraction(A3,region);   
 

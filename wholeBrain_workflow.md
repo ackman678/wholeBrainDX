@@ -229,7 +229,9 @@ Tags: analysis, wholeBrain, programming, matlab
 	matlabpool open 8          
 	diary on
 	disp(datestr(now,'yyyymmdd-HHMMSS'))
-	wholeBrain_batch('files.txt')
+	handles.makeMovies = 'all';
+	%handles.makeMovies = 'some';
+	wholeBrain_batch('files.txt',handles)
 	disp(datestr(now,'yyyymmdd-HHMMSS'))
 	diary off
 	```

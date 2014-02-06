@@ -22,6 +22,8 @@ function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, 
 %	6: Make multiplot figures with summary projections for m stimuli types on a differential normalized scale
 % levels -- the number of contour levels you want. If the input is 0, then a raw image of the normalized sumProjection is plotted instead of a contour plot
 % stimuliToPlot -- a multi element integer vector indicating the indices, i of the region.stimuli{i} you want to plot
+% handles -- figure handles to pass the plot to a previously generated figure window (handles.figHandle, handles.axesHandle)
+
 % James B. Ackman 2013-10-10 14:31:28
 
 if (nargin < 2 || isempty(frames)), frames = []; end
@@ -55,13 +57,12 @@ switch figType
 		set(handles.figHandle,'color','w');
 		set(handles.figHandle, 'InvertHardCopy', 'off');   %so that black axes background will print
 		handles.frames = frames;
-%		handles.axesHandle = subplot(1,1,1);
+		
 		handles.axesTitle = 'Signal px count norm to max sig count. MaxSig=';
-
 		mx = max(A3proj(:));
 		normValue = mx;
-
 		img = A3proj./normValue;
+
 		mxNormSig=max(img(:));
 		
 		disp(['max A3proj = ' num2str(mx)])
