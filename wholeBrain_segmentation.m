@@ -1,4 +1,4 @@
-function [A2, A, thresh] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh,pthr)
+function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh,pthr)
 %PURPOSE -- segment functional domains in wholeBrain calcium imaging movies into ROIs
 %USAGE -- A2 = wholeBrain_segmentation(fnm,[],region)
 %James B. Ackman

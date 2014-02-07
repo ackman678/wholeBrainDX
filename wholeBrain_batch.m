@@ -162,9 +162,10 @@ case 'none'
 end
 
 tic;
-[A2, A, thresh] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr);
+[A2, A, thresh, Amin] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr);
 toc;  
 region.graythresh = thresh;
+region.Amin = Amin;
 
 %==2==Detection============================
 tic;             
@@ -231,18 +232,20 @@ print(gcf, '-depsc', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.eps']);
 
 %==5==More Plots=========================
 %--Single contour activity map-----
-wholeBrainActivityMapFig(region,[],2,1);  
+wholeBrainActivityMapFig(region,[],2,1,20,[],[],'pixelFreq');  
 fnm2 = [fnm(1:end-4) 'ActivityMapFigContour' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
 print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
 print(gcf, '-depsc', [fnm2(1:end-4) '.eps']); 
-disp('complete: wholeBrainActivityMapFig(region,[],2,1);')
+disp('complete: wholeBrainActivityMapFig, contour pixelFreq')
 
-wholeBrainActivityMapFig(region,[],2,1,0);
-fnm2 = [fnm(1:end-4) 'ActivityMapFigRawProj' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
-print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
-print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
-disp('complete: wholeBrainActivityMapFig(region,[],2,1,0);')
-
+mapTypes = {'pixelFreq','domainFreq','domainDur','domainDiam','domainAmpl'}
+for j =1:length(mapTypes)
+	wholeBrainActivityMapFig(region,[],2,1,0,[],[],mapTypes{j});
+	fnm2 = [fnm(1:end-4) 'ActivityMapFigRawProj' datestr(now,'yyyymmdd-HHMMSS') '_' mapTypes{j} '.mat'];              
+	print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
+	print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
+	disp(['complete: wholeBrainActivityMapFig, mapType=' mapTypes{j}])
+end
 
 %--Drug state contour activity maps if applicable
 if isfield(region,'stimuli');

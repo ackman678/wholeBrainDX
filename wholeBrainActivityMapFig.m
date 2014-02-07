@@ -1,4 +1,4 @@
-function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, levels, stimuliToPlot, handles, mapType)
+function [A3proj,handles] = wholeBrainActivityMapFig(region, frames, plotType, figType, levels, stimuliToPlot, handles, mapType)
 %wholeBrainActivityMapFig(region, frames, plotType, figType, stimuliToPlot)
 % Plots the normalized pixel activation frequency image for a wholeBrain movie
 % Examples
@@ -22,7 +22,7 @@ function [A3proj] = wholeBrainActivityMapFig(region, frames, plotType, figType, 
 %	6: Make multiplot figures with summary projections for m stimuli types on a differential normalized scale
 % levels -- the number of contour levels you want. If the input is 0, then a raw image of the normalized sumProjection is plotted instead of a contour plot
 % stimuliToPlot -- a multi element integer vector indicating the indices, i of the region.stimuli{i} you want to plot
-% handles -- figure handles to pass the plot to a previously generated figure window (handles.figHandle, handles.axesHandle)
+% handles -- figure handles to pass the plot to a previously generated figure window (handles.figHandle, handles.axesHandle, handles.clims)
 % mapType -- string, switch to change summary map type.  'pixelFreq', 'domainFreq', 'domainDur', or 'domainAmpl'. Currently only works with 
 
 % James B. Ackman 2013-10-10 14:31:28
@@ -42,10 +42,22 @@ end
 if nargin < 7 || isempty(handles)
 	handles.figHandle = figure;
 	handles.axesHandle = subplot(1,1,1);
+	handles.clims = [];
 else
-	handles.axesHandle = handles.axes1;
-	axes(handles.axesHandle);
-	handles.figHandle = gcf;
+	if ~isfield(handles,'axesHandle')
+		if isfield(handles,'axes1')
+			handles.axesHandle = handles.axes1;
+		else
+			error('handles.axes1 not found')
+		end
+	end
+	if ~isfield(handles,'figHandle')
+		axes(handles.axesHandle);
+		handles.figHandle = gcf;
+	end	
+	if ~isfield(handles,'clims')
+		handles.clims = [];
+	end
 end
 
 if nargin < 8 || isempty(mapType), mapType = 'pixelFreq'; end
@@ -69,17 +81,31 @@ switch figType
 				normValue = mx;
 				img = A3proj./normValue;
 				disp(['max A3proj = ' num2str(mx)])
-			case {'domainFreq','domainDur','domainAmpl'}
+			case 'domainFreq'
 				handles.axesTitle = 'domainFreq, No. of domain activations MaxSig=';
-				img = A3proj;	
+				img = A3proj;
+			case 'domainDur'
+				handles.axesTitle = 'domainDur, Mean domain duration, sec MaxSig=';
+				img = A3proj;			
+			case 'domainDiam'
+				handles.axesTitle = 'domainDiam, Mean domain diameter, um MaxSig=';
+				img = A3proj;
+			case 'domainAmpl'
+				handles.axesTitle = 'domainAmpl, Mean domain, scaled dF/F MaxSig=';
+				img = A3proj;
+				if isfield(region,'Amin')
+					img = img - abs(Amin); %because the raw dFoF array, A in wholeBrain_segmentation.m was originally scaled to be all positive based by adding abs(Amin) (not centered on 0)
+					handles.clims = [min(img(:)) max(img(:))];
+				end				
 			otherwise
 				warning('Unexpected plot type. No plot created.');
 		end	
-		
-		mxNormSig=max(img(:));
-		disp(['mx normA3proj = ' num2str(mxNormSig)])
-		
-		handles.clims = [0 mxNormSig];
+
+		mxNormSig=max(img(:));	
+		disp(['mx normA3proj = ' num2str(mxNormSig)])	
+		if isempty(handles.clims),
+			handles.clims = [0 mxNormSig]; 
+		end
 		wholeBrainActivityMapPlot(img, mxNormSig, handles, levels)
 
 	case 2

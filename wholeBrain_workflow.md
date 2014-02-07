@@ -230,7 +230,7 @@ Tags: analysis, wholeBrain, programming, matlab
 	diary on
 	disp(datestr(now,'yyyymmdd-HHMMSS'))
 	handles.makeMovies = 'all';
-	%handles.makeMovies = 'some';
+	handles.makeMovies = 'some';
 	wholeBrain_batch('files.txt',handles)
 	disp(datestr(now,'yyyymmdd-HHMMSS'))
 	diary off
@@ -262,6 +262,30 @@ Tags: analysis, wholeBrain, programming, matlab
 
 
 ## Optional plots
+
+wholeBrainActivityMapFig
+
+* These plots are produced automatically with wholeBrain_batch.m. 
+* It is used by domainTagginGui for the 'pixelFreq' activity map for marking domains.
+* If you want to compare brain activity mapTypes for two separate recordings for any of mapType = {'pixelFreq','domainFreq','domainDur','domainDiam','domainAmpl'}, perform the following steps:  
+
+```matlab
+% load 1st recording, set as `region1 = region;`
+% load 2nd recording, set at `region2 = region;`
+
+handles.figHandle = figure;
+handles.axesHandle = subplot(1,2,1);
+handles.clims = [];
+
+mapType = 'domainFreq';
+[A3proj1,handles] = wholeBrainActivityMapFig(region1,[],2,1,0,[],handles,mapType);
+handles.axesHandle = subplot(1,2,2);
+[A3proj2,handles] = wholeBrainActivityMapFig(region2,[],2,1,0,[],handles,mapType);
+
+fnm2 = ['ActivityMapFigRawProj-' mapType '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
+print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
+print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
+```
 
 plotWholeBrainDomainsTraces
 : gui for comparing and assessing detection and for viewing movie with motor traces  
@@ -321,10 +345,10 @@ end
 plotWholeBrainDomainsTraces(A,A3,region,plot4,movieTitles,[])  	
 ```
 
-domainTagginGui
+domainTaggingGui
 : gui for marking domains
 
-domainTagginGui:  
+domainTaggingGui:  
 
 	domainTaggingGui(region) %will export region with STATS.descriptor for artifact domains tagging automatically
 
