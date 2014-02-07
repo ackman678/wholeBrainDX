@@ -57,8 +57,20 @@ function domainTaggingGui_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to domainTaggingGui (see VARARGIN)
+lenVarargin = length(varargin);
 
-handles.region = varargin{1};
+if lenVarargin < 1 || isempty(varargin{1}), 
+    error('must provide input, region');
+else
+	handles.region = varargin{1};
+end
+
+if lenVarargin < 2 || isempty(varargin{2}), 
+    handles.mapType = 'pixelFreq';
+else
+    handles.mapType = varargin{2};
+end
+
 setupCurrentPlot(handles)
 
 % Choose default command line output for domainTaggingGui
@@ -76,7 +88,7 @@ guidata(hObject, handles);
 
 function setupCurrentPlot(handles)
 %DomainPatchesPlot(handles.region.domainData.domains, handles.region.domainData.CC, handles.region.domainData.STATS, 1, handles.axes1);
-wholeBrainActivityMapFig(handles.region,[],2,1,0,[],handles);
+wholeBrainActivityMapFig(handles.region,[],2,1,0,[],handles,handles.mapType);
 
 % --- Outputs from this function are returned to the command line.
 function varargout = domainTaggingGui_OutputFcn(hObject, eventdata, handles) 

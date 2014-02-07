@@ -133,7 +133,7 @@ Tags: analysis, wholeBrain, programming, matlab
 	[filename, pathname] = uigetfile({'*d2r.mat'}, 'Choose region data file to open');
 	f = fullfile(pathname,filename);
 	load(f);
-	domainTaggingGui(region)
+	domainTaggingGui(region,'pixelFreq') %Can change 2nd vargin to any of {'pixelFreq', 'domainFreq', 'domainDur', 'domainDiam', or 'domainAmpl'}
 	
 	load(fnms{k},'region')   %load new dummyAreas file
 	if exist('taggedCentrBorders','var')
@@ -266,12 +266,20 @@ Tags: analysis, wholeBrain, programming, matlab
 wholeBrainActivityMapFig
 
 * These plots are produced automatically with wholeBrain_batch.m. 
-* It is used by domainTagginGui for the 'pixelFreq' activity map for marking domains.
+* It is used by domainTagginGui for the default 'pixelFreq' activity map for marking domains.
+* To make brain activity maps for a single recording, do the following: 
+
+```matlab
+% load recording *.d2r.mat* file, `region`
+mapType = 'domainFreq'; %where mapType can be any of {'pixelFreq','domainFreq','domainDur','domainDiam','domainAmpl'}
+[A3proj,handles] = wholeBrainActivityMapFig(region1,[],2,1,0,[],[],mapType);
+```
+
 * If you want to compare brain activity mapTypes for two separate recordings for any of mapType = {'pixelFreq','domainFreq','domainDur','domainDiam','domainAmpl'}, perform the following steps:  
 
 ```matlab
-% load 1st recording, set as `region1 = region;`
-% load 2nd recording, set at `region2 = region;`
+% load 1st recording *.d2r.mat* file, set as `region1 = region;`
+% load 2nd recording *.d2r.mat* file, set at `region2 = region;`
 
 handles.figHandle = figure;
 handles.axesHandle = subplot(1,2,1);
