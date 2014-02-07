@@ -138,11 +138,23 @@ if ~isfield(handles,'backgroundRemovRadius')
 	backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction.
 end
 
-if ~isfield(handles,'makeMovies'), makeMovies = 'all'; end
+if ~isfield(handles,'makeMovies'), 
+	makeMovies = 'all';
+else
+	makeMovies = handles.makeMovies;
+end
 
-if ~isfield(handles,'pthr'), pthr = 0.99; end
+if ~isfield(handles,'pthr'), 
+	pthr = 0.99; 
+else
+	pthr = handles.pthr;
+end
 
-if ~isfield(handles,'makeThresh'), makeThresh = 1; end
+if ~isfield(handles,'makeThresh'), 
+	makeThresh = 1; 
+else
+	makeThresh = handles.makeThresh;
+end
 
 switch makeThresh
 case 1
