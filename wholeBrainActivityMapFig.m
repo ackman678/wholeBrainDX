@@ -94,6 +94,7 @@ switch figType
 				handles.axesTitle = 'domainAmpl, Mean domain, scaled dF/F MaxSig=';
 				img = A3proj;
 				if isfield(region,'Amin')
+					Amin = region.Amin;
 					img = img - abs(Amin); %because the raw dFoF array, A in wholeBrain_segmentation.m was originally scaled to be all positive based by adding abs(Amin) (not centered on 0)
 					handles.clims = [min(img(:)) max(img(:))];
 				end				
