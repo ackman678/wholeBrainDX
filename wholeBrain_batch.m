@@ -132,10 +132,14 @@ fnm = region.filename; %set the base .tif file name for making fnm2 filenames be
 
 if ~isfield(handles,'hemisphereIndices')
 	hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
+else
+	hemisphereIndices = handles.hemisphereIndices;
 end
 
 if ~isfield(handles,'backgroundRemovRadius')
 	backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction.
+else
+	backgroundRemovRadius = handles.backgroundRemovRadius;
 end
 
 if ~isfield(handles,'makeMovies'), 
