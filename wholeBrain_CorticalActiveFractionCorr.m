@@ -58,7 +58,7 @@ plot(lags,c_ww); title(['xcorr (' names{1} ', ' names{2} ')']);     xlabel('lag 
 ax(3)=subplot(2,2,3);    
 [c_ww,lags] = xcorr(y,'coeff');    
 plot(lags,c_ww); title(['autocorr (' data(2).name ')']);    xlabel('lag (frame)'); ylabel('{R}_{y}')
-y    
+
 ax(4)=subplot(2,2,4);    
 [c_ww,lags] = xcorr(y,x,'coeff');    
 plot(lags,c_ww); title(['xcorr (' names{2} ', ' names{1} ')']);     xlabel('lag (frame)'); ylabel('{R}_{yx}')    
