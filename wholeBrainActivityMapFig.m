@@ -67,13 +67,10 @@ if nargin < 8 || isempty(mapType), mapType = 'pixelFreq'; end
 
 switch figType
 	case 1
+		updateFigBackground(handles);
 		[A3proj,frames] = wholeBrainActivityMapProj(region, frames, plotType, mapType);
-
-		set(handles.figHandle,'color','w');
-		set(handles.figHandle, 'InvertHardCopy', 'off');   %so that black axes background will print
 		handles.frames = frames;
 		
-
 		switch mapType
 			case 'pixelFreq'
 				handles.axesTitle = 'pixelFreq, Signal px count norm to max sig count. MaxSig=';
@@ -110,12 +107,7 @@ switch figType
 		wholeBrainActivityMapPlot(img, mxNormSig, handles, levels)
 
 	case 2
-
-%        scrsize = get(0,'screensize');
-%        set(handles.figHandle,'Position',scrsize);
-        set(handles.figHandle,'color',[1 1 1]);
-%        set(handles.figHandle,'PaperType','usletter');
-%        set(handles.figHandle,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
+		updateFigBackground(handles);
 
 		[Allproj,frames] = wholeBrainActivityMapProj(region, frames, 1);
 		[Goodproj,frames] = wholeBrainActivityMapProj(region, frames, 2);
@@ -157,8 +149,7 @@ switch figType
 		handles.axesTitle = 'Noise px count norm to max sig count. MaxNoise=';
 		wholeBrainActivityMapPlot(normBadproj, mxNormBadproj, handles);
 		
-	case 3
-	
+	case 3	
 	%----start-------
 	for numStim = stimuliToPlot
 		nstimuli=1:numel(region.stimuli{numStim}.stimulusParams);
@@ -167,19 +158,10 @@ switch figType
 		disp('--------------------------------------------------')
 		disp(name)
 
-%		scrsize = get(0,'screensize');
-%        set(h,'Position',scrsize);
         set(handles.figHandle,'color',[1 1 1]);
-%        set(h,'PaperType','usletter');
-%        set(h,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
 
-        numplots = numel(nstimuli);
-        cols = 3;
-        rows = floor(numplots/cols);
-        if rem(numplots,cols) > 0
-            rows = rows+1;
-        end
-
+		[rows, cols] = setupPlotMatrix(nstimuli, 3);
+        
 		for i=1:numel(nstimuli)
 			disp(['stimulus ' num2str(i)])
 
@@ -209,20 +191,14 @@ switch figType
 			handles.clims = [0 mxNormSig];
 			wholeBrainActivityMapPlot(img, mxNormSig, handles)
 		end
-
-
 	end
-%--------end
+	%--------end
 
 	case 4  %individual scales
 	%----start-------
+		updateFigBackground(handles);		
 		sz=region.domainData.CC.ImageSize;
-
-%		scrsize = get(0,'screensize');
-%        set(h,'Position',scrsize);
-        set(handles.figHandle,'color',[1 1 1]);
-%        set(h,'PaperType','usletter');
-%        set(h,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
+		[rows, cols] = setupPlotMatrix(stimuliToPlot, 2);
 
 		j = 0;
 		for numStim = stimuliToPlot
@@ -232,13 +208,6 @@ switch figType
 
 			disp('--------------------------------------------------')
 			disp(name)
-
-			numplots = numel(stimuliToPlot);
-			cols = 2;
-			rows = floor(numplots/cols);
-			if rem(numplots,cols) > 0
-				rows = rows+1;
-			end
 
 			ax(j) = subplot(rows,cols,j);
 			handles.axesHandle = ax(j);
@@ -273,30 +242,15 @@ switch figType
 	
 			handles.clims = [0 mxNormSig];
 			wholeBrainActivityMapPlot(img, mxNormSig, handles)
-
-
 		end
 	%--------end
 
 
 	case 5  %normalized scale
 	%----start-------
+		updateFigBackground(handles);
 		sz=region.domainData.CC.ImageSize;
-
-%		scrsize = get(0,'screensize');
-%        set(h,'Position',scrsize);
-        set(handles.figHandle,'color','w');
-%        set(h,'PaperType','usletter');
-%        set(h,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
-        set(handles.figHandle, 'InvertHardCopy', 'off');   %so that black axes background will print
-
-		numplots = numel(stimuliToPlot);
-		cols = 2;
-		rows = floor(numplots/cols);
-		if rem(numplots,cols) > 0
-			rows = rows+1;
-		end
-
+		[rows, cols] = setupPlotMatrix(stimuliToPlot, 2);
 
 		j = 0;
 		for numStim = stimuliToPlot
@@ -373,21 +327,9 @@ switch figType
 
 	case 6  %Differential plot with normalized scale
 	%----start-------
+		updateFigBackground(handles);
 		sz=region.domainData.CC.ImageSize;
-		
-		%scrsize = get(0,'screensize');
-%        set(h,'Position',scrsize);
-        set(handles.figHandle,'color',[1 1 1]);
-%        set(h,'PaperType','usletter');
-%        set(h,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);
-
-		numplots = numel(stimuliToPlot);
-		cols = 2;
-		rows = floor(numplots/cols);
-		if rem(numplots,cols) > 0
-			rows = rows+1;
-		end
-
+		[rows, cols] = setupPlotMatrix(stimuliToPlot, 2);
 
 		j = 0;
 		for numStim = stimuliToPlot
@@ -462,6 +404,99 @@ switch figType
 			wholeBrainActivityMapPlot(responseNorm{j}, maxSig, handles)
 		end
 
+	case 7  %normalized scale by mapType
+	%----start-------
+		updateFigBackground(handles);
+		sz=region.domainData.CC.ImageSize;
+		[rows, cols] = setupPlotMatrix(stimuliToPlot, 2);
+
+		j = 0;
+		for numStim = stimuliToPlot
+			j = j+1;
+			nstimuli=1:numel(region.stimuli{numStim}.stimulusParams);
+			name = region.stimuli{numStim}.description;
+
+			disp('--------------------------------------------------')
+			disp(name)
+		
+			responseArray{j} = zeros(sz(1),sz(2),length(nstimuli));
+			responseArrayMax{j} = [];
+
+			for i=1:numel(nstimuli)
+				disp(['stimulus ' num2str(i)])
+
+				handles.frames = [region.stimuli{numStim}.stimulusParams{i}.frame_indices(1) region.stimuli{numStim}.stimulusParams{i}.frame_indices(end)];
+				[A3proj,frames] = wholeBrainActivityMapProj(region, handles.frames, plotType, mapType);
+
+				mx = max(A3proj(:));
+				responseArray{j}(:,:,i) = A3proj;
+				responseArrayMax{j}(i) = mx;
+			end
+		end
+
+		for j = 1:length(stimuliToPlot)
+			responseNorm{j} = mean(responseArray{j},3);
+			MxresponseNorm(j) = max(responseNorm{j}(:));
+			MnresponseNorm(j) = min(responseNorm{j}(:));
+		end
+
+		mxNormSig = max(MxresponseNorm);
+		mnNormSig = min(MnresponseNorm);
+		switch mapType
+		case 'domainAmpl'		
+			if isfield(region,'Amin')
+				Amin = region.Amin;
+				MxresponseNorm = MxresponseNorm-abs(Amin);
+				MnresponseNorm = MnresponseNorm-abs(Amin);
+				handles.clims = [mnNormSig-abs(Amin) mxNormSig-abs(Amin)];
+			end		
+		otherwise
+			handles.clims = [0 mxNormSig];
+		end
+		
+		disp(['max vals: ' num2str(MxresponseNorm)])
+		disp(['min vals: ' num2str(MnresponseNorm)])
+		disp(['clims: ' num2str(handles.clims)])
+		
+		j = 0;
+		for numStim = stimuliToPlot
+			j = j+1;
+
+			img = responseNorm{j};
+			switch mapType
+				case 'pixelFreq'
+					handles.axesTitle = 'pixelFreq, mean Signal px count. MaxSig=';
+%					handles.axesTitle = 'pixelFreq, mean Signal px count norm to max mean sig count. MaxSig=';
+%					mx = max(img(:));
+%					normValue = mx;
+%					img = img./normValue;
+				case 'domainFreq'
+					handles.axesTitle = 'domainFreq, No. of domain activations MaxSig=';
+				case 'domainDur'
+					handles.axesTitle = 'domainDur, Mean domain duration, sec MaxSig=';
+				case 'domainDiam'
+					handles.axesTitle = 'domainDiam, Mean domain diameter, um MaxSig=';
+				case 'domainAmpl'
+					handles.axesTitle = 'domainAmpl, Mean domain, scaled dF/F MaxSig=';
+					if isfield(region,'Amin')
+						Amin = region.Amin;
+						img = img - abs(Amin); %because the raw dFoF array, A in wholeBrain_segmentation.m was originally scaled to be all positive based by adding abs(Amin) (not centered on 0)
+ 					end				
+				otherwise
+					warning('Unexpected plot type. No plot created.');
+			end	
+
+			name = region.stimuli{numStim}.description;
+			ax(j) = subplot(rows,cols,j);
+			handles.axesHandle = ax(j);
+
+			handles.axesTitle = [name ',' handles.axesTitle];
+			handles.frames = [];
+
+			maxSig = MxresponseNorm(j);
+			wholeBrainActivityMapPlot(img, maxSig, handles, levels)
+		end
+
 end
 
 
@@ -480,3 +515,23 @@ end
 %
 %end
 %}
+
+
+function [rows, cols] = setupPlotMatrix(stimuliToPlot, cols)
+numplots = numel(stimuliToPlot);
+if nargin < 2 || isempty(cols), cols = 2; end
+rows = floor(numplots/cols);
+if rem(numplots,cols) > 0
+	rows = rows+1;
+end
+
+
+
+function updateFigBackground(handles);
+set(handles.figHandle,'color','w');
+set(handles.figHandle, 'InvertHardCopy', 'off');   %so that black axes background will print
+		%scrsize = get(0,'screensize');
+%        set(h,'Position',scrsize);
+%        set(handles.figHandle,'color',[1 1 1]);
+%        set(h,'PaperType','usletter');
+%        set(h,'PaperPositionMode','auto');%         numplots = numel(stimuli{numStim}.stimulusParams);

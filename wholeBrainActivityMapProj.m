@@ -6,7 +6,7 @@ function [A3proj,frames] = wholeBrainActivityMapProj(region, frames, plotType, m
 %	[A3proj,frames] = wholeBrainActivityMapProj(region, [300 1800], 2);
 % INPUTS
 % region -- region formatted data structure (as from CalciumDX, domains2region, etc) that includes CC and STATS data structures returned from wholeBrain_segmentation.m and wholeBrain_kmeans.m
-% frames -- frames should be a vector containing two integers, the startFrame and endFrame for the range you want to plot. Currently only works for mapType = 'pixelFreq'
+% frames -- frames should be a vector containing two integers, the startFrame and endFrame for the range you want to plot.
 % plotType -- an integer of 1, 2, or 3 indicating the type of plot you want 
 %	1: plot all detected components (true positive activity domains and false positive artifacts)
 %	2: plot without false positive artifacts tagged in the STATS.descriptor variable in region.STATS
@@ -20,8 +20,9 @@ CC = region.domainData.CC;
 STATS = region.domainData.STATS;  
 sz=CC.ImageSize;
 
-if (nargin < 2 || isempty(plotType)), plotType = 1; end
-if (nargin < 3 || isempty(frames)), frames = [1 sz(3)]; end
+
+if (nargin < 2 || isempty(frames)), frames = [1 sz(3)]; end
+if (nargin < 3 || isempty(plotType)), plotType = 1; end
 if (nargin < 4 || isempty(mapType)), mapType = 'pixelFreq'; end
 
 %-----------main-----------------
@@ -49,7 +50,7 @@ case 1
 
 			disp(['Fraction of total: ' num2str(nSigPx2/nSigPx)])
 		case {'domainFreq','domainDur','domainDiam','domainAmpl'}
-			%makeother			
+			%TODO: makeother			
 		otherwise
 			warning('Unexpected mapType. No plot created.');
 	end	
@@ -67,17 +68,13 @@ case 2
 			disp([num2str(round(nSigPx2/(diff(frames)*region.timeres))) ' active pixels/sec'])
 			disp(['Fraction of total: ' num2str(nSigPx2/nSigPx)])	
 		case 'domainFreq'
-			A3 = makeBinaryPixelArrayTaggedDomainFreq(A3, CC, STATS, domains, '');
-			A3proj = A3;
+			A3proj = makeBinaryPixelArrayTaggedDomainFreq(A3, CC, STATS, domains, '', frames);
 		case 'domainDur'
-			[A3, count] = makeBinaryPixelArrayTaggedDomainDuration(A3, CC, STATS, domains, '', region.timeres);
-			A3proj = meanProjectArray(A3,frames,count);
+			A3proj = makeBinaryPixelArrayTaggedDomainDuration(A3, CC, STATS, domains, '', frames, region.timeres);
 		case 'domainDiam'
-			[A3, count] = makeBinaryPixelArrayTaggedDomainDiameter(A3, CC, STATS, domains, '', region.spaceres);
-			A3proj = meanProjectArray(A3,frames,count);
+			A3proj = makeBinaryPixelArrayTaggedDomainDiameter(A3, CC, STATS, domains, '', frames, region.spaceres);
 		case 'domainAmpl'	
-			[A3, count] = makeBinaryPixelArrayTaggedDomainAmplitude(A3, CC, STATS, domains, '');
-			A3proj = meanProjectArray(A3,frames,count);
+			A3proj = makeBinaryPixelArrayTaggedDomainAmplitude(A3, CC, STATS, domains, '', frames);
 		otherwise
 			warning('Unexpected mapType. No plot created.');
 	end		
@@ -96,7 +93,7 @@ case 3
 			disp([num2str(round(nNoisePx2/(diff(frames)*region.timeres))) ' active pixels/sec'])
 			disp(['Fraction of total: ' num2str(nNoisePx2/nNoisePx)])
 		case {'domainFreq','domainDur','domainDiam','domainAmpl'}
-			%makeother
+			%TODO: makeother
 		otherwise
 			warning('Unexpected mapType. No plot created.');
 	end		
@@ -131,27 +128,20 @@ function A3count = sumProjectArray(A3,frames)
 if (nargin < 2 || isempty(frames)), frames = [1 size(A3,3)]; end
 A3count = sum(A3(:,:,frames(1):frames(2)),3); 
 
-function A3proj = meanProjectArray(A3,frames,count)
-%frames should be a vector containing two integers, the startFrame and endFrame for the range you want to plot
-if (nargin < 2 || isempty(frames)), frames = [1 size(A3,3)]; end
-%A3count = mean(A3(:,:,frames(1):frames(2)),3); 
-A3proj = A3./count; 
-
-function A3 = makeBinaryPixelArrayTaggedDomainFreq(A3, CC, STATS, domains, tag)
+function A3 = makeBinaryPixelArrayTaggedDomainFreq(A3, CC, STATS, domains, tag, frames)
 %tag should be 'artifact' if you want to plot artifacts or '' if you want to plot with artifacts removed.
 if (nargin < 5 || isempty(tag)), tag = ''; end
 for i = 1:CC.NumObjects  
-	if strcmp(STATS(i).descriptor, tag)
+	if strcmp(STATS(i).descriptor, tag) & ceil(STATS(i).BoundingBox(3)) >= frames(1) & ceil(STATS(i).BoundingBox(3)) <= frames(2)
 		BW = zeros(CC.ImageSize(1:2));
 		BW(domains(i).PixelInd) = 1;
 		A3 = A3 + BW;
 	end
 end
 
-function [A3, count] = makeBinaryPixelArrayTaggedDomainDuration(A3, CC, STATS, domains, tag, framePeriod)
+function A3proj = makeBinaryPixelArrayTaggedDomainDuration(A3, CC, STATS, domains, tag, frames, framePeriod)
 %tag should be 'artifact' if you want to plot artifacts or '' if you want to plot with artifacts removed.
 if (nargin < 5 || isempty(tag)), tag = ''; end
-count = ones(CC.ImageSize(1:2));
 
 roiBoundingBox = zeros(length(STATS),6);
 for i = 1:length(STATS)
@@ -159,24 +149,12 @@ for i = 1:length(STATS)
 end
 
 durations = roiBoundingBox(:,6) * framePeriod;
-
-for i = 1:CC.NumObjects  
-	if strcmp(STATS(i).descriptor, tag)
-		sig = durations(i);
-		BW = zeros(CC.ImageSize(1:2));
-		BW2 = zeros(CC.ImageSize(1:2));
-		BW(domains(i).PixelInd) = 1;
-		BW2(domains(i).PixelInd) = sig;
-		count = count + BW;
-		A3 = A3 + BW2;
-	end
-end
+A3proj = meanProjectArray(A3, CC, STATS, domains, durations, tag, frames);
 
 
-function [A3, count] = makeBinaryPixelArrayTaggedDomainDiameter(A3, CC, STATS, domains, tag, spaceres)
+function A3proj = makeBinaryPixelArrayTaggedDomainDiameter(A3, CC, STATS, domains, tag, frames, spaceres)
 %tag should be 'artifact' if you want to plot artifacts or '' if you want to plot with artifacts removed.
 if (nargin < 5 || isempty(tag)), tag = ''; end
-count = ones(CC.ImageSize(1:2));
 
 roiBoundingBox = zeros(length(STATS),6);
 for i = 1:length(STATS)
@@ -184,30 +162,23 @@ for i = 1:length(STATS)
 end
 
 diameters = mean([roiBoundingBox(:,4) roiBoundingBox(:,5)], 2) .* spaceres;
-
-for i = 1:CC.NumObjects  
-	if strcmp(STATS(i).descriptor, tag)
-		sig = diameters(i);
-		BW = zeros(CC.ImageSize(1:2));
-		BW2 = zeros(CC.ImageSize(1:2));
-		BW(domains(i).PixelInd) = 1;
-		BW2(domains(i).PixelInd) = sig;
-		count = count + BW;
-		A3 = A3 + BW2;
-	end
-end
+A3proj = meanProjectArray(A3, CC, STATS, domains, diameters, tag, frames);
 
 
-function [A3, count] = makeBinaryPixelArrayTaggedDomainAmplitude(A3, CC, STATS, domains, tag)
+function A3proj = makeBinaryPixelArrayTaggedDomainAmplitude(A3, CC, STATS, domains, tag, frames)
 %tag should be 'artifact' if you want to plot artifacts or '' if you want to plot with artifacts removed.
 if (nargin < 5 || isempty(tag)), tag = ''; end
-count = ones(CC.ImageSize(1:2));
 
 roiMean=[STATS.MeanIntensity];
+A3proj = meanProjectArray(A3, CC, STATS, domains, roiMean, tag, frames);
 
+
+function A3proj = meanProjectArray(A3, CC, STATS, domains, signalMetric, tag, frames)
+%frames should be a vector containing two integers, the startFrame and endFrame for the range you want to plot
+count = ones(CC.ImageSize(1:2));
 for i = 1:CC.NumObjects  
-	if strcmp(STATS(i).descriptor, tag)
-		sig = roiMean(i);
+	if strcmp(STATS(i).descriptor, tag) & ceil(STATS(i).BoundingBox(3)) >= frames(1) & ceil(STATS(i).BoundingBox(3)) <= frames(2)
+		sig = signalMetric(i);
 		BW = zeros(CC.ImageSize(1:2));
 		BW2 = zeros(CC.ImageSize(1:2));
 		BW(domains(i).PixelInd) = 1;
@@ -216,5 +187,4 @@ for i = 1:CC.NumObjects
 		A3 = A3 + BW2;
 	end
 end
-
-
+A3proj = A3./count; 
