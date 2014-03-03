@@ -66,7 +66,8 @@ Tags: analysis, wholeBrain, programming, matlab
 * (2) Opened up the AVG-raw.tif image for each of the following in `calciumdx` and saved a dummy file with single region named 'field' encompassing whole field of view and a single manual dummy roi (so the file saves correctly) to save a 'dummyHemis.mat' file for each.  Be sure to know the spatial and temporal resolutions of your data before progressing with this step (region.spaceres and region.timeres).
 * (3) Make space-delimited filelist names 'files.txt' of the raw .tif movie filenames (1st column) and matching dummy filenames and save in same directory as your dummyHemis.mat files and the raw movie files.
 * (4) Bootup local copy of matlab and cd into the directory containing the files. Setup region file and add ImageJ roi coordinate outlines for the hemispheres.  Do the following for each file independently, change fnms to the appropriate filenames.
-
+	* (4a) Make **dummyHemis.mat** files:
+		
 	```matlab
 	%matlab
 	addpath(genpath('~/Documents/MATLAB/sigTOOL'))
@@ -83,11 +84,21 @@ Tags: analysis, wholeBrain, programming, matlab
 		region = myReadImageJROIregionAdd(region,'false');	
 		region.stimuli = [];  
 		region.motorSignal = [];  
-		region.nframes = 3000;  	
+		region.nframes = 3000;   %Change this the the number of frames so that the motor signal is the correct length 	
 		save(fnm,'region') 
 	end
-
+	```
+		
+	* (4b) Make **dummyAreas.mat** files (Optional:  Only for secondary batch run throughs if parcellation rois have been made):
+		* Make sure to Find and replace 'dummyHemis' for 'dummyAreas' in 'files.txt' after running the following code
+	
+	```matlab
 	%To make dummyAreas for 2nd run through
+	%matlab
+
+	filelist = readtext('files.txt',' ');
+	fnms = filelist(:,2);  %Second column is dummy region matfiles
+	
 	for i = 1:numel(fnms)
 		fnm = fnms{i};
 		load(fnm);
@@ -111,8 +122,16 @@ Tags: analysis, wholeBrain, programming, matlab
 		save(fnm,'region') 
 	end	
 
-	%Grep find and replace 'dummyHemis' for 'dummyAreas' in 'files.txt'	
-
+	%Find and replace 'dummyHemis' for 'dummyAreas' in 'files.txt'	
+	```
+	
+* (5) Optional:  Domain tagging
+	* Uses d2r.mat files from a previous batch run and `domainTaggingGui`
+		* Option 1: If each recording is the same exact FOV, can do domainTagging for one with artifacts, and use borders for rest of movies in a for loop
+		* Option 2: Or can do multiple movies and manually concatentate the borders together for a merged set of borders
+	* (5a) For individual files:
+	
+	```matlab
 	filelist = readtext('files.txt',' ');
 	fnms = filelist(:,2);  %Second column is dummy region matfiles
 
@@ -125,7 +144,6 @@ Tags: analysis, wholeBrain, programming, matlab
 	% 		* Could also implement an xy shift strategy for the border coords for movie to movie shifts in FOV, but probably safer to do over for each shift in movie FOV
 	%
 
-
 	% For individual files:
 	k = 1;  %Change no. to the fnms in list you want to use. 
 	disp(['Please load the region d2r data file for ' fnms{k}])
@@ -134,7 +152,7 @@ Tags: analysis, wholeBrain, programming, matlab
 	f = fullfile(pathname,filename);
 	load(f);
 	domainTaggingGui(region,'pixelFreq') %Can change 2nd vargin to any of {'pixelFreq', 'domainFreq', 'domainDur', 'domainDiam', or 'domainAmpl'}
-	
+
 	load(fnms{k},'region')   %load new dummyAreas file
 	if exist('taggedCentrBorders','var')
 		if isfield(region, 'taggedCentrBorders')
@@ -144,8 +162,14 @@ Tags: analysis, wholeBrain, programming, matlab
 		end
 		save(fnms{k},'region')  %save new dummyAreas file with the marked borders for tagging
 	end
+	```
 	
+	* (5b) For multiple files:
+	
+	```matlab
 	% For a bunch of files:
+	filelist = readtext('files.txt',' ');
+	fnms = filelist(:,2);  %Second column is dummy region matfiles
 	for k = 1:numel(fnms)
 	%	for k = [1 6 7 8]
 	%		clear data
@@ -159,7 +183,7 @@ Tags: analysis, wholeBrain, programming, matlab
 		h = gcf;
 		waitfor(h)
 		save(fnm,'region')
-	
+
 	%Optional, domainsPatchesPlot (doesn't work on hpc):  
 	%	for plotType = [1 3 4 5];
 	%		fnm2 = [fnm(1:end-4) 'domainPatchesPlot' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
@@ -170,16 +194,21 @@ Tags: analysis, wholeBrain, programming, matlab
 	end	
 	```
 
-* (5) Optional:  
+* (6) Optional:  
 	* Run `sigTOOL` from matlab and use `Batch Import` in the sigTOOL gui to convert each Spike2.smr file into a .kcl data file for use with sigTOOL for simultaneously acquired signals like motorSignal from photodiode or electrophysiology signals.  
-		* Export motor signal from spike2, make filtered signal for dummyfile, and detect motor active periods and save in dummyfile for each movie  
+		* Export motor signal from Spike2.smr file, make filtered signal for dummyfile, and detect motor active periods and save in dummyfile for each movie  
 		* Add other stimuli info to dummy file, using makeMotorStateStimParams.m and makeDrugStateStimParams.m  
 		* Save region fnm  
 
 	```matlab
-	fnm = fnms{11};  %***change to desired filename***
+	k = 0;  %Initialization only. For using the following code on multiple files in a directory
+	
+	%---START Add motor signal---
+	k = k+1;
+	fnm = fnms{k};  %***change iterator to desired filename***
 	load(fnm,'region')
-
+	
+	disp(['Please load the sigTOOL .kcl data file for ' fnm])
 	mySTOpen  %open each .kcl file	
 	fhandle = 1;
 	myBatchFilter(fhandle,1,[], 1,8,'ellip', 'band') %bandpass1 - 20Hz. The motor signal is in this band, with a little bit of respiratory rate signal (but attenuated).
@@ -211,6 +240,7 @@ Tags: analysis, wholeBrain, programming, matlab
 
 	print(gcf,'-dpng',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.png'])        
 	print(gcf,'-depsc',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
+	%---END Add motor signal---
 
 	%---------------------------------------------------------------------------
 	%**Optional, if a drug movie
@@ -221,8 +251,8 @@ Tags: analysis, wholeBrain, programming, matlab
 
 ## Run batch analysis
 
-* (6) Sync dummy and data files to NAS data server from local computer and to matlab location for analysis (either local PC or HPC).
-* (7) Run the batch script. Perform within the folder containing the data files and 'files.txt':    
+* (7) Sync dummy and data files to NAS data server from local computer and to matlab location for analysis (either local PC or HPC).
+* (8) Run the batch script. Perform within the folder containing the data files and 'files.txt':    
 
 	```matlab
 	matlabpool close force local
@@ -236,7 +266,7 @@ Tags: analysis, wholeBrain, programming, matlab
 	diary off
 	```
 
-* (8) Optional: Run the batch script for multiple experiments, using a 'files.txt' inside each experiment folder:  
+* (9) Optional: Run the batch script for multiple experiments, using a 'files.txt' inside each experiment folder:  
 
 	```matlab
 	% Multiple directories
