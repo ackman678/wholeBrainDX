@@ -20,6 +20,7 @@ function [A3proj,handles] = wholeBrainActivityMapFig(region, frames, plotType, f
 %	4: Make multiplot figures with summary projections for m stimuli types on individual scales
 %	5: Make multiplot figures with summary projections for m stimuli types on same normalized scale
 %	6: Make multiplot figures with summary projections for m stimuli types on a differential normalized scale
+%	7: Make multiplot figures with summary projections for m stimuli types on same normalized scale by mapType
 % levels -- the number of contour levels you want. If the input is 0, then a raw image of the normalized sumProjection is plotted instead of a contour plot
 % stimuliToPlot -- a multi element integer vector indicating the indices, i of the region.stimuli{i} you want to plot
 % handles -- figure handles to pass the plot to a previously generated figure window (handles.figHandle, handles.axesHandle, handles.clims)

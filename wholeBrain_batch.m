@@ -271,7 +271,17 @@ if isfield(region,'stimuli');
 		wholeBrainActivityMapFig(region,[],2,5,20,ind); 
 		fnm2 = [fnm(1:end-4) 'ActivityMapFigDrug' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
 		print(gcf, '-dpng', [fnm2(1:end-4) '.png']);            
-		print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);  
+		print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
+		
+		mapTypes = {'pixelFreq','domainFreq','domainDur','domainDiam','domainAmpl'}
+		for j =1:length(mapTypes)
+			wholeBrainActivityMapFig(region,[],2,7,0,ind,[],mapTypes{j});
+			fnm2 = [fnm(1:end-4) 'ActivityMapFigRawProjDrug' datestr(now,'yyyymmdd-HHMMSS') '_' mapTypes{j} '.mat'];              
+			print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
+			print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
+			disp(['complete: wholeBrainActivityMapFig, mapType=' mapTypes{j}])
+		end
+		  
 	end	
 	%--Motor state contour activity maps if applicable		
 	stimuliIndices = {'motor.state.active' 'motor.state.quiet'};
@@ -280,7 +290,18 @@ if isfield(region,'stimuli');
 		wholeBrainActivityMapFig(region,[],2,5,20,ind); 
 		fnm2 = [fnm(1:end-4) 'ActivityMapFigMotor' datestr(now,'yyyymmdd-HHMMSS') '.mat'];        
 		print(gcf, '-dpng', [fnm2(1:end-4) '.png']);            
-		print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);  		
+		print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
+		
+		mapTypes = {'pixelFreq','domainFreq','domainDur','domainDiam','domainAmpl'}
+		for j =1:length(mapTypes)
+			wholeBrainActivityMapFig(region,[],2,7,0,ind,[],mapTypes{j});
+			fnm2 = [fnm(1:end-4) 'ActivityMapFigRawProjMotor' datestr(now,'yyyymmdd-HHMMSS') '_' mapTypes{j} '.mat'];              
+			print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
+			print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
+			disp(['complete: wholeBrainActivityMapFig, mapType=' mapTypes{j}])
+		end
+		
+		  		
 	end
 end 
 
