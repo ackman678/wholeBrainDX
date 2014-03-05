@@ -63,7 +63,7 @@ if isfield(region,'userdata') & isfield(region.userdata,'motorCorr')
 else	
 	datasetSelector = 1;
 end	
-region.userdata.motorCorr{datasetSelector}.pvalCorrMatrix = zeros(length(names),1);  
+region.userdata.motorCorr{datasetSelector}.pvalCorrMatrix = ones(length(names),1);  %in case active regions are missing and we can't reject null hypothesis of no correlation.
 region.userdata.motorCorr{datasetSelector}.rvalCorrMatrix = zeros(length(names),1);   
 region.userdata.motorCorr{datasetSelector}.names = names;
 i = (1:length(names))';
@@ -78,11 +78,20 @@ region.userdata.motorCorr{datasetSelector}.rvalCorrMatrix(1,1) = r(2,1);
 for j = 1:numel(st)  
     str = st(j).str;  
     cActvFraction = zeros(size(region.locationData.data(strcmp({region.locationData.data.name},str{1})).activeFractionByFrame));  
-    for i = 1:numel(str)  
+    for i = 1:numel(str)
+		matchInd = find(strcmp({region.locationData.data.name},str{i}));
+		if isempty(matchInd)
+			break
+		end      
         y1 = region.locationData.data(strcmp({region.locationData.data.name},str{i})).activeFractionByFrame;  
         %y1 = region.locationData.data(1).activeFractionByFrame;    
         cActvFraction = cActvFraction + y1;  
-    end  
+    end
+    
+	if isempty(matchInd)
+		continue
+	end      
+      
     cActvFraction = cActvFraction ./ numel(str);
 
     titleStr = str;  
