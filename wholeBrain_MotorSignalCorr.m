@@ -77,7 +77,7 @@ region.userdata.motorCorr{datasetSelector}.rvalCorrMatrix(1,1) = r(2,1);
 %Make the plots:
 for j = 1:numel(st)  
     str = st(j).str;  
-    cActvFraction = zeros(size(region.locationData.data(strcmp({region.locationData.data.name},str{1})).activeFractionByFrame));  
+    cActvFraction = zeros(1,region.domainData.CC.ImageSize(3));  
     for i = 1:numel(str)
 		matchInd = find(strcmp({region.locationData.data.name},str{i}));
 		if isempty(matchInd)

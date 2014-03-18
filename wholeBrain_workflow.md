@@ -99,8 +99,8 @@ Tags: analysis, wholeBrain, programming, matlab
 	filelist = readtext('files.txt',' ');
 	fnms = filelist(:,2);  %Second column is dummy region matfiles
 	
-	for i = 1:numel(fnms)
-		fnm = fnms{i};
+	for k = 1:numel(fnms)
+		fnm = fnms{k};
 		load(fnm);
 		disp(['Please load Rois.zip file for ' fnm])
 		region = myReadImageJROIregionAdd(region,'false');	

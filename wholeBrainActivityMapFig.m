@@ -435,8 +435,12 @@ switch figType
 			end
 		end
 
-		for j = 1:length(stimuliToPlot)
-			responseNorm{j} = mean(responseArray{j},3);
+		for j = 1:length(stimuliToPlot)		
+			if strcmp(mapType,'pixelFreq') | strcmp(mapType,'domainFreq')
+				responseNorm{j} = sum(responseArray{j},3);
+			else
+				responseNorm{j} = mean(responseArray{j},3);
+			end
 			MxresponseNorm(j) = max(responseNorm{j}(:));
 			MnresponseNorm(j) = min(responseNorm{j}(:));
 		end
@@ -466,7 +470,7 @@ switch figType
 			img = responseNorm{j};
 			switch mapType
 				case 'pixelFreq'
-					handles.axesTitle = 'pixelFreq, mean Signal px count. MaxSig=';
+					handles.axesTitle = 'pixelFreq, sum Signal px count. MaxSig=';
 %					handles.axesTitle = 'pixelFreq, mean Signal px count norm to max mean sig count. MaxSig=';
 %					mx = max(img(:));
 %					normValue = mx;
