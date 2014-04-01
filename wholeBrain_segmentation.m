@@ -14,7 +14,7 @@ else
 end
 if nargin < 6 || isempty(makeMovies), makeMovies = 1; end
 if nargin < 5 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)
-if nargin < 4 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end  %index location of the hemisphere region outlines in the 'region' calciumdx struct
+if nargin < 4 || isempty(hemisphereIndices), hemisphereIndices = find(strcmp(region.name,'cortex.L') | strcmp(region.name,'cortex.R')); end  %index location of the hemisphere region outlines in the 'region' calciumdx struct
 if nargin < 3 || isempty(region), region = myOpen; end  %to load the hemisphere region outlines from 'region' calciumdx struct
 if nargin < 2 || isempty(backgroundRemovRadius)
 	%radius in pixels, should be a few times larger than the biggest object of interest in the image
@@ -80,12 +80,13 @@ Amin2D = min(A,[],3);
 Amin = min(Amin2D(:));
 A = A + abs(Amin);  %Scale deltaF array so everything is positive valued
 
-
-%The following assumes that the 'region' data structure will have outlines of the hemispheres drawn at index locations 2 and 3. Should make interactive or default preference saving
-regionMask1 = poly2mask(region.coords{hemisphereIndices(1)}(:,1),region.coords{hemisphereIndices(1)}(:,2),sz(1),sz(2));
-regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{hemisphereIndices(2)}(:,2),sz(1),sz(2));
-%figure; imshow(regionMask1); 	figure; imshow(regionMask2);
-bothMasks = regionMask1|regionMask2;  %makes a combined image mask of the two hemispheres
+bothMasks=logical(zeros(sz(1),sz(2)));
+for nRoi=1:length(hemisphereIndices)
+	regionMask = poly2mask(region.coords{hemisphereIndices(nRoi)}(:,1),region.coords{hemisphereIndices(nRoi)}(:,2),sz(1),sz(2));
+	%regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{hemisphereIndices(2)}(:,2),sz(1),sz(2));
+	%figure; imshow(regionMask1); 	figure; imshow(regionMask2);
+	bothMasks = bothMasks|regionMask;  %makes a combined image mask of the two hemispheres
+end
 
 %------Make pixelindex lists for background component removal within for loop below-----------
 borderJitter = 113.5/region.spaceres; %for making image border outline 10 px wide (at 11.35 µm/px) to intersect 

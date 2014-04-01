@@ -12,7 +12,7 @@ function [A3, CC, STATS] = wholeBrain_kmeans(A2,A,NclustersAll,showFigure,fnm,re
 
 %-----setup default parameters-------
 %assuming [2 3] are the region.name location indices for 'cortex.L' and 'cortex.R'
-if nargin < 7 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end
+if nargin < 7 || isempty(hemisphereIndices), hemisphereIndices = find(strcmp(region.name,'cortex.L') | strcmp(region.name,'cortex.R')); end
 if nargin < 6 || isempty(region),
     motorSignal = [];
     region = [];
@@ -247,10 +247,13 @@ diameters = mean([roiBoundingBox(:,4) roiBoundingBox(:,5)], 2);
 %Assuming region is loaded into workspace
 if ~isempty(region)
     sz = size(region.image);
-    regionMask1 = poly2mask(region.coords{hemisphereIndices(1)}(:,1),region.coords{hemisphereIndices(1)}(:,2),sz(1),sz(2));
-    regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{hemisphereIndices(2)}(:,2),sz(1),sz(2));
-    %figure; imshow(regionMask1); 	figure; imshow(regionMask2);
-    bothMasks = regionMask1|regionMask2;  %makes a combined image mask of the two hemispheres
+    bothMasks=logical(zeros(sz(1),sz(2)));
+    for nRoi=1:length(hemisphereIndices)
+		regionMask = poly2mask(region.coords{hemisphereIndices(nRoi)}(:,1),region.coords{hemisphereIndices(nRoi)}(:,2),sz(1),sz(2));
+		%regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{hemisphereIndices(2)}(:,2),sz(1),sz(2));
+		%figure; imshow(regionMask1); 	figure; imshow(regionMask2);
+		bothMasks = bothMasks|regionMask;  %makes a combined image mask of the two hemispheres
+    end
     bwBorders = bwperim(bothMasks);
     %figure; imshow(bwBorders) %TESTING
     [row,col] = find(bwBorders);

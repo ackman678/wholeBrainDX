@@ -15,7 +15,7 @@ function wholeBrain_batch(filename,handles)
 %Optional:
 % handles - handle structure of input variables
 % 	handles.makeMovies - string of 'all', 'some', or 'none' to indicate if you want to make avis. Do 'none' or 'some' to speed things up.
-% 	handles.hemisphereIndices - 2 element numeric vector, region.coord locations of 'cortex.L' and 'cortex.R'. Default is [2 3]
+% 	handles.hemisphereIndices - vector of integers, region.coord index locations in region.name for gross anatomical brain regions like 'cortex.L' and 'cortex.R' and others (e.g. 'OB.L', 'OB.R', 'SC.L', 'SC.R', etc).
 % 	handles.backgroundRemovRadius - single numeric in pixels. Default corresponds to 681 µm radius (round(681/region.spaceres)) for the circular structured element used for background subtraction.
 % 	handles.pthr - single numeric. Default is 0.99. Percentile threshold for the sobel edge based detection algorithm in wholeBrain_segmentation.m
 % 	handles.makeThresh - single numeric logical. Default is 1, for estimating the graythreshold using Otsu's method for each movie separately. Alternative is to use previous movie graythresh (like for subsequent recordings).
@@ -131,7 +131,7 @@ fn = fnm;  %fullfile path to the .tif file, for passing to wholeBrain_segmentati
 fnm = region.filename; %set the base .tif file name for making fnm2 filenames below for saving outputs.
 
 if ~isfield(handles,'hemisphereIndices')
-	hemisphereIndices = [2 3];  %region.coord locations of 'cortex.L' and 'cortex.R'
+	hemisphereIndices = find(strcmp(region.name,'cortex.L') | strcmp(region.name,'cortex.R') | strcmp(region.name,'OB.L') | strcmp(region.name,'OB.R') | strcmp(region.name,'SC.L') | strcmp(region.name,'SC.R'));  %region.coord locations of 'cortex.L' and 'cortex.R' and others.
 else
 	hemisphereIndices = handles.hemisphereIndices;
 end
@@ -366,7 +366,7 @@ batchFetchCorticalCorrData({fnm},region,fullfile(pwd,'dCorticalCorr.txt'),1);
 save(fnm,'region','-v7.3') ;
 
 %===If region contains coords for more than just 'field', 'cortex.L', and 'cortex.R' proceed to fetch data and plots making use of these parcellations (functional correlation matrices, motor corr, etc)
-if length(region.name) > 3
+if length(region.name) > length(hemisphereIndices)+1
 
 	%==9==Get correlation matrix and plots======================== 
 	exclude = {'cortex.L' 'cortex.R'};
@@ -385,7 +385,9 @@ if length(region.name) > 3
 		st(7).str = {'V1.L' 'V1.R'};    
 		st(8).str = {'V2L.L' 'V2L.R' 'V2M.L' 'V2M.R'};    
 		st(9).str = {'V2L.L' 'V2L.R' 'V2M.L' 'V2M.R' 'V1.L' 'V1.R'};    
-		st(10).str = {'cortex.L' 'cortex.R'};	
+		st(10).str = {'cortex.L' 'cortex.R'};
+		st(11).str = {'OB.L' 'OB.R'};
+		st(12).str = {'SC.L' 'SC.R'};	
 	
 		region = wholeBrain_MotorSignalCorr(fnm,region,st);
 		save(fnm,'region','-v7.3') ;
