@@ -241,7 +241,7 @@ save(fnm,'region','-v7.3')
 
 disp('-----')
 
-wholeBrain_activeFraction(A3,region,[2 3]); %Assuming 'cortex.L' and 'cortex.R' are at positons 2 & 3 in region.name, print just these traces instead of all locations
+wholeBrain_activeFraction(A3,region,hemisphereIndices); %Print just the gross anatomical hemisphereIndices traces instead of all locations
 fnm2 = [fnm(1:end-4) 'actvFraction' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 print(gcf, '-dpng', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.png']);      
 print(gcf, '-depsc', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.eps']);   
