@@ -1,4 +1,4 @@
-function data = wholeBrain_activeFraction(A3,region,locationMarkers)
+function data = wholeBrain_activeFraction(A3,region,locationMarkers,stimDesc)
 %PURPOSE -- get fraction of active functional domains in wholeBrain calcium imaging movies
 %USAGE -- data = wholeBrain_activeFraction(A3,region);
 %James B. Ackman
@@ -6,6 +6,7 @@ function data = wholeBrain_activeFraction(A3,region,locationMarkers)
 
 if nargin < 2 || isempty(region), region = myOpen; end  %to load the hemisphere region outlines from 'region' calciumdx struct
 if nargin < 3 || isempty(locationMarkers), locationMarkers = unique(region.location); end  %index location of the hemisphere region outlines or local areal outlines in the 'region' calciumdx data structure you want to analyse
+if nargin < 4 || isempty(stimDesc), stimDesc = ''; end  %plot stimulus periods on active fraction plot below, e.g. stimDesc='drug.state.isoflurane';
 
 sz = size(A3);
 maxProj = max(A3,[],3);   %makes a maximum projection image (all active pixels for whole brain)
@@ -102,6 +103,8 @@ end
 ax(nPlots) = subplot(nPlots,1,nPlots);
 hold all
 for locationIndex = 1:length(locationMarkers)
+	minY = min(data(locationIndex).activeFractionByFrame); maxY = max(data(locationIndex).activeFractionByFrame);
+	plotStimuli(region,stimuli,minY,maxY,[0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8],stimDesc)
 	plot(1:sz(3),data(locationIndex).activeFractionByFrame,'LineWidth',lineSize)
 	%legendText{locationIndex} = data(locationIndex).name;
 end

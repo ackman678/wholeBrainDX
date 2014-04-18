@@ -105,13 +105,17 @@ Tags: analysis, wholeBrain, programming, matlab
 		disp(['Please load Rois.zip file for ' fnm])
 		region = myReadImageJROIregionAdd(region,'false');	
 
-		strOrder = {'field' 'cortex.L' 'cortex.R' 'V1.L' 'V1.R' 'V2M.R' 'V2M.L' 'V2L.R' 'V2L.L' 'A1.L' 'A1.R' 'barrel.L' 'barrel.R' 'AS.L' 'AS.R' 'PPC.L' 'PPC.R' 'LS.L' 'LS.R' 'FL.L' 'FL.R' 'HL.L' 'HL.R' 'T.L' 'T.R' 'RSA.L' 'RSA.R' 'M1.L' 'M1.R' 'M2.L' 'M2.R'};
+		j=0;
+		strOrder = {'field' 'cortex.L' 'cortex.R' 'OB.L' 'OB.R' 'SC.L' 'SC.R' 'V1.L' 'V1.R' 'V2M.R' 'V2M.L' 'V2L.R' 'V2L.L' 'A1.L' 'A1.R' 'barrel.L' 'barrel.R' 'AS.L' 'AS.R' 'PPC.L' 'PPC.R' 'LS.L' 'LS.R' 'FL.L' 'FL.R' 'HL.L' 'HL.R' 'T.L' 'T.R' 'RSA.L' 'RSA.R' 'M1.L' 'M1.R' 'M2.L' 'M2.R'};
 		names2 = region.name;
 		coords2 = region.coords;
 		for i = 1:length(strOrder)
 			idx=find(strcmp(region.name,strOrder{i}));
-			names2{i} = region.name{idx};
-			coords2{i} = region.coords{idx};
+			if ~isempty(idx)
+				j=j+1;
+				names2{j} = region.name{idx};
+				coords2{j} = region.coords{idx};
+			end
 		end
 		if length(strOrder) ~= length(region.name)
 			error('strOrder not same length as region.name') 

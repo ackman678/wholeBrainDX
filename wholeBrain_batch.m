@@ -241,7 +241,7 @@ save(fnm,'region','-v7.3')
 
 disp('-----')
 
-wholeBrain_activeFraction(A3,region,hemisphereIndices); %Print just the gross anatomical hemisphereIndices traces instead of all locations
+wholeBrain_activeFraction(A3,region,hemisphereIndices,'drug.state.isoflurane'); %Print just the gross anatomical hemisphereIndices traces instead of all locations
 fnm2 = [fnm(1:end-4) 'actvFraction' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 print(gcf, '-dpng', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.png']);      
 print(gcf, '-depsc', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.eps']);   
@@ -281,8 +281,8 @@ if isfield(region,'stimuli');
 			print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
 			disp(['complete: wholeBrainActivityMapFig, mapType=' mapTypes{j}])
 		end
-		  
 	end	
+	
 	%--Motor state contour activity maps if applicable		
 	stimuliIndices = {'motor.state.active' 'motor.state.quiet'};
 	ind = detectDrugStimuli(region,stimuliIndices);
@@ -295,14 +295,26 @@ if isfield(region,'stimuli');
 		mapTypes = {'pixelFreq','domainFreq','domainDur','domainDiam','domainAmpl'}
 		for j =1:length(mapTypes)
 			wholeBrainActivityMapFig(region,[],2,7,0,ind,[],mapTypes{j});
-			fnm2 = [fnm(1:end-4) 'ActivityMapFigRawProjMotor' datestr(now,'yyyymmdd-HHMMSS') '_' mapTypes{j} '.mat'];              
+			fnm2 = [fnm(1:end-4) 'ActivityMapFigRawProjMotorState' datestr(now,'yyyymmdd-HHMMSS') '_' mapTypes{j} '.mat'];              
 			print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                  
 			print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
 			disp(['complete: wholeBrainActivityMapFig, mapType=' mapTypes{j}])
-		end
-		
-		  		
+		end		  		
 	end
+
+	%--Motor onset activity maps if applicable			
+	stimuliIndices = {'motor.onsets'};
+	ind = detectDrugStimuli(region,stimuliIndices); 
+	if ~isempty(ind)
+		mapTypes = {'domainFreq','domainDur','domainDiam'}  
+		for j =1:length(mapTypes)  
+			wholeBrainActivityMapFig(region,[],2,7,0,ind,[],mapTypes{j});  
+			fnm2 = [fnm(1:end-4) 'ActivityMapFigRawProjMotorOnsets' datestr(now,'yyyymmdd-HHMMSS') '_' mapTypes{j} '.mat'];                
+			print(gcf, '-dpng', [fnm2(1:end-4) '.png']);                    
+			print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);  
+			disp(['complete: wholeBrainActivityMapFig, mapType=' mapTypes{j}])  
+		end 
+	end	
 end 
 
 %DomainPatchesPlot(region.domainData.domains, region.domainData.CC, region.domainData.STATS,1,[],1)   %DomainPatchesPlot won't work on a linux server because of a segmentation fault with drawing alpha transparency in matlab
@@ -389,7 +401,7 @@ if length(region.name) > length(hemisphereIndices)+1
 		st(11).str = {'OB.L' 'OB.R'};
 		st(12).str = {'SC.L' 'SC.R'};	
 	
-		region = wholeBrain_MotorSignalCorr(fnm,region,st);
+		region = wholeBrain_MotorSignalCorr(fnm,region,st,[],1);
 		save(fnm,'region','-v7.3') ;
 	end
 

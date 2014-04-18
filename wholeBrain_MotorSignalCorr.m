@@ -1,4 +1,4 @@
-function region = wholeBrain_MotorSignalCorr(fnm,region,st,exclude)
+function [region, cM, lags] = wholeBrain_MotorSignalCorr(fnm,region,st,exclude, makePlots)
 %wholeBrain_MotorSignalCorr - Generate cross-correlation plots and values for region.locations with motor signal
 %Examples:
 % region = wholeBrain_MotorSignalCorr(fnm,region)
@@ -24,6 +24,8 @@ else
 end
 
 %Setup defaults: 
+
+if nargin < 5 || isempty(makePlots), makePlots = 0; end
 
 %Cortical signal:
 if nargin < 3 || isempty(st)
@@ -74,6 +76,9 @@ region.userdata.motorCorr{datasetSelector}.corr_pairs{1} = [i j];
 region.userdata.motorCorr{datasetSelector}.pvalCorrMatrix(1,1) = p(2,1);
 region.userdata.motorCorr{datasetSelector}.rvalCorrMatrix(1,1) = r(2,1);
 
+szZ = length(decY2);
+cM = zeros(numel(st), 2*szZ-1);
+
 %Make the plots:
 for j = 1:numel(st)  
     str = st(j).str;  
@@ -97,47 +102,52 @@ for j = 1:numel(st)
     titleStr = str;  
 
     %-----Cortical -motor signal xcorr Plot code--------------------------------------
-    x = cActvFraction; 
-    y = decY2;      
+    x = cActvFraction - mean(cActvFraction);   %detrend the signals
+    y = decY2 - mean(decY2);      %detrend the signals
+	[c_sig,lags] = xcorr(x,y,'coeff');
+	cM(j,:) = c_sig;   %Add these Rxy corr values for output     
 
-    figure;        
-    myColors = [0.3 0.3 0.3; 0 0.5 1];        
-    set(gcf,'DefaultAxesColorOrder',myColors)        
-    ax(1)=subplot(2,2,1);        
-    [c_ww,lags] = xcorr(x,'coeff');        
-    plot(lags,c_ww); title(['combined actvFraction']);    xlabel('lag (frame)'); ylabel('{R}_{x}')      
+	if makePlots > 0
+		figure;        
+		myColors = [0.3 0.3 0.3; 0 0.5 1];        
+		set(gcf,'DefaultAxesColorOrder',myColors)        
+		ax(1)=subplot(2,2,1);        
+		[c_ww,lags] = xcorr(x,'coeff');        
+		plot(lags,c_ww); title(['combined actvFraction']);    xlabel('lag (frame)'); ylabel('{R}_{x}')      
 
-    ax(2)=subplot(2,2,2);        
-    [c_ww,lags] = xcorr(x,y,'coeff');        
-    plot(lags,c_ww); title(['xcorr (x, y)']);     xlabel('lag (frame)'); ylabel('{R}_{xy}')      
+		ax(2)=subplot(2,2,2);        
+		plot(lags,c_sig); title(['xcorr (x, y)']);     xlabel('lag (frame)'); ylabel('{R}_{xy}')
 
-    ax(3)=subplot(2,2,3);        
-    [c_ww,lags] = xcorr(y,'coeff');        
-    plot(lags,c_ww); title(['motor activity']);    xlabel('lag (frame)'); ylabel('{R}_{y}')  
+		ax(3)=subplot(2,2,3);        
+		[c_ww,lags] = xcorr(y,'coeff');        
+		plot(lags,c_ww); title(['motor activity']);    xlabel('lag (frame)'); ylabel('{R}_{y}')  
 
-    ax(4)=subplot(2,2,4);        
-    [c_ww,lags] = xcorr(y,x,'coeff');        
-    plot(lags,c_ww); title(['xcorr (y, x)']);     xlabel('lag (frame)'); ylabel('{R}_{yx}')        
-    hold all      
+		ax(4)=subplot(2,2,4);        
+		[c_ww,lags] = xcorr(y,x,'coeff');        
+		plot(lags,c_ww); title(['xcorr (y, x)']);     xlabel('lag (frame)'); ylabel('{R}_{yx}')        
+		hold all      
+		
+		m1 = mean(x);        
+		sd1 = std(x);         
+		m2 = mean(y);        
+		sd2 = std(y);       
 
-    m1 = mean(x);        
-    sd1 = std(x);         
-    m2 = mean(y);        
-    sd2 = std(y);       
+		ww = m1 + (sd1.*randn(numel(x),1));        
+		ww2 = m2 + (sd2.*randn(numel(x),1));      
 
-    ww = m1 + (sd1.*randn(numel(x),1));        
-    ww2 = m2 + (sd2.*randn(numel(x),1));      
+		[c_ww,lags] = xcorr(ww,ww2,'coeff');        
+		plot(lags,c_ww)      
 
-    [c_ww,lags] = xcorr(ww,ww2,'coeff');        
-    plot(lags,c_ww)      
+		axis(ax,'tight','square')        
+		set(ax,'XGrid','on','YGrid','on')        
+		set(ax,'YLim', [0 1])        
+		%set(ax,'XLim', [-1500 1500])        
+		%set(ax,'XLim', [-250 250])   
 
-    axis(ax,'tight','square')        
-    set(ax,'XGrid','on','YGrid','on')        
-    set(ax,'YLim', [0 1])        
-    %set(ax,'XLim', [-1500 1500])        
-    %set(ax,'XLim', [-250 250])   
-
-    annotation('textbox', [.03 .8, .1, .1], 'String', titleStr);
+		annotation('textbox', [.03 .8, .1, .1], 'String', titleStr);
+		print(gcf,'-dpng',[fnm(1:end-4) 'motorSignalXCorr' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
+		print(gcf,'-depsc',[fnm(1:end-4) 'motorSignalXCorr' datestr(now,'yyyymmdd-HHMMSS') '.eps'])    
+	end
 
 	disp('===xy pearson corr coef===')    
 	disp(titleStr)
@@ -145,26 +155,46 @@ for j = 1:numel(st)
 	region.userdata.motorCorr{datasetSelector}.pvalCorrMatrix(j+1,1) = p(2,1);
 	region.userdata.motorCorr{datasetSelector}.rvalCorrMatrix(j+1,1) = r(2,1);
 
-
-    print(gcf,'-dpng',[fnm(1:end-4) 'motorSignalXCorr' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
-    print(gcf,'-depsc',[fnm(1:end-4) 'motorSignalXCorr' datestr(now,'yyyymmdd-HHMMSS') '.eps'])    
-
-    %---Cortical - motor signal activeFraction plot code------------------------------  
-    wholeBrain_actvFractionMotorPlot(region,cActvFraction,decY2,1,titleStr)  
-    %Print fig-- print doesn't like the legend outside of axes for some reason, doesn't print...!      
-    print(gcf,'-dpng',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
-    print(gcf,'-depsc',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.eps'])   
-    
-	%---Power spectrum--- 
-	Fs = 1/region.timeres;
-    PxxM = myPSD(x,1,Fs);
-    title(titleStr)
-    print(gcf,'-dpng',[fnm(1:end-4) 'PSD' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
-    print(gcf,'-depsc',[fnm(1:end-4) 'PSD' datestr(now,'yyyymmdd-HHMMSS') '.eps'])   
+	if makePlots > 0
+		%---Cortical - motor signal activeFraction plot code------------------------------  
+		wholeBrain_actvFractionMotorPlot(region,cActvFraction,decY2,1,titleStr)  
+		%Print fig-- print doesn't like the legend outside of axes for some reason, doesn't print...!      
+		print(gcf,'-dpng',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
+		print(gcf,'-depsc',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.eps'])   
+	
+		%---Power spectrum--- 
+		Fs = 1/region.timeres;
+		PxxM = myPSD(x,1,Fs);
+		title(titleStr)
+		print(gcf,'-dpng',[fnm(1:end-4) 'PSD' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
+		print(gcf,'-depsc',[fnm(1:end-4) 'PSD' datestr(now,'yyyymmdd-HHMMSS') '.eps'])   
+    end
 end 
 
+if makePlots > 0
+	titleStr='motorXcorrLags';
+	imagesc(cM)
+	colorbar
+	names = region.userdata.motorCorr{datasetSelector}.names;
+	names = names(~strcmp(names,'motorSignal'));
+	set(gca,'YTick',[1:length(names)])
+	set(gca,'YTickLabel',names)
+
+	xticklabels = -szZ:25:szZ;  %make it centered around lag zero with 100 fr spacing
+	xticks = linspace(1, size(cM, 2), numel(xticklabels));
+	set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
+	set(gca,'XLim',[-250 250] + szZ)  %set xlim to within 250fr of zeroth lag
+	title(titleStr)
+	zoom xon
+	fnm2 = [fnm(1:length(fnm)-4) '_' titleStr '_' datestr(now,'yyyymmdd-HHMMSS')];    
+	print(gcf,'-dpng',[fnm2 '.png'])            
+	print(gcf,'-depsc',[fnm2 '.eps'])   
+end
+
+if makePlots > 0
 Fs = 1/region.timeres;
 PxxM = myPSD(y,1,Fs);
 title('motorSignal')
 print(gcf,'-dpng',[fnm(1:end-4) 'PSD' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
 print(gcf,'-depsc',[fnm(1:end-4) 'PSD' datestr(now,'yyyymmdd-HHMMSS') '.eps'])   
+end
