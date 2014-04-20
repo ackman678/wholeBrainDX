@@ -8,6 +8,7 @@ if nargin < 2 || isempty(region), region = myOpen; end  %to load the hemisphere 
 if nargin < 3 || isempty(locationMarkers), locationMarkers = unique(region.location); end  %index location of the hemisphere region outlines or local areal outlines in the 'region' calciumdx data structure you want to analyse
 if nargin < 4 || isempty(stimDesc), stimDesc = ''; end  %plot stimulus periods on active fraction plot below, e.g. stimDesc='drug.state.isoflurane';
 
+stimuli=region.stimuli;
 sz = size(A3);
 maxProj = max(A3,[],3);   %makes a maximum projection image (all active pixels for whole brain)
 
