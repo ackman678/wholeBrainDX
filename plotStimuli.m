@@ -5,7 +5,7 @@ function plotStimuli(region,stimuli,minY,maxY,mycolors,stimDesc)
 if nargin < 6 || isempty(stimDesc), stimDesc = 'motor.state.active'; end
 
 for numStim = 1:length(stimuli)
-	if strcmp(stimuli{numStim}.description,desc)
+	if strcmp(stimuli{numStim}.description,stimDesc)
 %		 mycolors = [0.8 0.8 1.0; 0.8 1.0 0.8; 1.0 0.8 0.8; 0.6 0.6 1.0; 0.6 1.0 0.6; 1.0 0.6 0.6; 0.4 0.4 1.0; 0.4 1.0 0.4; 1.0 0.4 0.4];        
 			for i=1:numel(stimuli{numStim}.stimulusParams)
 				x1=(stimuli{numStim}.stimulusParams{i}.frame_indices(1)/stimuli{numStim}.stimulusParams{i}.frame_times(1))*stimuli{numStim}.stimulusParams{i}.stimulus_times(1);

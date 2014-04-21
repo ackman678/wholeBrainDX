@@ -105,7 +105,7 @@ ax(nPlots) = subplot(nPlots,1,nPlots);
 hold all
 for locationIndex = 1:length(locationMarkers)
 	minY = min(data(locationIndex).activeFractionByFrame); maxY = max(data(locationIndex).activeFractionByFrame);
-	plotStimuli(region,stimuli,minY,maxY,[0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8],stimDesc)
+	plotStimuli(region,stimuli,minY,maxY,[0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8],stimDesc);
 	plot(1:sz(3),data(locationIndex).activeFractionByFrame,'LineWidth',lineSize)
 	%legendText{locationIndex} = data(locationIndex).name;
 end
