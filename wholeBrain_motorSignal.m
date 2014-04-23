@@ -21,14 +21,26 @@ y = channels{chanNum}.adc(:,1)';
 
 r =  Fs / Fs_imaging; %typically 5000 if Fs = 25000, and Fs_imaging = 5;
 ri = floor(log10(r));  % this gives no. of decimation iterations with a decimation factor of 10  (10^ri = r) ==> log10(10^ri) = log10(r);
-rRem = r/(10^ri); %this gives the decimation factor for the last iteration
+rRem = r/(10^ri); %this gives the decimation factor for the last iteration. e.g. if ri = 3, the decimation factors would be 10*10*10*rRem.  
+
+if rem(rRem, 1) ~=0  %test whether remainder is an integer and if not fix the last two decimation factors, so that if ri was 3, the new factors would be 10*10*(10/(nrRem/rRem))*nrRem
+	nrRem = ceil(rRem); 
+	while mod(nrRem,rRem) ~= 0
+		nrRem=nrRem+1;
+	end
+	ri = ri-1;
+	rRem(1) = (10/(nrRem/rRem));
+	rRem(2) = nrRem;
+end
 
 rectY = abs(y);    %rectify the signal
 decY = rectY;
 for i = 1:ri
 	decY = decimate(decY,10);  
 end
-decY = decimate(decY,rRem);  
+for i = 1:length(rRem)
+	decY = decimate(decY,rRem(i));  
+end
 decX = 1:length(decY);  
 
 hFig = figure;
