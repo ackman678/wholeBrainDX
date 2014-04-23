@@ -53,9 +53,26 @@ end
 [pathstr, name, ext] = fileparts(fnm);
 fnm2 = [name '_wholeBrain_segmentation_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
 
+%Read in the primary or first movie file:  
 [data, series1] = myOpenOMEtiff(fnm);
 A = double(series1);
 clear data series1
+
+%Find out whether there are extra movie files that need to be concatenated together with the first one (regular tiffs have 2+GB limit in size):  
+if isfield(region,'extraFiles')
+	if ~isempty(region.extraFiles)
+		C = textscan(region.extraFiles,'%s', ' ');  %region.extraFiles should be a single space-delimited character vector of additional movie filenames		
+		for i = 1:numel(C{1})		
+			if ~strcmp(fnm,C{1}{i})  %if the current filename is not the first one proceed with concatenation				
+				fn=fullfile(pathstr,C{1}{i}));
+				[data, series1] = myOpenOMEtiff(fn);
+				A = cat(3, A, double(series1));
+				clear data series1
+			end
+		end
+	end
+end
+
 sz = size(A);
 szZ=sz(3);
 

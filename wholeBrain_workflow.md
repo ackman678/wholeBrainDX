@@ -63,7 +63,7 @@ Tags: analysis, wholeBrain, programming, matlab
 	```
 
 
-* (2) Opened up the AVG-raw.tif image for each of the following in `calciumdx` and saved a dummy file with single region named 'field' encompassing whole field of view and a single manual dummy roi (so the file saves correctly) to save a 'dummyHemis.mat' file for each.  Be sure to know the spatial and temporal resolutions of your data before progressing with this step (region.spaceres and region.timeres).
+* (2) Open up the AVG-raw.tif image for each of the following in `calciumdx` and saved a dummy file with single region named 'field' encompassing whole field of view and a single manual dummy roi (so the file saves correctly) to save a 'dummyHemis.mat' file for each.  Be sure to know the spatial and temporal resolutions of your data before progressing with this step (region.spaceres and region.timeres).
 * (3) Make space-delimited filelist names 'files.txt' of the raw .tif movie filenames (1st column) and matching dummy filenames and save in same directory as your dummyHemis.mat files and the raw movie files.
 * (4) Bootup local copy of matlab and cd into the directory containing the files. Setup region file and add ImageJ roi coordinate outlines for the hemispheres.  Do the following for each file independently, change fnms to the appropriate filenames.
 	* (4a) Make **dummyHemis.mat** files:
@@ -83,13 +83,30 @@ Tags: analysis, wholeBrain, programming, matlab
 		disp(['Please load Rois.zip file for ' fnm])
 		region = myReadImageJROIregionAdd(region,'false');	
 		region.stimuli = [];  
-		region.motorSignal = [];  
-		region.nframes = 3000;   %Change this the the number of frames so that the motor signal is the correct length 	
+		region.motorSignal = [];
+		answer = inputdlg({'nframes:'},'Enter total number of frames for whole recording',1,{'3000'});  %Change this the the number of frames so that the motor signal is the correct length
+		region.nframes = str2double(answer{1});   	
 		save(fnm,'region') 
 	end
 	```
+	
+	
+	* (4b) Fix the experimental parameters if needed (Optional: e.g. Need to **pass filenames for additional tiff movie files** if the recording consists of multiple 2GB tiff files). Should be passed to the 'extraFiles' variable in the interactive dialog box as a space-delimited character vector. The resulting 'region.extraFiles' variable will be used by `wholeBrain_segmentation.m` when reading in the movie data to concatenate the movie together:  
+	
+	```matlab
+	filelist = readtext('files.txt',' ');
+	fnms = filelist(:,2);  %Second column is dummy region matfiles
+	def=[];
+	for k = 1:length(fnms)
+		load(fnms{k});
+		disp(['Please input exp params for' fnms{k}])
+		[region, def] = dxInputParams(region, def);
+		save(fnms{k},'region')
+	end
+	```
+	
 		
-	* (4b) Make **dummyAreas.mat** files (Optional:  Only for secondary batch run throughs if parcellation rois have been made):
+	* (4c) Make **dummyAreas.mat** files (Optional:  Only for secondary batch run throughs if parcellation rois have been made):
 		* Make sure to Find and replace 'dummyHemis' for 'dummyAreas' in 'files.txt' after running the following code
 	
 	```matlab
