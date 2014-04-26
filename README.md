@@ -71,8 +71,17 @@ Demonstrates positive correlation between brain activity and motor signal at sho
 ![](assets/img/Screen_Shot_2013-05-02_at_10.53.40_AM.png)
 
 
+# Acknowledgements
 
+Many thanks goes to the following people for their excellent functions:  
 
+* [readtext.m](http://www.mathworks.com/matlabcentral/fileexchange/10946-readtext) by Peder Axensten
+* dsplot.m by Jiro Doke
+* legendflex.m by Kelly Kearney
+* [clickableLegend.m](http://www.mathworks.com/matlabcentral/fileexchange/21799-clickablelegend/content/clickableLegend.m) by Ameya Deoras
+* getpos.m by JÈrÙme Briot
+* freezeColors.m by John Iversen
+* [DIPUM toolbox][dipumToolbox] by [#Gonzalez:2009]. The otsuthresh.m and percentile2i.m functions are based on functions described in this wonderful image processing book.
 
 [SyncPushPull]: http://mac.github.com/help.html#faq-sync-push-pull
 
@@ -81,3 +90,7 @@ Demonstrates positive correlation between brain activity and motor signal at sho
 [piotrToolbox]: http://vision.ucsd.edu/~pdollar/toolbox/doc/
 
 [sigtool]: http://sourceforge.net/projects/sigtool/
+
+[#Gonzalez:2009]: Digital Image Processing Using MATLAB, 2nd edition, by R.C. Gonzalez, R.E. Woods, and S.L. Eddins, Gatesmark Publishing, 2009.
+
+[dipumToolbox]: http://www.imageprocessingplace.com/DIPUM_Toolbox_2/DIPUM_Toolbox_2.htm
