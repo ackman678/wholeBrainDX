@@ -12,17 +12,33 @@ function openWholeBrainDomainsTraces(fnm,fnm2)
 %James B. Ackman, 2014-03-06 10:12:25
 
 if nargin < 2 || isempty(fnm),
+	if exist('calciumdxprefs.mat','file') == 2
+        load('calciumdxprefs')
+    else
+        pathname = pwd;
+    end
+
 	disp(['Please load the region d2r data file'])
 	%load previous region data file with domains tagged or use domainTaggingGui to fetch data().frame() xy centroid locations for artifacts
-	[filename, pathname] = uigetfile({'*d2r.mat'}, 'Please load the region d2r data file');
+	[filename, pathname] = uigetfile({'*d2r.mat'}, 'Please load the region d2r data file', pathname);
 	fnm = fullfile(pathname,filename);
+	fnm = [pathname filename];
+    save('calciumdxprefs.mat', 'pathname','filename')
 end
 
 if nargin < 3 || isempty(fnm2),
+	if exist('calciumdxprefs.mat','file') == 2
+        load('calciumdxprefs')
+    else
+        pathname = pwd;
+    end
+
 	disp(['Please load the .avi movie'])
 	%load previous region data file with domains tagged or use domainTaggingGui to fetch data().frame() xy centroid locations for artifacts
-	[filename, pathname] = uigetfile({'*.avi'}, 'Please load the .avi movie');
+	[filename, pathname] = uigetfile({'*.avi'}, 'Please load the .avi movie', pathname);
 	fnm2 = fullfile(pathname,filename);
+	fnm = [pathname filename];
+    save('calciumdxprefs.mat', 'pathname','filename')
 end
 
 %--Create 8bit avi in ImageJ of dF/F movie first or use .avi from wholeBrain_segmentation.m
@@ -56,11 +72,17 @@ movieTitles{1} = 'dF/F+60px diskBkgndSubtr avi';
 movieTitles{2} = 'kmeans detect';   
 movieTitles{3} = 'active fraction';  
 movieTitles{4} = 'motor activity signal';
-decY2 = region.motorSignal;
-plot4(1).data=decY2;     %setup a default plot structure for the rectified/decimated photodiode motor signal  
-plot4(1).legendText = ['rectDecMotorSig'];  
-plot4(1).Fs=1;   %sampling rate (Hz).  Used to convert data point indices to appropriate time units.  Leave at '1' for no conversion (like plotting the indices, 'frames')  
-plot4(1).unitConvFactor = 1; 
+
+if isfield(region,'motorSignal')
+	if ~isempty(region.motorSignal)
+		decY2 = region.motorSignal;
+		plot4(1).data=decY2;     %setup a default plot structure for the rectified/decimated photodiode motor signal  
+		plot4(1).legendText = ['rectDecMotorSig'];  
+		plot4(1).Fs=1;   %sampling rate (Hz).  Used to convert data point indices to appropriate time units.  Leave at '1' for no conversion (like plotting the indices, 'frames')  
+		plot4(1).unitConvFactor = 1; 
+	end
+end
+
 %--Make binary mask movie------------------------------------------------------------------------
 sz=region.domainData.CC.ImageSize;        
 tmp = zeros(sz,'uint8');        

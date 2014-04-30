@@ -349,60 +349,11 @@ print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
 plotWholeBrainDomainsTraces
 : gui for comparing and assessing detection and for viewing movie with motor traces  
 
-plotWholeBrainDomainsTraces:  
+To run plotWholeBrainDomainsTraces simply type:  
 
-```matlab
-%--Create 8bit avi in ImageJ of dF/F movie first or use .avi from wholeBrain_segmentation.m
-%--In matlab, use 'VideoReader' to make 8bit movie object structure and return frames from the .avi of the raw movie (so we can full frame res, array in memory locally)
+	openWholeBrainDomainsTraces
 
-fnm = '_d2r.mat'  %d2r.mat file from wholeBrain_batch
-fnm2 = 'dFoF.avi' %.avi file from wholeBrain_segmentation.m or _kmeans.m
-vidObj = VideoReader(fnm2);   %TODO: change this to desired .avi to read in
-nFrames = vidObj.NumberOfFrames;
-vidHeight = vidObj.Height;
-vidWidth = vidObj.Width;
-%--Preallocate movie structure----------------------------------------------------
-mov(1:nFrames) = ...
-	struct('cdata', zeros(vidHeight, vidWidth, 3, 'uint8'),...
-		   'colormap', []);
-%--Read one frame at a time, takes awhile if it's jpeg compressed avi-------------
-for fr = 1 : nFrames
-	mov(fr).cdata = read(vidObj, fr);
-end
-%--Make 8bit movie array----------------------------------------------------------
-sz = size(mov(1).cdata);
-A = zeros([sz(1) sz(2) nFrames], 'uint8');
-for fr = 1:nFrames
-	[im,map] = frame2im(mov(fr));
-	im1 = im(:,:,1);
-	A(:,:,fr) = im1;
-end
-clear mov vidObj im im1
-%--Prep plots and titles for gui--------------------------------------------------
-load(fnm,'region')
-%load(fnm3,'A3')
-movieTitles{1} = 'dF/F+60px diskBkgndSubtr avi';  
-movieTitles{2} = 'kmeans detect';   
-movieTitles{3} = 'active fraction';  
-movieTitles{4} = 'motor activity signal';
-decY2 = region.motorSignal;
-plot4(1).data=decY2;     %setup a default plot structure for the rectified/decimated photodiode motor signal  
-plot4(1).legendText = ['rectDecMotorSig'];  
-plot4(1).Fs=1;   %sampling rate (Hz).  Used to convert data point indices to appropriate time units.  Leave at '1' for no conversion (like plotting the indices, 'frames')  
-plot4(1).unitConvFactor = 1; 
-%--Make binary mask movie------------------------------------------------------------------------
-sz=region.domainData.CC.ImageSize;        
-tmp = zeros(sz,'uint8');        
-A3 = logical(tmp);        
-clear tmp;      
-for i = 1:region.domainData.CC.NumObjects      
-	if ~strcmp(region.domainData.STATS(i).descriptor, 'artifact')    
-		A3(region.domainData.CC.PixelIdxList{i}) = 1;      
-	end          
-end
-%--Run gui------------------------------------------------------------------------
-plotWholeBrainDomainsTraces(A,A3,region,plot4,movieTitles,[])  	
-```
+
 
 domainTaggingGui
 : gui for marking domains
