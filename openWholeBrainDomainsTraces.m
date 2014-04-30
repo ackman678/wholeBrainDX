@@ -22,7 +22,6 @@ if nargin < 2 || isempty(fnm),
 	%load previous region data file with domains tagged or use domainTaggingGui to fetch data().frame() xy centroid locations for artifacts
 	[filename, pathname] = uigetfile({'*d2r.mat'}, 'Please load the region d2r data file', pathname);
 	fnm = fullfile(pathname,filename);
-	fnm = [pathname filename];
     save('calciumdxprefs.mat', 'pathname','filename')
 end
 
@@ -37,7 +36,6 @@ if nargin < 3 || isempty(fnm2),
 	%load previous region data file with domains tagged or use domainTaggingGui to fetch data().frame() xy centroid locations for artifacts
 	[filename, pathname] = uigetfile({'*.avi'}, 'Please load the .avi movie', pathname);
 	fnm2 = fullfile(pathname,filename);
-	fnm = [pathname filename];
     save('calciumdxprefs.mat', 'pathname','filename')
 end
 
