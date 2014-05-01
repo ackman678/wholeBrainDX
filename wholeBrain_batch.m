@@ -154,6 +154,12 @@ else
 	pthr = handles.pthr;
 end
 
+if ~isfield(handles,'sigma)
+	sigma = 56.75/region.spaceres; end  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
+else
+	sigma = handles.sigma;
+end
+
 if ~isfield(handles,'makeThresh'), 
 	makeThresh = 1; 
 else
@@ -178,7 +184,7 @@ case 'none'
 end
 
 tic;
-[A2, A, thresh, Amin] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr);
+[A2, A, thresh, Amin] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma);
 toc;  
 region.graythresh = thresh;
 region.Amin = Amin;

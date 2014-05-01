@@ -280,8 +280,13 @@ Tags: analysis, wholeBrain, programming, matlab
 	matlabpool open 8          
 	diary on
 	disp(datestr(now,'yyyymmdd-HHMMSS'))
+	
 	handles.makeMovies = 'all';
-	handles.makeMovies = 'some';
+	%handles.makeMovies = 'some';
+	handles.sigma = 3; %3px sigma for gauss smooth
+	handles.pthr = 0.99; %99th percentile in histo of pixel edge signal intensities for estimating otsu's thresh on the sobel image.
+	handles.backgroundRemovRadius = 60; %60px background radius for the circular element used in tophat filter
+	
 	wholeBrain_batch('files.txt',handles)
 	disp(datestr(now,'yyyymmdd-HHMMSS'))
 	diary off
@@ -352,7 +357,6 @@ plotWholeBrainDomainsTraces
 To run plotWholeBrainDomainsTraces simply type:  
 
 	openWholeBrainDomainsTraces
-
 
 
 domainTaggingGui

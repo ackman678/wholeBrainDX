@@ -1,4 +1,4 @@
-function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh,pthr)
+function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh,pthr,sigma)
 %PURPOSE -- segment functional domains in wholeBrain calcium imaging movies into ROIs
 %USAGE -- A2 = wholeBrain_segmentation(fnm,[],region)
 %James B. Ackman
@@ -6,6 +6,8 @@ function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadi
 %updated, improved algorithm with watershed separation and gaussian smooth 2013-02-01 by J.B.A.
 %modified 2013-03-28 14:25:44 by J.B.A.
 
+
+if nargin < 9 || isempty(sigma), sigma = 56.75/region.spaceres; end  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
 if nargin < 8 || isempty(pthr), pthr = 0.99; end
 if nargin < 7 || isempty(thresh), 
 	makeThresh = 1; 
@@ -20,6 +22,11 @@ if nargin < 2 || isempty(backgroundRemovRadius)
 	%radius in pixels, should be a few times larger than the biggest object of interest in the image
 	backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction. This was empirically determined during testing with a range of sizes in spring 2013 on 120518–07.tif and 120703–01.tif. At 11.35 µm/px this would be a 60px radius.
 end
+
+nPixelThreshold = round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
+edgeSmooth = ceil(22.70/region.spaceres); %22.70µm at 11.35um/px to give 2px smooth for the morphological dilation.
+edgeSmooth2 = ceil(34.050/region.spaceres);  %34.0500 at 11.35um/px to give 3px smooth for the second morphological dilation after detection
+
 
 
 %{
@@ -129,11 +136,6 @@ szZ=sz(3);
 Iarr=zeros(size(A));
 G=zeros(size(A));
 bothMasks3D = repmat(bothMasks,[1 1 szZ]);
-
-nPixelThreshold = round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
-sigma = 56.75/region.spaceres;  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a 5px sigma. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
-edgeSmooth = ceil(22.70/region.spaceres); %22.70µm at 11.35um/px to give 2px smooth for the morphological dilation.
-edgeSmooth2 = ceil(34.050/region.spaceres);  %34.0500 at 11.35um/px to give 3px smooth for the second morphological dilation after detection
 
 %------Start core for loop-------------------------
 %figure;
