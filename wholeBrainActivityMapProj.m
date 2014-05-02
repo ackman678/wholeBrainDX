@@ -5,7 +5,7 @@ function [A3proj,frames] = wholeBrainActivityMapProj(region, frames, plotType, m
 %	A3proj = wholeBrainActivityMapProj(region, [], 1);
 %	[A3proj,frames] = wholeBrainActivityMapProj(region, [300 1800], 2);
 % INPUTS
-% region -- region formatted data structure (as from CalciumDX, domains2region, etc) that includes CC and STATS data structures returned from wholeBrain_segmentation.m and wholeBrain_kmeans.m
+% region -- region formatted data structure (as from CalciumDX, domains2region, etc) that includes CC and STATS data structures returned from wholeBrain_segmentation.m and wholeBrain_detect.m
 % frames -- frames should be a vector containing two integers, the startFrame and endFrame for the range you want to plot.
 % plotType -- an integer of 1, 2, or 3 indicating the type of plot you want 
 %	1: plot all detected components (true positive activity domains and false positive artifacts)

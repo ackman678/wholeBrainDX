@@ -1,14 +1,24 @@
-function [A3, CC, STATS] = wholeBrain_kmeans(A2,A,NclustersAll,showFigure,fnm,region,hemisphereIndices)
-%PURPOSE -- use kmeans clustering to clean up segmentation from wholeBrain_segmentation.m
+function [A3, CC, STATS] = wholeBrain_detect(A2,A,NclustersAll,showFigure,fnm,region,hemisphereIndices)
+%PURPOSE -- detect domains from segmented movie from wholeBrain_segmentation.m
 %INPUTS --
 %A2: the binary array returned from wholeBrain_segmentation
 %A: the raw dF/F image array that was returned from and passed to wholeBrain_segmentation.m originally
 %NclustersAll: optional integer vector stating how many k-clusters to detect for each pass
-%USAGE -- [A3, CC] = wholeBrain_kmeans(A2,A)
+%
+%OPTIONS --
+% By default, the only detected components that will be removed are those lasting only 1 frame in duration. This is set around ln 165 as `badComponents = find(durations<2);`
+% The preceding lines around ln 165 can be uncommented to accept only the kmeans detected signal components that are automatically detected, **but not accepted by default**
+% TODO: add optional flag on whether to make use of kmeans clustering (default is off).
+% TODO: add option to pass alternative 'badComponents' vector, as could be done using alternate n-D signal decomposition techniques.
+%
+%USAGE -- [A3, CC] = wholeBrain_detect(A2,A)
 %SEE AlSO -- kmeans, wholeBrain_segmentation.m
 %James B. Ackman
 %2012-12-20
 % update 2013-10-31 15:42:02 JBA to used mean, duration, diameter for clustering and to remove single frame activations in the largest cluster
+% update 2013-11-21 JBA to implemented sqDist algo to be passed to clustering.
+% update 2013-12-31 JBA set default to just remove detected components lasting <2 frames in duration as default for wholeBrain paper.
+% update 2014-05-01 14:15:54 JBA changed name to wholeBrain_detect.m and edited documentation.
 
 %-----setup default parameters-------
 %assuming [2 3] are the region.name location indices for 'cortex.L' and 'cortex.R'
@@ -25,9 +35,9 @@ else
 end  %a downsampled motorSignal same length as n movie frames can be input to help clustering
 
 if nargin < 5 || isempty(fnm),
-    fnm2 = ['wholeBrain_kmeans_' datestr(now,'yyyymmdd-HHMMSS') '.avi'];
+    fnm2 = ['wholeBrain_detect_' datestr(now,'yyyymmdd-HHMMSS') '.avi'];
 else
-    fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_kmeans_' datestr(now,'yyyymmdd-HHMMSS') '.avi'];
+    fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_detect_' datestr(now,'yyyymmdd-HHMMSS') '.avi'];
 end
 
 if nargin < 4 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)

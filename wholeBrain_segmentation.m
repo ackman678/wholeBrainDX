@@ -185,7 +185,7 @@ end
 	
 	if showFigure > 0; figure; imhist(grad); end
 %	pthr = 0.99;
-	Q = percentile2i(h,pthr);
+	Q = prctileThresh(h,pthr);
 %	markerImage = grad > Q;
 	markerImage = G > Q;
 %	[level,est] = graythresh(grad);  %Otsu's threshold from Image Processing Toolbox  

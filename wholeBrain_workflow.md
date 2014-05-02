@@ -373,7 +373,7 @@ domainTaggingGui:
 ## Outline of wholeBrain_batch
 
 * A, A2 = wholeBrainSegmentation
-* A3, CC, STATS, wholeBrain_kmeans
+* A3, CC, STATS, wholeBrain_detect
 * domains = DomainSegmentationAssigment(CC,STATS,'false')
 * region = domains2region(domains,CC,STATS,region, hemiindices)
 	

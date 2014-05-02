@@ -1,6 +1,6 @@
 function myMovie2avi(A,fnm,graylevels)
 %PURPOSE -- Save a motion jpeg avi file from a matlab array
-%Need the a movie (A or A2) or binary array (A3) returned from for example wholeBrain_segmentation or wholeBrain_kmeans.m
+%Need the a movie (A or A2) or binary array (A3) returned from for example wholeBrain_segmentation or wholeBrain_detect.m
 %Need a filename, fnm
 %Need to specify number of graylevels if not a binary array (e.g. 256 gray levels for a dF/F signal movie)
 %USAGE -- myMovie2avi(A3,fnm)

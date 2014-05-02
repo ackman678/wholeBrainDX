@@ -5,7 +5,7 @@ function openWholeBrainDomainsTraces(fnm,fnm2)
 % openWholeBrainDomainsTraces(fnm,fnm2)
 %**USE**
 % fnm - '_d2r.mat'  %d2r.mat file from wholeBrain_batch
-% fnm2 - 'dFoF.avi' %.avi file from wholeBrain_segmentation.m or _kmeans.m
+% fnm2 - 'dFoF.avi' %.avi file from wholeBrain_segmentation.m or _detect.m
 %
 % See also plotWholeBrainDomainsTraces.m
 %
@@ -67,7 +67,7 @@ clear mov vidObj im im1
 load(fnm,'region')
 %load(fnm3,'A3')
 movieTitles{1} = 'dF/F+60px diskBkgndSubtr avi';  
-movieTitles{2} = 'kmeans detect';   
+movieTitles{2} = 'detect';   
 movieTitles{3} = 'active fraction';  
 movieTitles{4} = 'motor activity signal';
 

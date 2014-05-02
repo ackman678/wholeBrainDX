@@ -21,6 +21,7 @@ Usage instructions at [wholeBrain_workflow.md](wholeBrain_workflow.md)
 ## Core dependencies ##
 
 * matlab with the signal processing and image processing toolboxes
+* [CalciumDX](https://github.com/ackman678/CalciumDX)
 * [piotrImageVideoProcessingToolbox][piotrToolbox]. Uses gaussSmooth and xcorrn from this toolbox.
 * `loci_tools.jar` a java plugin for opening many different microscopy image/tiff file formats 
 	* included in `CalciumDX`, but up-to-date version can be found at [ome website](http://www.loci.wisc.edu/ome/ome-tiff.html) or through the ImageJ plugins page.
@@ -61,8 +62,6 @@ Setup up plot 4 data structure that can be passed to plotWholeBrainDomainsTraces
 
 
 
-
-
 ## Moving Average of Calcium and Motor Activity Signals ##
 Used as inputs to fetching iterative correlation coefs between these signals at different lags. 
 This is from 2013-04-01_analysis.txt on 2013–05–02 09:15:14 at [[Plot moving average of raw time courses]]. Shows motor signal detection and how to Perform [[Iterative correlation with different lags]]
@@ -71,17 +70,7 @@ Demonstrates positive correlation between brain activity and motor signal at sho
 ![](assets/img/Screen_Shot_2013-05-02_at_10.53.40_AM.png)
 
 
-# Acknowledgements
 
-Many thanks goes to the following people for their excellent functions:  
-
-* [readtext.m](http://www.mathworks.com/matlabcentral/fileexchange/10946-readtext) by Peder Axensten
-* dsplot.m by Jiro Doke
-* legendflex.m by Kelly Kearney
-* [clickableLegend.m](http://www.mathworks.com/matlabcentral/fileexchange/21799-clickablelegend/content/clickableLegend.m) by Ameya Deoras
-* getpos.m by JÈrÙme Briot
-* freezeColors.m by John Iversen
-* [DIPUM toolbox][dipumToolbox] by [#Gonzalez:2009]. The otsuthresh.m and percentile2i.m functions are based on functions described in this wonderful image processing book.
 
 [SyncPushPull]: http://mac.github.com/help.html#faq-sync-push-pull
 
@@ -90,7 +79,5 @@ Many thanks goes to the following people for their excellent functions:
 [piotrToolbox]: http://vision.ucsd.edu/~pdollar/toolbox/doc/
 
 [sigtool]: http://sourceforge.net/projects/sigtool/
-
-[#Gonzalez:2009]: Digital Image Processing Using MATLAB, 2nd edition, by R.C. Gonzalez, R.E. Woods, and S.L. Eddins, Gatesmark Publishing, 2009.
 
 [dipumToolbox]: http://www.imageprocessingplace.com/DIPUM_Toolbox_2/DIPUM_Toolbox_2.htm
