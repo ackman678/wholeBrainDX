@@ -154,8 +154,8 @@ else
 	pthr = handles.pthr;
 end
 
-if ~isfield(handles,'sigma)
-	sigma = 56.75/region.spaceres; end  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
+if ~isfield(handles,'sigma')
+	sigma = 56.75/region.spaceres;  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
 else
 	sigma = handles.sigma;
 end

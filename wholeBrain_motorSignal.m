@@ -20,6 +20,11 @@ y = channels{chanNum}.adc(:,1)';
 %So to get a factor of 5000 reduction we can run 4 times, with r = 10, 10, 10, 5.
 
 r =  Fs / Fs_imaging; %typically 5000 if Fs = 25000, and Fs_imaging = 5;
+
+if rem(r, 1) ~= 0  %test whether the r downsample ratio is an integer and if not pass error (code should be edited for non-integer ratios or data cropped) 
+	error('Ratio of Fs / Fs_imaging is not an integer-- code or data should be edited')
+end
+
 ri = floor(log10(r));  % this gives no. of decimation iterations with a decimation factor of 10  (10^ri = r) ==> log10(10^ri) = log10(r);
 rRem = r/(10^ri); %this gives the decimation factor for the last iteration. e.g. if ri = 3, the decimation factors would be 10*10*10*rRem.  
 
@@ -35,11 +40,18 @@ end
 
 rectY = abs(y);    %rectify the signal
 decY = rectY;
-for i = 1:ri
-	decY = decimate(decY,10);  
-end
-for i = 1:length(rRem)
-	decY = decimate(decY,rRem(i));  
+
+if rem(sum(rRem), 1) == 0
+	% use the decimate downsample method
+	for i = 1:ri
+		decY = decimate(decY,10);  
+	end
+	for i = 1:length(rRem)
+		decY = decimate(decY,rRem(i));  
+	end
+else
+	% use the resample downsample method
+	decY = resample(decY,1,r);  
 end
 decX = 1:length(decY);  
 
