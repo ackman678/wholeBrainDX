@@ -62,7 +62,12 @@ end
 
 currdir = pwd;  %This assumes that the script calling wholeBrain_batch has already cd'd into the flat directory containing both .tif movie files and dummy .mat files
 %Otherwise this currdir can be changed within this mainfcnloop and the paths to the files for loading .mat and .tif files ('f' and 'fn' below inside 'mainfcnloop') can be changed
-dirname = datestr(now,'yyyy-mm-dd-HHMMSS');
+
+if isfield(handles,'dirname')
+	dirname = handles.dirname;
+else
+	dirname = datestr(now,'yyyy-mm-dd-HHMMSS');
+end
 mkdir(dirname);
 cd(dirname);
 
