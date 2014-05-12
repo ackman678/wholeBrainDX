@@ -144,7 +144,7 @@ bothMasks3D = repmat(bothMasks,[1 1 szZ]);
 switch makeThresh
 case 1 %make otsu thresholds (normal)
 
-parfor fr = 1:szZ;
+for fr = 1:szZ;
 	I = A(:,:,fr);
 	
 	se = strel('disk',backgroundRemovRadius);
@@ -206,7 +206,7 @@ end
 	T = otsuthresh(hp);
 %	T*(numel(hp) - 1)
 
-parfor fr = 1:szZ;
+for fr = 1:szZ;
 	f = Iarr(:,:,fr);
 	bw = im2bw(f, T);
 	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
@@ -271,7 +271,7 @@ end
 
 case 0 %use preexisting otsu threshold (for drug movies)
 	T = thresh;
-parfor fr = 1:szZ;
+for fr = 1:szZ;
 	I = A(:,:,fr);
 	
 	se = strel('disk',backgroundRemovRadius);

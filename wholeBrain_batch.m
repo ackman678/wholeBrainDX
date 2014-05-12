@@ -274,6 +274,7 @@ for j =1:length(mapTypes)
 	disp(['complete: wholeBrainActivityMapFig, mapType=' mapTypes{j}])
 end
 
+%{
 %--Drug state contour activity maps if applicable
 if isfield(region,'stimuli');
 	stimuliIndices = {'drug.state.control' 'drug.state.isoflurane'};
@@ -327,6 +328,7 @@ if isfield(region,'stimuli');
 		end 
 	end	
 end 
+%}
 
 %DomainPatchesPlot(region.domainData.domains, region.domainData.CC, region.domainData.STATS,1,[],1)   %DomainPatchesPlot won't work on a linux server because of a segmentation fault with drawing alpha transparency in matlab
 %fnm2 = [fnm(1:end-4) 'DomainPatchesPlot' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
@@ -373,11 +375,12 @@ print('-dpng', [fnm2 '.png'])
 print('-depsc', [fnm2 '.eps']) 
 
 
+%{
 %==6==Batch fetch datasets=======================
 batchFetchDomainProps({fnm},region,fullfile(pwd,'dDomainProps.txt'));
 batchFetchLocationProps({fnm},region,fullfile(pwd,'dLocationProps.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
 batchFetchLocationPropsFreq({fnm},region,fullfile(pwd,'dLocationPropsFreq.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});	
-
+%}
 
 %==7==Get spatial correlation results and plots==============
 region = wholeBrain_SpatialCOMCorr(fnm,region,{'cortex.L' 'cortex.R'},1);
