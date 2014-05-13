@@ -6,7 +6,6 @@ function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadi
 %updated, improved algorithm with watershed separation and gaussian smooth 2013-02-01 by J.B.A.
 %modified 2013-03-28 14:25:44 by J.B.A.
 
-
 if nargin < 9 || isempty(sigma), sigma = 56.75/region.spaceres; end  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
 if nargin < 8 || isempty(pthr), pthr = 0.99; end
 if nargin < 7 || isempty(thresh), 
@@ -26,8 +25,6 @@ end
 nPixelThreshold = round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
 edgeSmooth = ceil(22.70/region.spaceres); %22.70µm at 11.35um/px to give 2px smooth for the morphological dilation.
 edgeSmooth2 = ceil(34.050/region.spaceres);  %34.0500 at 11.35um/px to give 3px smooth for the second morphological dilation after detection
-
-
 
 %{
 %Open the time series if not passed as a dF/F double array as an input
@@ -141,9 +138,6 @@ bothMasks3D = repmat(bothMasks,[1 1 szZ]);
 %figure;
 %levels = zeros(1,szZ);
 
-switch makeThresh
-case 1 %make otsu thresholds (normal)
-
 for fr = 1:szZ;
 	I = A(:,:,fr);
 	
@@ -205,6 +199,11 @@ end
 	if showFigure > 0; figure; bar(hp,0); end
 	T = otsuthresh(hp);
 %	T*(numel(hp) - 1)
+
+if makeThresh < 1
+	%If false, ignore the threshold, T, set above and use preexisting otsu threshold (for drug movies) passed as handle
+	T = thresh;
+end
 
 for fr = 1:szZ;
 	f = Iarr(:,:,fr);
@@ -268,88 +267,6 @@ for fr = 1:szZ;
 	end
 	
 end
-
-case 0 %use preexisting otsu threshold (for drug movies)
-	T = thresh;
-for fr = 1:szZ;
-	I = A(:,:,fr);
-	
-	se = strel('disk',backgroundRemovRadius);
-	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
-	I2 = I - background;  %subtract background
-%	figure; imshow(I2,[]); title('I2')
-	
-%	Iarr(:,:,fr) = I2;
-	
-	I2 = gaussSmooth(I2,sigma,'same');
-%		figure, imshow(img2,[])
-	Iarr(:,:,fr) = I2;
-	%Adjust filtered image contrast, estimate Otsu's threshold, then binarize the frame, and remove single pixel noise
-%	I3 = imadjust(I2);  %increase image contrast, saturating 1% of data at both low and high intensities.
-%	I3 = I2;
-	f = I2;
-		bw = im2bw(f, T);
-	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
- 	levels(1,fr) = T;
-
-%	figure; imshow(bw,[]); title('bw')
-	bw = bwareaopen(bw, nPixelThreshold);  %remove background single isolated pixel noise. 50 is matlab default value in documentation example for image with , removes all binary objects containing less than 50 pixels. 
-%	figure; imshow(bw,[]); title('bwareaopen 50')
-
-	se = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
-	bw2 = imdilate(bw,se);
-	%bw2 = imfill(bw2,'holes');
-	%figure, imshow(bw2,[]); title('fill')
-
-	g3 = bw2;  %TESTING 2013-03-27 13:12:53
-
-	%Detect connected components in the frame and return ROI CC data structure
-	CC = bwconncomp(g3);  %
-	L = labelmatrix(CC);  %Not used
-	%figure; imshow(label2rgb(L));	
-	STATS = regionprops(CC,'Centroid');  % 
-
-	newPixelIdxList = {};
-	count = 0;
-	for i = 1:CC.NumObjects
-		centrInd = sub2ind(CC.ImageSize(1:2),round(STATS(i).Centroid(2)),round(STATS(i).Centroid(1)));	
-		if	(length(intersect(centrInd,backgroundIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
-	%		if	(length(intersect(centrInd,backgroundIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
-	%		if	(length(intersect(centrInd,backgroundIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},hemisphereBorders)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
-			count = count+1;
-			newPixelIdxList{count} = CC.PixelIdxList{i};
-		end
-	end
-	CC.PixelIdxList = newPixelIdxList;
-	CC.NumObjects = length(CC.PixelIdxList);
-
-	%Make rgb label matrix from the CC ROIs
-	L = labelmatrix(CC);
-%	figure; imshow(label2rgb(L));	%TESTING
-
-	w = L == 0;
-	g4 = g3 & ~w;
-	%figure, imshow(g4)
-
-%	figure, imshow(g4&bothMasks)   %TESTING
-
-	se = strel('disk',edgeSmooth2);
-	g5 = imclose(g4,se);
-	bwFrame = g5&bothMasks;
-%	figure; imshow(bwFrame); title('bw close')   %TESTING
-	%-------end new Algorithm-------------------------------------
-
-	A2(:,:,fr) = bwFrame;
-	
-	%Optional--Show the frame and prep for .avi movie making if desired
-	if showFigure > 0
-		imshow(label2rgb(L));	
-		M(fr) = getframe;
-	end
-end	
-end
-
-
 
 thresh = T;
 
