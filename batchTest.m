@@ -54,72 +54,82 @@ end
 if nargin< 2 || isempty(region); region = []; end
 
 %---**functionHandles.workers and functionHandles.main must be valid functions in this program or in matlabpath to provide an array of function_handles
-functionHandles.workers = {@filename @domainInd};
+functionHandles.workers = {@filename @domainInd @rgen};
 functionHandles.main = @wholeBrain_getDomainStats;
 %tableHeaders = {'filename' 'matlab.filename' 'region.name' 'roi.number' 'nrois' 'roi.height.px' 'roi.width.px' 'xloca.px' 'yloca.px' 'xloca.norm' 'yloca.norm' 'freq.hz' 'intvls.s' 'onsets.s' 'durs.s' 'ampl.df'};
 %filename %roi no. %region.name %roi size %normalized xloca %normalized yloca %region.stimuli{numStim}.description %normalized responseFreq %absolutefiringFreq(dFreq) %meanLatency %meanAmpl %meanDur
 
-headers = cellfun(@func2str, functionHandles.workers, 'UniformOutput', false);
-tableHeaders = headers;
-
+tableHeaders = cellfun(@func2str, functionHandles.workers, 'UniformOutput', false);
 %---Generic opening function---------------------
-datafilename=setupDataTable(tableHeaders, datafilename);
-
-%---Generic main function loop-------------------
-%Provide valid function handle
-mainfcnLoop(filelist, region, datafilename, functionHandles, useStimuli, stimuliIndices)
-
-
-
-
-function datafilename=setupDataTable(tableHeaders, datafilename)
-%---Generic table setup function---------------------
-if nargin < 2 || isempty(datafilename), datafilename = ['dataTable_' datestr(now,'yyyymmdd-HHMMSS') '.txt']; end
-if nargin < 1 || isempty(tableHeaders), error('Must provide tableHeaders cell array of strings'); end
-%localpath_datafilename = ['./' datafilename];
-%setupHeaders = exist(localpath_datafilename,'file');
 setupHeaders = exist(datafilename,'file');
 if setupHeaders < 1
 	%write headers to file----
-	appendCellArray2file(datafilename,tableHeaders)
+	fid = fopen(datafilename,'a');
+	appendCellArray2file(datafilename,tableHeaders,fid)
+else
+	fid = fopen(datafilename,'a');
 end
 
+%---Generic main function loop-------------------
+%Provide valid function handle
+mainfcnLoop(filelist, region, datafilename, functionHandles, useStimuli, stimuliIndices, fid)
+%mainfcnLoop
 
-function appendCellArray2file(filename,output)
-%---Generic output function-------------
-tmp=output;
-fid = fopen(filename,'a');
-for i=1:numel(tmp); tmp{i} = num2str(tmp{i}); end  %this will be to 4 decimal points (defaut for 'format short'). Can switch to 'format long' before running this loop if need more precision.
-tmp2=tmp';
-fprintf(fid,[repmat('%s\t',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %tab delimited
-%fprintf(fid,[repmat('%s ',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %space delimited
 fclose(fid);
 
 
-function mainfcnLoop(filelist, region, datafilename, functionHandles, useStimuli, stimuliIndices)
-functionHandles.main(region, functionHandles.workers, datafilename, stimuliIndices)
+function appendCellArray2file(filename, output, fid)
+%---Generic output function-------------
+tmp=cellfun(@str_func,output,'UniformOutput', false);
+tmp2=tmp';
+fprintf(fid,[repmat('%s\t',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %tab delimited
+%fprintf(fid,[repmat('%s ',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %space delimited
 
 
-function output = wholeBrain_getDomainStats(region, functionHandles, datafilename, stimuliIndices)
-varin.datafilename='140102_01.tif';
+function [ out ] = str_func( in )
+% this function will test whether the input is a string or a double precision non-integer or integer and format the output accordingly. To 4 decimal places precision for non-integers.
+in_datatype = class(in);
+switch in_datatype
+	case 'char'
+		out = in;
+	case 'double'		
+		if rem(in, 1) ~= 0
+			out = sprintf('%.4f',in);
+		else
+			out = sprintf('%d',in);
+		end
+end
+
+
+function mainfcnLoop(filelist, region, datafilename, functionHandles, useStimuli, stimuliIndices,fid)
+%	function mainfcnLoop()
+functionHandles.main(region, functionHandles.workers, datafilename, stimuliIndices, fid)
+
+
+function output = wholeBrain_getDomainStats(region, functionHandles, datafilename, stimuliIndices, fid)
+varin.datafilename=datafilename;
 ObjectIndices = 1:10000;
 
 for idx = ObjectIndices
 	varin.idx = idx;
-	printStats(functionHandles, varin) 	
+	printStats(functionHandles, varin, fid) 	
 end	
 
 
-function stats = printStats(functionHandles, varin)
+function stats = printStats(functionHandles, varin, fid)
 output=cellfun(@(x)x(varin), functionHandles, 'UniformOutput', false); %cellfun example using a generic function  @x applied to the function cell array so that varin can be passed to each function
-appendCellArray2file(varin.datafilename,output)
-
+appendCellArray2file(varin.datafilename,output, fid)
 
 
 function out = filename(varin) 
 %movie .tif filename descriptor string
 out = varin.datafilename;
 
+
 function out = domainInd(varin)
 %location name descriptor string
 out = varin.idx;
+
+
+function out = rgen(varin)
+out = rand(1)/rand(1);

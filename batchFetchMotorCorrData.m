@@ -58,50 +58,36 @@ functionHandles.main = @wholeBrain_getCorrStats;
 %tableHeaders = {'filename' 'matlab.filename' 'region.name' 'roi.number' 'nrois' 'roi.height.px' 'roi.width.px' 'xloca.px' 'yloca.px' 'xloca.norm' 'yloca.norm' 'freq.hz' 'intvls.s' 'onsets.s' 'durs.s' 'ampl.df'};
 %filename %roi no. %region.name %roi size %normalized xloca %normalized yloca %region.stimuli{numStim}.description %normalized responseFreq %absolutefiringFreq(dFreq) %meanLatency %meanAmpl %meanDur
 
-headers = cellfun(@func2str, functionHandles.workers, 'UniformOutput', false);
-tableHeaders = headers;
-
+tableHeaders = cellfun(@func2str, functionHandles.workers, 'UniformOutput', false);
 %---Generic opening function---------------------
-datafilename=setupDataTable(tableHeaders, datafilename);
-
-%---Generic main function loop-------------------
-%Provide valid function handle
-mainfcnLoop(filelist, region, datafilename, functionHandles, datasetSelector)
-
-
-function datafilename=setupDataTable(tableHeaders, datafilename)
-%---Generic table setup function---------------------
-if nargin < 2 || isempty(datafilename), datafilename = ['dataTable_' datestr(now,'yyyymmdd-HHMMSS') '.txt']; end
-if nargin < 1 || isempty(tableHeaders), error('Must provide tableHeaders cell array of strings'); end
-%localpath_datafilename = ['./' datafilename];
-%setupHeaders = exist(localpath_datafilename,'file');
 setupHeaders = exist(datafilename,'file');
 if setupHeaders < 1
 	%write headers to file----
-	appendCellArray2file(datafilename,tableHeaders)
+	fid = fopen(datafilename,'a');
+	appendCellArray2file(datafilename,tableHeaders,fid)
+else
+	fid = fopen(datafilename,'a');
 end
 
-
-function appendCellArray2file(filename,output)
-%---Generic output function-------------
-tmp=output;
-fid = fopen(filename,'a');
-for i=1:numel(tmp); tmp{i} = num2str(tmp{i}); end  %this will be to 4 decimal points (defaut for 'format short'). Can switch to 'format long' before running this loop if need more precision.
-tmp2=tmp';
-fprintf(fid,[repmat('%s\t',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %tab delimited
-%fprintf(fid,[repmat('%s ',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %space delimited
+%---Generic main function loop-------------------
+%Provide valid function handle
+mainfcnLoop(filelist, region, datafilename, functionHandles, datasetSelector, fid)
 fclose(fid);
 
 
-function mainfcnLoop(filelist, region, datafilename, functionHandles, datasetSelector)
+
+function mainfcnLoop(filelist, region, datafilename, functionHandles, datasetSelector, fid, useStimuli, stimuliIndices)
 %start loop through files-----------------------------------------------------------------
+
+if nargin < 5 || isempty(datasetSelector), datasetSelector=[]; end
+if nargin < 7 || isempty(useStimuli), useStimuli=[]; end
+if nargin < 8 || isempty(stimuliIndices), stimuliIndices=[]; end
 
 if nargin< 2 || isempty(region); 
     region = []; loadfile = 1; 
 else
     loadfile = 0;
 end
-
 
 fnms = filelist(:,1);
 
@@ -132,7 +118,7 @@ for j=1:numel(fnms)
 
     disp('--------------------------------------------------------------------')
 	%myEventProps(region,rowinfo);
-	functionHandles.main(region, functionHandles.workers, datafilename, datasetSelector)
+	functionHandles.main(region, functionHandles.workers, datafilename, datasetSelector, fid, useStimuli, stimuliIndices)
 	if ismac | ispc
 		h = waitbar(j/numel(fnms));
 	else
@@ -144,12 +130,8 @@ if ismac | ispc
 	close(h)
 end
 
-function stats = printStats(functionHandles, varin)
-output=cellfun(@(x)x(varin), functionHandles, 'UniformOutput', false); %cellfun example using a generic function  @x applied to the function cell array so that varin can be passed to each function
-appendCellArray2file(varin.datafilename,output)
 
-
-function output = wholeBrain_getCorrStats(region, functionHandles, datafilename, datasetSelector)
+function output = wholeBrain_getCorrStats(region, functionHandles, datafilename, datasetSelector, fid, useStimuli, stimuliIndices)
 varin.datafilename=datafilename;
 varin.region=region;
 varin.datasetSelector = datasetSelector;
@@ -159,7 +141,7 @@ varin.names = names;
 %The following code will save a dataframe of this adjacency dataset:
 for i = 1:size(edgeData,1)  %Plot the pairs in order based on their sorted edgeAesthetic and color their connections with the colormap  
 	varin.idx = i;
-	printStats(functionHandles, varin)
+	printStats(functionHandles, varin, fid)
 end 
 
 

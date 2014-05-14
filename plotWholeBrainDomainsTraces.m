@@ -6,7 +6,7 @@ function varargout = plotWholeBrainDomainsTraces(varargin)
 % true-positive detected vs false-positive detected domains. and can export
 % the data to workspace for error rate detection statistics.
 %
-%EXAMPLE:  plotWholeBrainDomainsTraces(movie1,movie2,region,sigtoolFigHandle,sigtoolChannels,movieTitles,data)
+%EXAMPLE:  plotWholeBrainDomainsTraces(movie1,movie2,region,sigtoolFigHandle,sigtoolChannels,movieTitles,data,makeMovie)
 %INPUTS: movie1, movie2 are MxNxP matlab arrays
 % (uint8 or logical format is best) that get passed within varargin where
 % movie1 is varargin{1}, etc.
