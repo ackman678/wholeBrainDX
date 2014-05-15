@@ -28,21 +28,21 @@ if (nargin < 4 || isempty(mapType)), mapType = 'pixelFreq'; end
 %-----------main-----------------
 frTxt = ['fr' num2str(frames(1)) ':' num2str(frames(2))];
 
-A3 = zeros(sz(1:2));
-
 if strcmp(mapType,'pixelFreq')
-	A3 = makeBlankArray(sz);
+	A3bw = makeBlankArray(sz);
+else
+	A3 = zeros(sz(1:2));
 end
 
 switch plotType
 case 1
 	switch mapType
 		case 'pixelFreq'
-			A3 = makeBinaryPixelArray(A3,CC);
-			nSigPx = numel(find(A3));
+			A3bw = makeBinaryPixelArray(A3bw,CC);
+			nSigPx = numel(find(A3bw));
 			disp([num2str(nSigPx) ' whole movie detected active pixels'])
 
-			A3proj = sumProjectArray(A3,frames);
+			A3proj = sumProjectArray(A3bw,frames);
 
 			nSigPx2 = sum(A3proj(:));
 			disp([num2str(nSigPx2) ' ' frTxt ' detected active pixels'])
@@ -57,11 +57,11 @@ case 1
 case 2
 	switch mapType
 		case 'pixelFreq'
-			A3 = makeBinaryPixelArrayTagged(A3, CC, STATS, '');
-			nSigPx = numel(find(A3));
+			A3bw = makeBinaryPixelArrayTagged(A3bw, CC, STATS, '');
+			nSigPx = numel(find(A3bw));
 			disp([num2str(nSigPx) ' whole movie true positive active pixels'])
 
-			A3proj = sumProjectArray(A3,frames);
+			A3proj = sumProjectArray(A3bw,frames);
 
 			nSigPx2 = sum(A3proj(:));
 			disp([num2str(nSigPx2) ' ' frTxt ' true positive active pixels'])
@@ -82,11 +82,11 @@ case 2
 case 3
 	switch mapType
 		case 'pixelFreq'
-			A3 = makeBinaryPixelArrayTagged(A3, CC, STATS, 'artifact');
-			nNoisePx = numel(find(A3));
+			A3bw = makeBinaryPixelArrayTagged(A3bw, CC, STATS, 'artifact');
+			nNoisePx = numel(find(A3bw));
 			disp([num2str(nNoisePx) ' whole movie false positive active pixels'])
 
-			A3proj = sumProjectArray(A3,frames);
+			A3proj = sumProjectArray(A3bw,frames);
 
 			nNoisePx2 = sum(A3proj(:));
 			disp([num2str(nNoisePx2) ' ' frTxt ' false positive active pixels'])
@@ -102,13 +102,12 @@ otherwise
 	warning('Unexpected plotType vargin. No plot created.');
 end
 
-%-----------functions-------------
-
 function BW = makeBlankArray(sz)
 tmp = zeros(sz,'uint8');
 BW = logical(tmp);
 clear tmp;
 
+%-----------functions-------------
 function A3 = makeBinaryPixelArray(A3, CC)
 for i = 1:CC.NumObjects  
 	A3(CC.PixelIdxList{i}) = 1;  

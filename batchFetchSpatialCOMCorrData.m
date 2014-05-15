@@ -129,7 +129,7 @@ if ismac | ispc
 end
 
 
-function output = wholeBrain_getCorrStats(region, functionHandles, datafilename, functionHandles, datasetSelector, fid, useStimuli, stimuliIndices)
+function output = wholeBrain_getCorrStats(region, functionHandles, datafilename, datasetSelector, fid, useStimuli, stimuliIndices)
 varin.datafilename=datafilename;
 varin.region=region;
 varin.datasetSelector = datasetSelector;

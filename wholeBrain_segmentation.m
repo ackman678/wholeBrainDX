@@ -123,13 +123,12 @@ bwBorders = bwperim(bothMasks);
 se = strel('square',5);
 bwBorders = imdilate(bwBorders,se);
 %	figure, imshow(bwBorders)
-hemisphereBorders = find(bwBorders);
+%hemisphereBorders = find(bwBorders);
 
 M(size(A,3)) = struct('cdata',[],'colormap',[]);
 F(size(A,3)) = struct('cdata',[],'colormap',[]);
-A2=zeros(size(A),'int8');
-A2=logical(A2);
-szZ=sz(3);
+tmp=zeros(size(A),'int8');
+A2=logical(tmp); clear tmp;
 Iarr=zeros(size(A));
 G=zeros(size(A));
 bothMasks3D = repmat(bothMasks,[1 1 szZ]);
@@ -138,7 +137,7 @@ bothMasks3D = repmat(bothMasks,[1 1 szZ]);
 %figure;
 %levels = zeros(1,szZ);
 
-for fr = 1:szZ;
+parfor fr = 1:szZ;
 	I = A(:,:,fr);
 	
 	se = strel('disk',backgroundRemovRadius);
@@ -205,7 +204,7 @@ if makeThresh < 1
 	T = thresh;
 end
 
-for fr = 1:szZ;
+parfor fr = 1:szZ;
 	f = Iarr(:,:,fr);
 	bw = im2bw(f, T);
 	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
@@ -224,7 +223,7 @@ for fr = 1:szZ;
 
 	%Detect connected components in the frame and return ROI CC data structure
 	CC = bwconncomp(g3);  %
-	L = labelmatrix(CC);  %Not used
+%	L = labelmatrix(CC);  %Not used
 	%figure; imshow(label2rgb(L));	
 	STATS = regionprops(CC,'Centroid');  % 
 
@@ -232,9 +231,9 @@ for fr = 1:szZ;
 	count = 0;
 	for i = 1:CC.NumObjects
 		centrInd = sub2ind(CC.ImageSize(1:2),round(STATS(i).Centroid(2)),round(STATS(i).Centroid(1)));	
-		if	(length(intersect(centrInd,backgroundIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
-	%		if	(length(intersect(centrInd,backgroundIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
-	%		if	(length(intersect(centrInd,backgroundIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},hemisphereBorders)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
+		if	(length(intersect(centrInd,backgroundIndices)) < 1) && (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
+	%		if	(length(intersect(centrInd,backgroundIndices)) < 1) && (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
+	%		if	(length(intersect(centrInd,backgroundIndices)) < 1) && (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},hemisphereBorders)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
 			count = count+1;
 			newPixelIdxList{count} = CC.PixelIdxList{i};
 		end
@@ -291,19 +290,21 @@ if makeMovies
 	end
 
 	fnm3 = [fnm2(1:length(fnm2)-4) '-dFoF' '.avi']; 
-	vidObj = VideoWriter(fnm3)
-	open(vidObj)
+	disp(['Making ' fnm3 '-----------'])
+	vidObj = VideoWriter(fnm3);
+	open(vidObj);
 	for i =1:numel(M)
 		writeVideo(vidObj,M(i));
 	end
-	close(vidObj)
+	close(vidObj);
 
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
-	fnm3 = [fnm2(1:length(fnm2)-4) '-mask' '.avi']; 
-	vidObj = VideoWriter(fnm3)
-	open(vidObj)
+	fnm3 = [fnm2(1:length(fnm2)-4) '-mask' '.avi'];
+	disp(['Making ' fnm3 '-----------']) 
+	vidObj = VideoWriter(fnm3);
+	open(vidObj);
 	for i =1:numel(F)
 		writeVideo(vidObj,F(i));
 	end
-	close(vidObj)
+	close(vidObj);
 end

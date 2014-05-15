@@ -188,18 +188,15 @@ case 'none'
 	makeInitMovies = 0;
 end
 
-tic;
 [A2, A, thresh, Amin] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma);
-toc;  
 region.graythresh = thresh;
 region.Amin = Amin;
 
 %==2==Detection============================
-tic;             
 [A3, CC, STATS] = wholeBrain_detect(A2,A,[4 3],makeInitMovies,fnm,region,hemisphereIndices);
 fnm2 = [fnm(1:length(fnm)-4) '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
-toc;        
 save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3')  
+clear A2 A3;
 
 %rsync -av -e ssh jba38@louise.hpc.yale.edu:~/data/120518i/120518_09....mat ~/Desktop  
 
@@ -209,6 +206,7 @@ domains = DomainSegmentationAssignment(CC,STATS, 'false');
 region.domainData.domains = domains;      
 region.domainData.CC = CC;      
 region.domainData.STATS = STATS;  
+clear CC STATS domains;
 
 if ~isfield(region.domainData.STATS, 'descriptor')      
 	for i = 1:length(region.domainData.STATS)    
@@ -221,7 +219,7 @@ if isfield(region, 'taggedCentrBorders')
 end
 
 locationIndices = find(~strcmp(region.name,'field') & ~strcmp(region.name,'craniotomy'));  %because region.location may be empty to this point (usually gets tagged only as a lut for cells are grid rois)
-region = Domains2region(domains, region.domainData.CC,region.domainData.STATS,region,locationIndices);
+region = Domains2region(region.domainData.domains, region.domainData.CC,region.domainData.STATS,region,locationIndices);
 
 fnm = fnm2;  
 fnm = [fnm(1:end-4) '_d2r' '.mat'];       
@@ -274,7 +272,7 @@ for j =1:length(mapTypes)
 	disp(['complete: wholeBrainActivityMapFig, mapType=' mapTypes{j}])
 end
 
-%{
+
 %--Drug state contour activity maps if applicable
 if isfield(region,'stimuli');
 	stimuliIndices = {'drug.state.control' 'drug.state.isoflurane'};
@@ -373,9 +371,9 @@ imagesc(A6); title('maxproj of dFoF movie array raw adjust'); colorbar('location
 fnm2 = [fnm(1:length(fnm)-4) '_maxProj3_' datestr(now,'yyyymmdd-HHMMSS')];    
 print('-dpng', [fnm2 '.png'])
 print('-depsc', [fnm2 '.eps']) 
+clear A A3 A4 A5 A6;
 
 
-%{
 %==6==Batch fetch datasets=======================
 batchFetchDomainProps({fnm},region,fullfile(pwd,'dDomainProps.txt'));
 batchFetchLocationProps({fnm},region,fullfile(pwd,'dLocationProps.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
@@ -431,3 +429,4 @@ else
 		end
 	end
 end
+close all
