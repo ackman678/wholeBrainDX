@@ -46,13 +46,21 @@ region.userdata.spatialAPCorr{datasetSelector}.names = names;
 
 %Make the plots:
 for i = 1:length(names)
-	y1 = data(strcmp({data.name},names{i})).meanActivePixelLocaNormML;  
-  	y3 = data(strcmp({data.name},names{i})).meanActivePixelLocaNormAP;
+
+	if sum(strcmp({data.name},names{i})) > 0
+		y1 = data(strcmp({data.name},names{i})).meanActivePixelLocaNormML;  
+		y3 = data(strcmp({data.name},names{i})).meanActivePixelLocaNormAP;
+    else
+		continue
+    end
     
 	for j = 1:length(names)	
-		y2 = data(strcmp({data.name},names{j})).meanActivePixelLocaNormML;  
-		y4 = data(strcmp({data.name},names{j})).meanActivePixelLocaNormAP;
-	
+		if sum(strcmp({data.name},names{j})) > 0
+			y2 = data(strcmp({data.name},names{j})).meanActivePixelLocaNormML;  
+			y4 = data(strcmp({data.name},names{j})).meanActivePixelLocaNormAP;
+		else
+			continue
+		end	
 		if makePlots
 			figure;
 			ax(1) = subplot(2,1,1);  
