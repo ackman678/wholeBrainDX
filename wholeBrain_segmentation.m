@@ -22,7 +22,7 @@ if nargin < 2 || isempty(backgroundRemovRadius)
 	backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction. This was empirically determined during testing with a range of sizes in spring 2013 on 120518–07.tif and 120703–01.tif. At 11.35 µm/px this would be a 60px radius.
 end
 
-nPixelThreshold = round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
+nPixelThreshold = 50; %round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
 edgeSmooth = ceil(22.70/region.spaceres); %22.70µm at 11.35um/px to give 2px smooth for the morphological dilation.
 edgeSmooth2 = ceil(34.050/region.spaceres);  %34.0500 at 11.35um/px to give 3px smooth for the second morphological dilation after detection
 
@@ -110,7 +110,7 @@ for nRoi=1:length(hemisphereIndices)
 end
 
 %------Make pixelindex lists for background component removal within for loop below-----------
-borderJitter = 113.5/region.spaceres; %for making image border outline 10 px wide (at 11.35 µm/px) to intersect 
+borderJitter = ceil(113.5/region.spaceres); %for making image border outline 10 px wide (at 11.35 µm/px) to intersect 
 x = [borderJitter sz(2)-borderJitter sz(2)-borderJitter borderJitter borderJitter];  %make image border outline borderJitter px wide (at 11.35 µm/px) to intersect 
 y = [borderJitter borderJitter sz(1)-borderJitter sz(1)-borderJitter borderJitter];  %make image border outline borderJitter px wide (at 11.35 µm/px) to intersect 
 ImageBordermask = poly2mask(x,y,sz(1),sz(2));  %make image border mask
@@ -118,12 +118,15 @@ ImageBordermask = poly2mask(x,y,sz(1),sz(2));  %make image border mask
 imageBorderIndices = find(~ImageBordermask);
 backgroundIndices = find(~bothMasks);
 
+%{
+% from orig in dec 2012, no longer needed
 bwBorders = bwperim(bothMasks);
 %figure, imshow(bwBorders);
 se = strel('square',5);
 bwBorders = imdilate(bwBorders,se);
 %	figure, imshow(bwBorders)
 %hemisphereBorders = find(bwBorders);
+%}
 
 M(size(A,3)) = struct('cdata',[],'colormap',[]);
 F(size(A,3)) = struct('cdata',[],'colormap',[]);
@@ -137,7 +140,7 @@ bothMasks3D = repmat(bothMasks,[1 1 szZ]);
 %figure;
 %levels = zeros(1,szZ);
 
-parfor fr = 1:szZ;
+for fr = 1:szZ;
 	I = A(:,:,fr);
 	
 	se = strel('disk',backgroundRemovRadius);
@@ -204,7 +207,7 @@ if makeThresh < 1
 	T = thresh;
 end
 
-parfor fr = 1:szZ;
+for fr = 1:szZ;
 	f = Iarr(:,:,fr);
 	bw = im2bw(f, T);
 	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
@@ -219,10 +222,10 @@ parfor fr = 1:szZ;
 	%bw2 = imfill(bw2,'holes');
 	%figure, imshow(bw2,[]); title('fill')
 
-	g3 = bw2;  %TESTING 2013-03-27 13:12:53
+%	g3 = bw2;  %TESTING 2013-03-27 13:12:53
 
 	%Detect connected components in the frame and return ROI CC data structure
-	CC = bwconncomp(g3);  %
+	CC = bwconncomp(bw2);  %
 %	L = labelmatrix(CC);  %Not used
 	%figure; imshow(label2rgb(L));	
 	STATS = regionprops(CC,'Centroid');  % 
@@ -246,7 +249,7 @@ parfor fr = 1:szZ;
 %	figure; imshow(label2rgb(L));	%TESTING
 
 	w = L == 0;
-	g4 = g3 & ~w;
+	g4 = bw2 & ~w;
 	%figure, imshow(g4)
 
 %	figure, imshow(g4&bothMasks)   %TESTING

@@ -72,6 +72,7 @@ Tags: analysis, wholeBrain, programming, matlab
 	%matlab
 	addpath(genpath('~/Documents/MATLAB/sigTOOL'))
 	addpath(genpath('~/Documents/MATLAB/physioDX'))
+	addpath(genpath('~/Documents/MATLAB/piotrImageVideoProcessingToolbox'))
 
 	filelist = readtext('files.txt',' ');
 	fnms = filelist(:,2);  %Second column is dummy region matfiles
