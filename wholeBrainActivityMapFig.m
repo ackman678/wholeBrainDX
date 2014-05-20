@@ -417,14 +417,14 @@ switch figType
 			nstimuli=1:numel(region.stimuli{numStim}.stimulusParams);
 			name = region.stimuli{numStim}.description;
 
-			disp('--------------------------------------------------')
-			disp(name)
+%			disp('--------------------------------------------------')
+%			disp(name)
 		
 			responseArray{j} = zeros(sz(1),sz(2),length(nstimuli));
 			responseArrayMax{j} = [];
 
 			for i=1:numel(nstimuli)
-				disp(['stimulus ' num2str(i)])
+%				disp(['stimulus ' num2str(i)])
 
 				handles.frames = [region.stimuli{numStim}.stimulusParams{i}.frame_indices(1) region.stimuli{numStim}.stimulusParams{i}.frame_indices(end)];
 				[A3proj,frames] = wholeBrainActivityMapProj(region, handles.frames, plotType, mapType);

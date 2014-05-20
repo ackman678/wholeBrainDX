@@ -192,11 +192,15 @@ end
 region.graythresh = thresh;
 region.Amin = Amin;
 
+disp(['Segmentation finished: ' datestr(now,'yyyymmdd-HHMMSS')])
+
 %==2==Detection============================
 [A3, CC, STATS] = wholeBrain_detect(A2,A,[4 3],makeInitMovies,fnm,region,hemisphereIndices);
 fnm2 = [fnm(1:length(fnm)-4) '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3')  
 clear A2 A3;
+
+disp(['Detection finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
 %rsync -av -e ssh jba38@louise.hpc.yale.edu:~/data/120518i/120518_09....mat ~/Desktop  
 
@@ -224,6 +228,8 @@ region = Domains2region(region.domainData.domains, region.domainData.CC,region.d
 fnm = fnm2;  
 fnm = [fnm(1:end-4) '_d2r' '.mat'];       
 save(fnm,'region','-v7.3')   
+
+disp(['Domain assignment finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
 
 %==4==Get active fraction signals=============================
@@ -254,6 +260,8 @@ wholeBrain_activeFraction(A3,region,hemisphereIndices,'drug.state.isoflurane'); 
 fnm2 = [fnm(1:end-4) 'actvFraction' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 print(gcf, '-dpng', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.png']);      
 print(gcf, '-depsc', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.eps']);   
+
+disp(['Active fraction finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
 %==5==More Plots=========================
 %--Single contour activity map-----
@@ -374,11 +382,15 @@ print('-depsc', [fnm2 '.eps'])
 clear A A3 A4 A5 A6;
 
 
+disp(['Maps finished: ' datestr(now,'yyyymmdd-HHMMSS')])
+
 %==6==Batch fetch datasets=======================
 batchFetchDomainProps({fnm},region,fullfile(pwd,'dDomainProps.txt'));
 batchFetchLocationProps({fnm},region,fullfile(pwd,'dLocationProps.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
 batchFetchLocationPropsFreq({fnm},region,fullfile(pwd,'dLocationPropsFreq.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});	
 %}
+
+disp(['All batch fetch domains, location finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
 %==7==Get spatial correlation results and plots==============
 region = wholeBrain_SpatialCOMCorr(fnm,region,{'cortex.L' 'cortex.R'},1);
@@ -429,4 +441,6 @@ else
 		end
 	end
 end
+
+disp(['All batch fetch corr finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 close all
