@@ -58,7 +58,7 @@ end
 fnm2 = [name '_wholeBrain_segmentation_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
 
 %Read in the primary or first movie file:  
-[data, series1] = myOpenOMEtiff(fnm);
+[~, series1] = myOpenOMEtiff(fnm);
 A = double(series1);
 clear data series1
 
@@ -69,9 +69,9 @@ if isfield(region,'extraFiles')
 		for i = 1:numel(C{1})		
 			if ~strcmp(fnm,C{1}{i})  %if the current filename is not the first one proceed with concatenation				
 				fn=fullfile(pathstr,C{1}{i});
-				[data, series1] = myOpenOMEtiff(fn);
+				[~, series1] = myOpenOMEtiff(fn);
 				A = cat(3, A, double(series1));
-				clear data series1
+				clear series1
 			end
 		end
 	end
@@ -101,7 +101,7 @@ Amin2D = min(A,[],3);
 Amin = min(Amin2D(:));
 A = A + abs(Amin);  %Scale deltaF array so everything is positive valued
 
-bothMasks=logical(zeros(sz(1),sz(2)));
+bothMasks= false(sz(1),sz(2));
 for nRoi=1:length(hemisphereIndices)
 	regionMask = poly2mask(region.coords{hemisphereIndices(nRoi)}(:,1),region.coords{hemisphereIndices(nRoi)}(:,2),sz(1),sz(2));
 	%regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{hemisphereIndices(2)}(:,2),sz(1),sz(2));
@@ -115,8 +115,8 @@ x = [borderJitter sz(2)-borderJitter sz(2)-borderJitter borderJitter borderJitte
 y = [borderJitter borderJitter sz(1)-borderJitter sz(1)-borderJitter borderJitter];  %make image border outline borderJitter px wide (at 11.35 µm/px) to intersect 
 ImageBordermask = poly2mask(x,y,sz(1),sz(2));  %make image border mask
 %figure, imshow(mask)
-imageBorderIndices = find(~ImageBordermask);
-backgroundIndices = find(~bothMasks);
+% imageBorderIndices = find(~ImageBordermask);
+% backgroundIndices = find(~bothMasks);
 
 %{
 % from orig in dec 2012, no longer needed
@@ -130,8 +130,7 @@ bwBorders = imdilate(bwBorders,se);
 
 M(size(A,3)) = struct('cdata',[],'colormap',[]);
 F(size(A,3)) = struct('cdata',[],'colormap',[]);
-tmp=zeros(size(A),'int8');
-A2=logical(tmp); clear tmp;
+A2=false(size(A));
 Iarr=zeros(size(A));
 G=zeros(size(A));
 bothMasks3D = repmat(bothMasks,[1 1 szZ]);
@@ -140,10 +139,13 @@ bothMasks3D = repmat(bothMasks,[1 1 szZ]);
 %figure;
 %levels = zeros(1,szZ);
 
+se = strel('disk',backgroundRemovRadius);
+seSm1 = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
+seSm2 = strel('disk',edgeSmooth2);
+
 for fr = 1:szZ;
 	I = A(:,:,fr);
 	
-	se = strel('disk',backgroundRemovRadius);
 	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
 	I2 = I - background;  %subtract background
 %	figure; imshow(I2,[]); title('I2')
@@ -214,49 +216,32 @@ for fr = 1:szZ;
 % 	levels(1,fr) = T;
 
 %	figure; imshow(bw,[]); title('bw')
-	bw = bwareaopen(bw, nPixelThreshold);  %remove background single isolated pixel noise. 50 is matlab default value in documentation example for image with , removes all binary objects containing less than 50 pixels. 
+%	bw = bwareaopen(bw, nPixelThreshold);  %remove background single isolated pixel noise. 50 is matlab default value in documentation example for image with , removes all binary objects containing less than 50 pixels. 
 %	figure; imshow(bw,[]); title('bwareaopen 50')
 
-	se = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
-	bw2 = imdilate(bw,se);
-	%bw2 = imfill(bw2,'holes');
-	%figure, imshow(bw2,[]); title('fill')
-
-%	g3 = bw2;  %TESTING 2013-03-27 13:12:53
+%	bw = imdilate(bw,seSm1);
 
 	%Detect connected components in the frame and return ROI CC data structure
-	CC = bwconncomp(bw2);  %
-%	L = labelmatrix(CC);  %Not used
-	%figure; imshow(label2rgb(L));	
-	STATS = regionprops(CC,'Centroid');  % 
-
-	newPixelIdxList = {};
-	count = 0;
-	for i = 1:CC.NumObjects
-		centrInd = sub2ind(CC.ImageSize(1:2),round(STATS(i).Centroid(2)),round(STATS(i).Centroid(1)));	
-		if	(length(intersect(centrInd,backgroundIndices)) < 1) && (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
-	%		if	(length(intersect(centrInd,backgroundIndices)) < 1) && (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
-	%		if	(length(intersect(centrInd,backgroundIndices)) < 1) && (length(intersect(CC.PixelIdxList{i},imageBorderIndices)) < 1) & (length(intersect(CC.PixelIdxList{i},hemisphereBorders)) < 1)    %maybe change this threshold, to more than one px intersect like a percentage
-			count = count+1;
-			newPixelIdxList{count} = CC.PixelIdxList{i};
-		end
-	end
-	CC.PixelIdxList = newPixelIdxList;
-	CC.NumObjects = length(CC.PixelIdxList);
-
-	%Make rgb label matrix from the CC ROIs
+	CC = bwconncomp(bw);
+	STATS = regionprops(CC,'Centroid');
 	L = labelmatrix(CC);
-%	figure; imshow(label2rgb(L));	%TESTING
+	K = zeros(sz(1:2));
+	vCentrs=vertcat(STATS.Centroid);
+	centrInd = sub2ind(sz(1:2),round(vCentrs(:,2))',round(vCentrs(:,1))'); 
+	K(centrInd) = L(centrInd);
+	Kbad = [K(K & ~bothMasks); unique(L(L & ~ImageBordermask))];
 
-	w = L == 0;
-	g4 = bw2 & ~w;
-	%figure, imshow(g4)
+	for i = 1:length(Kbad)
+		L(L==Kbad(i)) = 0;
+	end
+	%figure; imagesc(L)
 
-%	figure, imshow(g4&bothMasks)   %TESTING
+	w = L > 0;
+	g4 = bothMasks & w;
+	%figure; imshow(bw2,[])
 
-	se = strel('disk',edgeSmooth2);
-	g5 = imclose(g4,se);
-	bwFrame = g5&bothMasks;
+%	g4 = imclose(g4,seSm2);
+	bwFrame = g4&bothMasks;
 %	figure; imshow(bwFrame); title('bw close')   %TESTING
 	%-------end new Algorithm-------------------------------------
 
