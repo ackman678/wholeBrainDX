@@ -3,8 +3,9 @@ function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadi
 %USAGE -- A2 = wholeBrain_segmentation(fnm,[],region)
 %James B. Ackman
 %2012-12-20
-%updated, improved algorithm with watershed separation and gaussian smooth 2013-02-01 by J.B.A.
+%updated, improved algorithm with gaussian smooth 2013-02-01 by J.B.A.
 %modified 2013-03-28 14:25:44 by J.B.A.
+% Optimized and simplified algoritm 2014-05-21 16:06:48 by J.B.A.
 
 if nargin < 9 || isempty(sigma), sigma = 56.75/region.spaceres; end  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
 if nargin < 8 || isempty(pthr), pthr = 0.99; end
@@ -22,7 +23,7 @@ if nargin < 2 || isempty(backgroundRemovRadius)
 	backgroundRemovRadius = round(681/region.spaceres);  % default is 681 µm radius for the circular structured element used for background subtraction. This was empirically determined during testing with a range of sizes in spring 2013 on 120518–07.tif and 120703–01.tif. At 11.35 µm/px this would be a 60px radius.
 end
 
-nPixelThreshold = 100; %round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
+nPixelThreshold = 50; %round(6.4411e+03/(region.spaceres^2));  %for bwareaopen in loop where salt and pepper noise is removed, getting rid of objects less than 6441.1 µm^2 (50 px with pixel dimensions at 11.35 µm^2)
 edgeSmooth = ceil(22.70/region.spaceres); %22.70µm at 11.35um/px to give 2px smooth for the morphological dilation.
 edgeSmooth2 = ceil(34.050/region.spaceres);  %34.0500 at 11.35um/px to give 3px smooth for the second morphological dilation after detection
 
@@ -60,7 +61,7 @@ fnm2 = [name '_wholeBrain_segmentation_' datestr(now,'yyyymmdd-HHMMSS') '.avi'];
 %Read in the primary or first movie file:  
 [~, series1] = myOpenOMEtiff(fnm);
 A = double(series1);
-clear data series1
+clear series1
 
 %Find out whether there are extra movie files that need to be concatenated together with the first one (regular tiffs have 2+GB limit in size):  
 if isfield(region,'extraFiles')
@@ -78,6 +79,7 @@ if isfield(region,'extraFiles')
 end
 
 sz = size(A);
+szXY = sz(1:2);
 szZ=sz(3);
 
 %TESTING-------------
@@ -116,7 +118,7 @@ y = [borderJitter borderJitter sz(1)-borderJitter sz(1)-borderJitter borderJitte
 ImageBordermask = poly2mask(x,y,sz(1),sz(2));  %make image border mask
 %figure, imshow(mask)
 % imageBorderIndices = find(~ImageBordermask);
-% backgroundIndices = find(~bothMasks);
+backgroundIndices = find(~bothMasks);
 
 %{
 % from orig in dec 2012, no longer needed
@@ -130,12 +132,13 @@ bwBorders = imdilate(bwBorders,se);
 
 M(size(A,3)) = struct('cdata',[],'colormap',[]);
 F(size(A,3)) = struct('cdata',[],'colormap',[]);
-%A2=false(size(A));
+A2=false(size(A));
 Iarr=zeros(size(A));
 G=zeros(size(A));
 bothMasks3D = repmat(bothMasks,[1 1 szZ]);
-ImageBordermask3D = repmat(~ImageBordermask,[1 1 szZ]);
-
+%ImageBordermask3D = repmat(~ImageBordermask,[1 1 szZ]);
+%imageBorderIndices = find(ImageBordermask3D);
+%clear ImageBordermask3D
 
 %------Start core for loop-------------------------
 %figure;
@@ -145,7 +148,7 @@ se = strel('disk',backgroundRemovRadius);
 seSm1 = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
 seSm2 = strel('disk',edgeSmooth2);
 
-for fr = 1:szZ;
+parfor fr = 1:szZ;
 	I = A(:,:,fr);
 	
 	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
@@ -168,41 +171,43 @@ for fr = 1:szZ;
 	grad = sqrt(gx.*gx + gy.*gy);
 	G(:,:,fr) = grad;
 end	
-	
+
+
+%======BEGIN Calculate threshold==========================================================
 %	grad = grad/max(grad(:));
-	mxG = max(G,[],3);
-	mx = max(mxG(:));
-	G = G/mx;
+mxG = max(G,[],3);
+mx = max(mxG(:));
+G = G/mx;
 
 %	grad(~bothMasks) = 0; %Make all edges outside of hemispheres to black level pixels so they don't influence the histogram calculation
-	G(~bothMasks3D) = 0;
-	if showFigure > 0; figure; imshow(grad,[]); end
+G(~bothMasks3D) = 0;
+if showFigure > 0; figure; imshow(G(:,:,1),[]); end
 
 %	[h, ~] = imhist(grad); %For indexed images, imhist returns the histogram counts for each colormap entry so the length of counts is the same as the length of the colormap.
-	
-	[h, ~] = imhist(reshape(G,numel(G),1));
-	
-	if showFigure > 0; figure; imhist(grad); end
+
+[h, ~] = imhist(reshape(G,numel(G),1));
+
+if showFigure > 0; figure; imhist(grad); end
 %	pthr = 0.99;
-	Q = prctileThresh(h,pthr);
+Q = prctileThresh(h,pthr);
 %	markerImage = grad > Q;
-	markerImage = G > Q;
+markerImage = G > Q;
 %	[level,est] = graythresh(grad);  %Otsu's threshold from Image Processing Toolbox  
 %	markerImage = im2bw(grad,level);  %Make binary based on Otsu's threshold
-	if showFigure > 0; figure; imshow(markerImage,[]); end
+if showFigure > 0; figure; imshow(markerImage,[]); end
 
 %	fp = f.*markerImage; 
-	fp = Iarr.*markerImage; 
+fp = Iarr.*markerImage; 
 
-	if showFigure > 0
-	figure, imshow(fp,[])  
-	figure, imhist(fp)
-	end
-	[hp, ~] = imhist(reshape(fp,numel(fp),1));
+if showFigure > 0
+figure, imshow(fp,[])  
+figure, imhist(fp)
+end
+[hp, ~] = imhist(reshape(fp,numel(fp),1));
 
-	hp(1) = 0;
-	if showFigure > 0; figure; bar(hp,0); end
-	T = otsuthresh(hp);
+hp(1) = 0;
+if showFigure > 0; figure; bar(hp,0); end
+T = otsuthresh(hp);
 %	T*(numel(hp) - 1)
 
 if makeThresh < 1
@@ -210,50 +215,57 @@ if makeThresh < 1
 	T = thresh;
 end
 
-	bw = Iarr > T;
+
+%======BEGIN segmentation=================================================================
+parfor fr = 1:szZ;
+
+	bw = Iarr(:,:,fr) > T;
 	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
-% 	levels(1,fr) = T;
+	% 	levels(1,fr) = T;
 
-%	figure; imshow(bw,[]); title('bw')
-	bw = bwareaopen(bw, nPixelThreshold);  %remove background single isolated pixel noise. 50 is matlab default value in documentation example for image with , removes all binary objects containing less than 50 pixels. 
-%	figure; imshow(bw,[]); title('bwareaopen 50')
+	%Detect connected components in the frame and return ROI CC data structure----------------
+	%CC = bwconncomp(bw);
+	S = regionprops(bw, 'Area', 'Centroid', 'PixelIdxList');
+	sa = [S.Area];
 
-%	bw = imdilate(bw,seSm1);
+	vCentrs=vertcat(S.Centroid);
+%	centrInd = sub2ind(sz, round(vCentrs(:,2))', round(vCentrs(:,1))', round(vCentrs(:,3))'); 
+	centrInd = sub2ind(szXY, round(vCentrs(:,2))', round(vCentrs(:,1))'); 
+	pxInd = {S.PixelIdxList};
 
-	%Detect connected components in the frame and return ROI CC data structure
-	CC = bwconncomp(bw);
-	STATS = regionprops(CC,'Centroid');
+	%sa = cellfun(@numel, pxInd);
+
+	[~,ia] = setdiff(centrInd,backgroundIndices);
+
+	%function C = inters2(pxIdxList)
+	%C = intersect(pxIdxList,imageBorderIndices);
+	%end
+	%
+	%IN = cellfun(@inters2, pxInd, 'UniformOutput', false);
+	%lenIN = cellfun(@numel, IN);
+
+	C1 = intersect(find(sa > nPixelThreshold), ia);
+	%C2 = intersect(find(lenIN < 1), C1);
+
+	%idxToKeep = S.PixelIdxList(sa > nPixelThreshold);
+	idxToKeep = pxInd(C1);
+	idxToKeep = vertcat(idxToKeep{:});
+
+	bw2 = false(size(bw));
+	bw2(idxToKeep) = true;
 	
-	L = labelmatrix(CC);
-	K = zeros(sz);
-	vCentrs=vertcat(STATS.Centroid);
-	centrInd = sub2ind(sz, round(vCentrs(:,2))', round(vCentrs(:,1))', round(vCentrs(:,3))'); 
-	K(centrInd) = L(centrInd);
-	Kbad = [K(K & ~bothMasks3D); unique(L(L & ImageBordermask3D))];
-
-	for i = 1:length(Kbad)
-		L(L==Kbad(i)) = 0;
-	end
-	%figure; imagesc(L)
-
-	w = L > 0;
-	A2 = bothMasks3D & w;
-	%figure; imshow(bw2,[])
-
-%	g4 = imclose(g4,seSm2);
-%	bwFrame = g4&bothMasks;
-%	figure; imshow(bwFrame); title('bw close')   %TESTING
-	%-------end new Algorithm-------------------------------------
-
-%	A2(:,:,fr) = bwFrame;
+	bw2 = imdilate(bw2,seSm1);	
+	bw2 = imclose(bw2,seSm2);
 	
+	A2(:,:,fr) = bothMasks & bw2;
+	%-----------------------------------------------------------------------------------------
+
 	%Optional--Show the frame and prep for .avi movie making if desired
 	if showFigure > 0
 		imshow(label2rgb(L));	
 		M(fr) = getframe;
 	end
-	
-
+end
 
 thresh = T;
 
@@ -295,4 +307,5 @@ if makeMovies
 		writeVideo(vidObj,F(i));
 	end
 	close(vidObj);
+end
 end
