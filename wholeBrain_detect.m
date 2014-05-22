@@ -1,4 +1,4 @@
-function [A3, CC, STATS] = wholeBrain_detect(A2,A,NclustersAll,showFigure,fnm,region,hemisphereIndices)
+function [A3, CC, STATS] = wholeBrain_detect(A2,A,NclustersAll,showFigure,fnm,region,hemisphereIndices,makePlots)
 %PURPOSE -- detect domains from segmented movie from wholeBrain_segmentation.m
 %INPUTS --
 %A2: the binary array returned from wholeBrain_segmentation
@@ -22,6 +22,7 @@ function [A3, CC, STATS] = wholeBrain_detect(A2,A,NclustersAll,showFigure,fnm,re
 
 %-----setup default parameters-------
 %assuming [2 3] are the region.name location indices for 'cortex.L' and 'cortex.R'
+if nargin < 8 || isempty(makePlots), makePlots = 1; end
 if nargin < 7 || isempty(hemisphereIndices), hemisphereIndices = find(strcmp(region.name,'cortex.L') | strcmp(region.name,'cortex.R')); end
 if nargin < 6 || isempty(region),
     motorSignal = [];
@@ -150,9 +151,10 @@ for i = 1:Nclusters
 end
 disp(NumObjects)
 
+if makePlots
 plotDomainCentroids(cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,'2nd pass domain centroid location');
 plotClusters(X,cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,'2nd pass kmeans inputs distribution');
-
+end
 %-------Figure out which clusters to keep and get vector of object indices-------
 %Single frame activation noise removal on big cluster algorithm
 %NoiseClusterIdx = find(NumObjects == max(NumObjects));
@@ -170,13 +172,14 @@ tmp{1} = 'total no. of good:';
 tmp{2} = num2str(numel(ObjectIndices));
 disp(tmp)
 
+if makePlots
 %---Make plot of only good clusters---
 figure; plot(centr(ObjectIndices,1),centr(ObjectIndices,2),'o','Color',myColors(1,:)); title('2nd pass Noise cluster removed') %title('durations > 1fr')
 axis image; axis ij; %axis off
 ylim([1 sz(1)]); xlim([1 sz(2)]); colormap(myColors); colorbar;
 print(gcf, '-dpng', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '-3.png']);
 print(gcf, '-depsc', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '-3.eps']);
-
+end
 %ObjectIndices=goodComponents;  %TESTING. Line goes with <= 1 frame delete noise code above.
 %----Remake CC data structure with desired objects (deleting noise components)----
 %now we remake the connected components (CC) data structure by keeping only the objects in the cluster of interest (the functional signal cluster)
