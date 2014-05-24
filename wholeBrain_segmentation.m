@@ -257,7 +257,8 @@ parfor fr = 1:szZ;
 	bw2 = imdilate(bw2,seSm1);	
 	bw2 = imclose(bw2,seSm2);
 	
-	A2(:,:,fr) = bothMasks & bw2;
+	%A2(:,:,fr) = bothMasks & bw2;
+	A2(:,:,fr) = bw2;
 	%-----------------------------------------------------------------------------------------
 
 	%Optional--Show the frame and prep for .avi movie making if desired

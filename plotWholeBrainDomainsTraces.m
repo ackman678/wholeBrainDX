@@ -1,7 +1,7 @@
 function varargout = plotWholeBrainDomainsTraces(varargin)
 % PLOTWHOLEBRAINDOMAINSTRACES MATLAB code for plotWholeBrainDomainsTraces.fig
 % This function is utilized to visualize and compare multiple copies of the
-% same movie (in this case up to 4) and can interactively mark
+% same movie and can interactively mark
 % all real positive ROIs (calcium domains in this case) as well as
 % true-positive detected vs false-positive detected domains. and can export
 % the data to workspace for error rate detection statistics.
@@ -92,15 +92,19 @@ if lenVarargin < 3 || isempty(varargin{3}),
     else
         pathname = pwd;
     end
-    [filename, pathname] = uigetfile('*.mat','Select file to load',pathname);
-    fname = fullfile(pathname,filename);
-    matfile=load(fname);
-    save('calciumdxprefs.mat', 'pathname','filename');
+    [filename, pathname] = uigetfile('*.mat','Select file to load or press cancel',pathname);
+    if filename == 0
+		matfile.region=[];
+    else
+		fname = fullfile(pathname,filename);
+		matfile=load(fname);
+		save('calciumdxprefs.mat', 'pathname','filename');
+    end
     if isfield(matfile.region,'locationData')
 %         handles.plot3.data=region.locationData.data;
         handles.plot3=setupActiveFractionHandles(region);
     else
-        handles.plot3(1).data.activeFractionByFrame=[];
+        handles.plot3(1).data=[];
         handles.plot3(1).legendText = 'no data';
     end
 else
@@ -191,7 +195,8 @@ end
 
 function plot3 = setupActiveFractionHandles(region)
 data = region.locationData.data;
-for locationIndex = 1:length(data)
+nplots = min([length(data) 6]);
+for locationIndex = 1:nplots
     plot3(locationIndex).data = data(locationIndex).activeFractionByFrame;
     plot3(locationIndex).legendText = data(locationIndex).name;
     plot3(locationIndex).Fs = 1/region.timeres;   %sampling rate (Hz).  Used to convert frame times to time for aligning the ephys framemarkers.
@@ -219,16 +224,17 @@ function handles = plotImages_initialize(hObject, eventdata, handles)
 if islogical(handles.movie1)
     handles.clims1 = [0 1];
 else
-%     clear tmp; tmp = handles.movie1(:);
-%     handles.clims1 = [min(tmp) max(tmp)];
-    handles.clims1 = [0 255];
+	tmp = max(handles.movie1,[],3);
+	tmp2 = min(handles.movie1,[],3);
+    handles.clims1 = [min(tmp2(:)) max(tmp(:))];
+%    handles.clims1 = [0 255];
 end
 
 if islogical(handles.movie2)
     handles.clims2 = [0 1];
 else
-    clear tmp; tmp = handles.movie2(:);
-    handles.clims2 = [min(tmp) max(tmp)];
+	tmp = max(handles.movie2,[],3);
+    handles.clims2 = [0 max(tmp(:))];
 end
 
 % if islogical(handles.movie3)
@@ -252,6 +258,7 @@ handles.current_data2 = handles.movie2(:,:,handles.currentFrame);
 set(gcf,'CurrentAxes',handles.axes2)
 handles.image2 = imagesc(handles.current_data2,handles.clims2); axis off; axis image; colormap(gray); title(handles.axesTitles{2})
 
+if ~isempty(handles.plot3.data)
 %-------setup plot3-------------------
 set(gcf,'CurrentAxes',handles.axes3)
 nPlots = length(handles.plot3);
@@ -291,8 +298,9 @@ if handles.plot4(1).unitConvFactor == 1
 end
 zoom xon
 %-------end setup plot3----------------
+end
 
-
+if ~isempty(handles.plot4.data)
 %-------setup plot4-------------------
 set(gcf,'CurrentAxes',handles.axes4)
 nPlots = length(handles.plot4);
@@ -340,6 +348,7 @@ clickableLegend(handles.axes4,legendText,handles.slider2);  %pass axes handle, l
 % pan xon
 zoom xon
 %-------end setup plot4----------------
+end
 
 handles = setupFrameMarkers(hObject, eventdata, handles);
 
@@ -418,17 +427,20 @@ function handles = setupFrameMarkers(hObject, eventdata, handles)
 % hObject    handle (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+%if ~isempty(handles.plot3.data)
 set(gcf,'CurrentAxes',handles.axes3)
 ylimits = get(handles.axes3,'YLim');
 myColors = [0.5 0.5 0.5];
 
 handles.current_data3.frameMarker = line([handles.currentFrame handles.currentFrame],ylimits,'LineStyle','-','LineWidth',1,'Color',myColors);
+%end
 
+%if ~isempty(handles.plot4.data)
 set(gcf,'CurrentAxes',handles.axes4)
 ylimits = get(handles.axes4,'YLim');
 
 handles.current_data4.frameMarker = line([handles.currentFrame/handles.plot4(1).unitConvFactor handles.currentFrame/handles.plot4(1).unitConvFactor],ylimits,'LineStyle','-','LineWidth',1,'Color',myColors);   %this frameMarker converted to time (s) based on the framerate (plot3(1).Fs)
-
+%end
 
 function plotFrameMarkers(handles)
 % hObject    handle (see GCBO)
