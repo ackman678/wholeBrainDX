@@ -9,23 +9,19 @@ Usage instructions at [wholeBrain_workflow.md](wholeBrain_workflow.md)
 
 # Installation
 
-1. Clone wholeBrainDX from GitHub into your *MATLAB* user folder.
+1. Clone wholeBrainDX from GitHub into your *$MATLABHOME* user folder.
 2. Add wholeBrainDX to your [matlab path][matlabSearchPath]
-3. *Optional:* Install the non-core dependency toolboxes
-	* download from the respective sites listed above
-	* move the toolboxes into your matlab user home folder
-	* add their folders and subfolders to your matlab path.
+3. Install the core dependency toolboxes. Add them your matlab search path or use the `addpath(genpath('$PATH/$MATLABHOME/toolbox'))` syntax at the command prompt when starting up matlab with each toolbox.
+4. *Optional:* Install the non-core dependency toolboxes. Same as above, add their folders and subfolders to your matlab path.
 
 # Requirements
 
 ## Core dependencies ##
 
 * matlab with the signal processing and image processing toolboxes
-* [CalciumDX](https://github.com/ackman678/CalciumDX)
+* [CalciumDX](https://github.com/ackman678/CalciumDX) This is used mostly just to help with setting up dummy parcellation files for inputs to wholeBrain_batch.m (explained in [wholeBrain_workflow.md](wholeBrain_workflow.md)). Also calls myOpenOMEtiff.m for tiff movie opening.
 * [piotrImageVideoProcessingToolbox][piotrToolbox]. Uses gaussSmooth and xcorrn from this toolbox.
-* `loci_tools.jar` a java plugin for opening many different microscopy image/tiff file formats 
-	* included in `CalciumDX`, but up-to-date version can be found at [ome website](http://www.loci.wisc.edu/ome/ome-tiff.html) or through the ImageJ plugins page.
-	* should be placed in the `CalciumDX/` folder
+* [bfmatlab](http://www.openmicroscopy.org/site/support/bio-formats5/users/matlab/index.html), a matlab toolbox containing the bio-formats java plugin and a `bfopen.m` reader function for opening many different microscopy image/tiff file formats.
 
 ## Non-core dependencies ##
 

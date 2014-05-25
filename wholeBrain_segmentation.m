@@ -117,7 +117,7 @@ x = [borderJitter sz(2)-borderJitter sz(2)-borderJitter borderJitter borderJitte
 y = [borderJitter borderJitter sz(1)-borderJitter sz(1)-borderJitter borderJitter];  %make image border outline borderJitter px wide (at 11.35 µm/px) to intersect 
 ImageBordermask = poly2mask(x,y,sz(1),sz(2));  %make image border mask
 %figure, imshow(mask)
-% imageBorderIndices = find(~ImageBordermask);
+imageBorderIndices = find(~ImageBordermask);
 backgroundIndices = find(~bothMasks);
 
 %{
@@ -249,16 +249,25 @@ parfor fr = 1:szZ;
 
 	%idxToKeep = S.PixelIdxList(sa > nPixelThreshold);
 	idxToKeep = pxInd(C1);
-	idxToKeep = vertcat(idxToKeep{:});
+	
+	%imagebord intersect
+	lenIN=zeros(1,numel(idxToKeep));
+	for i=1:numel(lenIN)
+	C = intersect(idxToKeep{i},imageBorderIndices);
+	lenIN(1,i)=numel(C);
+	end
+	
+	idxToKeep2=idxToKeep(lenIN < 1);
+	idxToKeep2 = vertcat(idxToKeep2{:});
 
 	bw2 = false(size(bw));
-	bw2(idxToKeep) = true;
+	bw2(idxToKeep2) = true;
 	
 	bw2 = imdilate(bw2,seSm1);	
 	bw2 = imclose(bw2,seSm2);
 	
-	%A2(:,:,fr) = bothMasks & bw2;
-	A2(:,:,fr) = bw2;
+	A2(:,:,fr) = bothMasks & bw2;
+	%A2(:,:,fr) = bw2;
 	%-----------------------------------------------------------------------------------------
 
 	%Optional--Show the frame and prep for .avi movie making if desired
