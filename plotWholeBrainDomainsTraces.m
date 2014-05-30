@@ -258,7 +258,7 @@ handles.current_data2 = handles.movie2(:,:,handles.currentFrame);
 set(gcf,'CurrentAxes',handles.axes2)
 handles.image2 = imagesc(handles.current_data2,handles.clims2); axis off; axis image; colormap(gray); title(handles.axesTitles{2})
 
-if ~isempty(handles.plot3.data)
+if ~isempty(handles.plot3(1).data)
 %-------setup plot3-------------------
 set(gcf,'CurrentAxes',handles.axes3)
 nPlots = length(handles.plot3);
@@ -300,7 +300,7 @@ zoom xon
 %-------end setup plot3----------------
 end
 
-if ~isempty(handles.plot4.data)
+if ~isempty(handles.plot4(1).data)
 %-------setup plot4-------------------
 set(gcf,'CurrentAxes',handles.axes4)
 nPlots = length(handles.plot4);

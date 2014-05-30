@@ -70,6 +70,9 @@ Tags: analysis, wholeBrain, programming, matlab
 		
 	```matlab
 	%matlab
+	addpath(genpath('~/Documents/MATLAB/wholeBrainDX'))
+	addpath(genpath('~/Documents/MATLAB/CalciumDX'))
+	addpath(genpath('~/Documents/MATLAB/bfmatlab'))
 	addpath(genpath('~/Documents/MATLAB/sigTOOL'))
 	addpath(genpath('~/Documents/MATLAB/physioDX'))
 	addpath(genpath('~/Documents/MATLAB/piotrImageVideoProcessingToolbox'))
