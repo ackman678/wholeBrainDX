@@ -1,17 +1,28 @@
-function [A3, CC, STATS] = wholeBrain_kmeans(A2,A,NclustersAll,showFigure,fnm,region,hemisphereIndices)
-%PURPOSE -- use kmeans clustering to clean up segmentation from wholeBrain_segmentation.m
+function [A3, CC, STATS] = wholeBrain_detect(A2,A,NclustersAll,showFigure,fnm,region,hemisphereIndices,makePlots)
+%PURPOSE -- detect domains from segmented movie from wholeBrain_segmentation.m
 %INPUTS --
 %A2: the binary array returned from wholeBrain_segmentation
 %A: the raw dF/F image array that was returned from and passed to wholeBrain_segmentation.m originally
 %NclustersAll: optional integer vector stating how many k-clusters to detect for each pass
-%USAGE -- [A3, CC] = wholeBrain_kmeans(A2,A)
+%
+%OPTIONS --
+% By default, the only detected components that will be removed are those lasting only 1 frame in duration. This is set around ln 165 as `badComponents = find(durations<2);`
+% The preceding lines around ln 165 can be uncommented to accept only the kmeans detected signal components that are automatically detected, **but not accepted by default**
+% TODO: add optional flag on whether to make use of kmeans clustering (default is off).
+% TODO: add option to pass alternative 'badComponents' vector, as could be done using alternate n-D signal decomposition techniques.
+%
+%USAGE -- [A3, CC] = wholeBrain_detect(A2,A)
 %SEE AlSO -- kmeans, wholeBrain_segmentation.m
 %James B. Ackman
 %2012-12-20
 % update 2013-10-31 15:42:02 JBA to used mean, duration, diameter for clustering and to remove single frame activations in the largest cluster
+% update 2013-11-21 JBA to implemented sqDist algo to be passed to clustering.
+% update 2013-12-31 JBA set default to just remove detected components lasting <2 frames in duration as default for wholeBrain paper.
+% update 2014-05-01 14:15:54 JBA changed name to wholeBrain_detect.m and edited documentation.
 
 %-----setup default parameters-------
 %assuming [2 3] are the region.name location indices for 'cortex.L' and 'cortex.R'
+if nargin < 8 || isempty(makePlots), makePlots = 1; end
 if nargin < 7 || isempty(hemisphereIndices), hemisphereIndices = find(strcmp(region.name,'cortex.L') | strcmp(region.name,'cortex.R')); end
 if nargin < 6 || isempty(region),
     motorSignal = [];
@@ -25,9 +36,9 @@ else
 end  %a downsampled motorSignal same length as n movie frames can be input to help clustering
 
 if nargin < 5 || isempty(fnm),
-    fnm2 = ['wholeBrain_kmeans_' datestr(now,'yyyymmdd-HHMMSS') '.avi'];
+    fnm2 = ['wholeBrain_detect_' datestr(now,'yyyymmdd-HHMMSS') '.avi'];
 else
-    fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_kmeans_' datestr(now,'yyyymmdd-HHMMSS') '.avi'];
+    fnm2 = [fnm(1:length(fnm)-4) '_wholeBrain_detect_' datestr(now,'yyyymmdd-HHMMSS') '.avi'];
 end
 
 if nargin < 4 || isempty(showFigure), showFigure = 0; end %default is to not show the figures (faster)
@@ -140,9 +151,10 @@ for i = 1:Nclusters
 end
 disp(NumObjects)
 
+if makePlots
 plotDomainCentroids(cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,'2nd pass domain centroid location');
 plotClusters(X,cidx,NumObjects,xlab,ylab,zlab,sz,fnm2,Nclusters,Nreplicates,centr,myColors,'2nd pass kmeans inputs distribution');
-
+end
 %-------Figure out which clusters to keep and get vector of object indices-------
 %Single frame activation noise removal on big cluster algorithm
 %NoiseClusterIdx = find(NumObjects == max(NumObjects));
@@ -160,13 +172,14 @@ tmp{1} = 'total no. of good:';
 tmp{2} = num2str(numel(ObjectIndices));
 disp(tmp)
 
+if makePlots
 %---Make plot of only good clusters---
 figure; plot(centr(ObjectIndices,1),centr(ObjectIndices,2),'o','Color',myColors(1,:)); title('2nd pass Noise cluster removed') %title('durations > 1fr')
 axis image; axis ij; %axis off
 ylim([1 sz(1)]); xlim([1 sz(2)]); colormap(myColors); colorbar;
 print(gcf, '-dpng', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '-3.png']);
 print(gcf, '-depsc', [fnm2(1:end-4) datestr(now,'yyyymmdd-HHMMSS') '-3.eps']);
-
+end
 %ObjectIndices=goodComponents;  %TESTING. Line goes with <= 1 frame delete noise code above.
 %----Remake CC data structure with desired objects (deleting noise components)----
 %now we remake the connected components (CC) data structure by keeping only the objects in the cluster of interest (the functional signal cluster)
@@ -184,9 +197,11 @@ CC.NumObjects = length(CC.PixelIdxList);
 
 %---Finish---
 if exist('A')
-    STATS = regionprops(CC,A,'Area','BoundingBox', 'Centroid', 'MaxIntensity', 'MinIntensity', 'MeanIntensity', 'FilledArea', 'FilledImage', 'Image', 'PixelIdxList', 'PixelList', 'SubarrayIdx'); %all the properties in regionprops that work on n-D arrays
+%    STATS = regionprops(CC,A,'Area','BoundingBox', 'Centroid', 'MaxIntensity', 'MinIntensity', 'MeanIntensity', 'FilledArea', 'FilledImage', 'Image', 'PixelIdxList', 'PixelList', 'SubarrayIdx'); %all the properties in regionprops that work on n-D arrays   in 2014a FilledImage and FilledArea take too long, not needed anyways
+    STATS = regionprops(CC,A,'Area','BoundingBox', 'Centroid', 'MaxIntensity', 'MinIntensity', 'MeanIntensity', 'Image', 'PixelIdxList', 'PixelList', 'SubarrayIdx'); %all the properties in regionprops that work on n-D arrays
 else
-    STATS = regionprops(CC,'Area','BoundingBox', 'Centroid', 'FilledArea', 'FilledImage', 'Image', 'PixelIdxList', 'PixelList', 'SubarrayIdx'); %all the properties in regionprops that work on n-D arrays
+%    STATS = regionprops(CC,'Area','BoundingBox', 'Centroid', 'FilledArea', 'FilledImage', 'Image', 'PixelIdxList', 'PixelList', 'SubarrayIdx'); %all the properties in regionprops that work on n-D arrays % in 2014a FilledImage and FilledArea take too long, not needed anyways
+    STATS = regionprops(CC,'Area','BoundingBox', 'Centroid', 'Image', 'PixelIdxList', 'PixelList', 'SubarrayIdx'); %all the properties in regionprops that work on n-D arrays
 end
 
 A3 = getMovie(CC,A2,fnm2,sz,showFigure);

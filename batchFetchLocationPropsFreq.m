@@ -60,50 +60,35 @@ functionHandles.main = @wholeBrain_getActiveFractionStats;
 %tableHeaders = {'filename' 'matlab.filename' 'region.name' 'roi.number' 'nrois' 'roi.height.px' 'roi.width.px' 'xloca.px' 'yloca.px' 'xloca.norm' 'yloca.norm' 'freq.hz' 'intvls.s' 'onsets.s' 'durs.s' 'ampl.df'};
 %filename %roi no. %region.name %roi size %normalized xloca %normalized yloca %region.stimuli{numStim}.description %normalized responseFreq %absolutefiringFreq(dFreq) %meanLatency %meanAmpl %meanDur
 
-headers = cellfun(@func2str, functionHandles.workers, 'UniformOutput', false);
-tableHeaders = headers;
-
+tableHeaders = cellfun(@func2str, functionHandles.workers, 'UniformOutput', false);
 %---Generic opening function---------------------
-datafilename=setupDataTable(tableHeaders, datafilename);
-
-%---Generic main function loop-------------------
-%Provide valid function handle
-mainfcnLoop(filelist, region, datafilename, functionHandles, useStimuli, stimuliIndices)
-
-
-function datafilename=setupDataTable(tableHeaders, datafilename)
-%---Generic table setup function---------------------
-if nargin < 2 || isempty(datafilename), datafilename = ['dataTable_' datestr(now,'yyyymmdd-HHMMSS') '.txt']; end
-if nargin < 1 || isempty(tableHeaders), error('Must provide tableHeaders cell array of strings'); end
-%localpath_datafilename = ['./' datafilename];
-%setupHeaders = exist(localpath_datafilename,'file');
 setupHeaders = exist(datafilename,'file');
 if setupHeaders < 1
 	%write headers to file----
-	appendCellArray2file(datafilename,tableHeaders)
+	fid = fopen(datafilename,'a');
+	appendCellArray2file(datafilename,tableHeaders,fid)
+else
+	fid = fopen(datafilename,'a');
 end
 
-
-function appendCellArray2file(filename,output)
-%---Generic output function-------------
-tmp=output;
-fid = fopen(filename,'a');
-for i=1:numel(tmp); tmp{i} = num2str(tmp{i}); end  %this will be to 4 decimal points (defaut for 'format short'). Can switch to 'format long' before running this loop if need more precision.
-tmp2=tmp';
-fprintf(fid,[repmat('%s\t',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %tab delimited
-%fprintf(fid,[repmat('%s ',1,size(tmp2,1)-1),'%s\n'],tmp2{:});  %space delimited
+%---Generic main function loop-------------------
+%Provide valid function handle
+mainfcnLoop(filelist, region, datafilename, functionHandles, [], fid, useStimuli, stimuliIndices)
 fclose(fid);
 
 
-function mainfcnLoop(filelist, region, datafilename, functionHandles, useStimuli, stimuliIndices)
+function mainfcnLoop(filelist, region, datafilename, functionHandles, datasetSelector, fid, useStimuli, stimuliIndices)
 %start loop through files-----------------------------------------------------------------
+
+if nargin < 5 || isempty(datasetSelector), datasetSelector=[]; end
+if nargin < 7 || isempty(useStimuli), useStimuli=[]; end
+if nargin < 8 || isempty(stimuliIndices), stimuliIndices=[]; end
 
 if nargin< 2 || isempty(region); 
     region = []; loadfile = 1; 
 else
     loadfile = 0;
 end
-
 
 fnms = filelist(:,1);
 
@@ -127,26 +112,6 @@ for j=1:numel(fnms)
     end
 	[pathstr, name, ext] = fileparts(fnms{j});
 	region.matfilename = [name ext];  %2012-02-07 jba    
-
-	if strcmp(useStimuli,'true') & isempty(stimuliIndices) & isfield(region,'stimuli'); 
-		stimuliIndices=1:numel(region.stimuli);
-	elseif strcmp(useStimuli,'true') & iscellstr(stimuliIndices) & isfield(region,'stimuli')  %if the input is a cellarray of strings
-			ind = [];
-			for i = 1:length(region.stimuli)
-				for k = 1:length(stimuliIndices)
-					if strcmp(region.stimuli{i}.description,stimuliIndices{k})
-						ind = [ind i];
-					end
-				end
-			end
-			stimuliIndices = ind; %assign indices 
-	elseif strcmp(useStimuli,'true') & isnumeric(stimuliIndices) & isfield(region,'stimuli')
-		return
-	elseif ~isfield(region,'stimuli') || strcmp(useStimuli,'false')
-		stimuliIndices = [];
-	else
-		error('Bad input to useStimuli, stimuliIndices, or region.stimuli missing')
-	end
 	
 %	rowinfo = [name1 name2];  %cat cell array of strings
 %	rowinfo = filelist(j,:);
@@ -154,7 +119,7 @@ for j=1:numel(fnms)
 
     disp('--------------------------------------------------------------------')
 	%myEventProps(region,rowinfo);
-	functionHandles.main(region, functionHandles.workers, datafilename, stimuliIndices)
+	functionHandles.main(region, functionHandles.workers, datafilename, datasetSelector, fid, useStimuli, stimuliIndices)
 	if ismac | ispc
 		h = waitbar(j/numel(fnms));
 	else
@@ -169,7 +134,7 @@ end
 
 %-----------------------------------------------------------------------------------------
 %dataFunctionHandle
-function output = wholeBrain_getActiveFractionStats(region, functionHandles, datafilename, stimuliIndices)
+function output = wholeBrain_getActiveFractionStats(region, functionHandles, datafilename, datasetSelector, fid, useStimuli, stimuliIndices)
 %script to fetch the active and non-active pixel fraction period durations
 %for all data and all locations
 %2013-04-09 11:35:04 James B. Ackman
@@ -180,6 +145,27 @@ function output = wholeBrain_getActiveFractionStats(region, functionHandles, dat
 locationMarkers = unique(region.location);
 varin.datafilename=datafilename;
 varin.region=region;
+
+if strcmp(useStimuli,'true') & isempty(stimuliIndices) & isfield(region,'stimuli'); 
+	stimuliIndices=1:numel(region.stimuli);
+elseif strcmp(useStimuli,'true') & iscellstr(stimuliIndices) & isfield(region,'stimuli')  %if the input is a cellarray of strings
+		ind = [];
+		for i = 1:length(region.stimuli)
+			for k = 1:length(stimuliIndices)
+				if strcmp(region.stimuli{i}.description,stimuliIndices{k})
+					ind = [ind i];
+				end
+			end
+		end
+		stimuliIndices = ind; %assign indices 
+elseif strcmp(useStimuli,'true') & isnumeric(stimuliIndices) & isfield(region,'stimuli')
+	return
+elseif ~isfield(region,'stimuli') || strcmp(useStimuli,'false')
+	stimuliIndices = [];
+else
+	error('Bad input to useStimuli, stimuliIndices, or region.stimuli missing')
+end
+
 
 if ~isempty(stimuliIndices)
 	%SignalMatrix = zeros(length(locationMarkers),size(region.locationData.data(1).activeFractionByFrame,2));  %for making a combined actvFraction location signal
@@ -194,7 +180,7 @@ if ~isempty(stimuliIndices)
 				varin.off = region.stimuli{numStim}.stimulusParams{nstimuli}.frame_indices(end);
 				varin.locationName=locationName;
 				varin.locationIndex=locationIndex;
-				printStats(functionHandles, varin) 
+				printStats(functionHandles, varin, fid) 
 			end
 		end
 		%END For loop here by stimulus.stimuliParams-------------------------------
@@ -209,7 +195,7 @@ else
 		varin.off = numel(region.locationData.data(locationIndex).nPixelsByFrame);
 		varin.locationName=locationName;
 		varin.locationIndex=locationIndex;
-		printStats(functionHandles, varin) 
+		printStats(functionHandles, varin, fid) 
 	end
 end
 %{
@@ -242,19 +228,6 @@ varin.periodType='non.active';
 printStats(functionHandles, varin)
 %---END---use the combined actvFraction location signal----
 %}
-
-
-function stats = printStats(functionHandles, varin)
-output=cellfun(@(x)x(varin), functionHandles, 'UniformOutput', false); %cellfun example using a generic function  @x applied to the function cell array so that varin can be passed to each function
-appendCellArray2file(varin.datafilename,output)
-%functionHandles.workers = {@region_name @actvPeriodType ...
-%@actvFraction @maxFraction @minFraction @meanFraction @sdFraction @meanActvFraction @sdActvFraction @actvFrames @actvTimeFraction @nonActvFrames @nonActvTimeFraction ...
-%@maxDuration_s @minDuration_s @medianDuration_s @meanDuration_s @sdDuration_s @sumDuration_s};
-
-%do for loop through functionHandles or cellfun
-%S = cellfun(@str2func, {'sin' 'cos' 'tan'}, 'UniformOutput', false);  %cellfun example
-%cellfun(@(x)x(2), S, 'UniformOutput', false) %cellfun example
-
 
 
 function out = filename(varin) 

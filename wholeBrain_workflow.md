@@ -70,8 +70,12 @@ Tags: analysis, wholeBrain, programming, matlab
 		
 	```matlab
 	%matlab
+	addpath(genpath('~/Documents/MATLAB/wholeBrainDX'))
+	addpath(genpath('~/Documents/MATLAB/CalciumDX'))
+	addpath(genpath('~/Documents/MATLAB/bfmatlab'))
 	addpath(genpath('~/Documents/MATLAB/sigTOOL'))
 	addpath(genpath('~/Documents/MATLAB/physioDX'))
+	addpath(genpath('~/Documents/MATLAB/piotrImageVideoProcessingToolbox'))
 
 	filelist = readtext('files.txt',' ');
 	fnms = filelist(:,2);  %Second column is dummy region matfiles
@@ -373,7 +377,7 @@ domainTaggingGui:
 ## Outline of wholeBrain_batch
 
 * A, A2 = wholeBrainSegmentation
-* A3, CC, STATS, wholeBrain_kmeans
+* A3, CC, STATS, wholeBrain_detect
 * domains = DomainSegmentationAssigment(CC,STATS,'false')
 * region = domains2region(domains,CC,STATS,region, hemiindices)
 	

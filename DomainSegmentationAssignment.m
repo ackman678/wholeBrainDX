@@ -1,6 +1,6 @@
 function domains = DomainSegmentationAssignment(CC,STATS,assign)
 %overlay domains for plot and for domain assignment from a 3D connected components array
-% need CC, connected components and STATS, the structure returned by region.props after running wholeBrain_segmentation.m and then wholeBrain_kmeans.m
+% need CC, connected components and STATS, the structure returned by region.props after running wholeBrain_segmentation.m and then wholeBrain_detect.m
 % James B. Ackman 2013-01-04 22:39:41
 
 if nargin < 3 || isempty('assign'), assign = 'true'; end;

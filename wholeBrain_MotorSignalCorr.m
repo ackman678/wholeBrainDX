@@ -1,4 +1,4 @@
-function [region, cM, lags] = wholeBrain_MotorSignalCorr(fnm,region,st,exclude, makePlots)
+function [region, cM, lags] = wholeBrain_MotorSignalCorr(fnm,region,st,exclude, makePlots, rsFactor)
 %wholeBrain_MotorSignalCorr - Generate cross-correlation plots and values for region.locations with motor signal
 %Examples:
 % region = wholeBrain_MotorSignalCorr(fnm,region)
@@ -7,6 +7,9 @@ function [region, cM, lags] = wholeBrain_MotorSignalCorr(fnm,region,st,exclude, 
 % fnm - .mat filename, from which filenames for plots will be saved (nothing will be overwritten) 
 % region - region data structure with region.locationData.data structure returned from wholeBrain_activeFraction.m
 % st - a structure array, st containing the cell arrays, str that contain the region.locations that you want to concatentate to make plots and autocorr and xcorr with the motorSignal
+% exclude - 
+% makePlots -
+% rsFactor - resampling factor if comparing multiple recordings that are of different sampling rates.
 %Output:
 %region - will print correlation results to command line. Return region data structure with corr data at region.userdata.motorCorr. Will also display corr plots with activeFraction traces.
 %
@@ -16,14 +19,19 @@ function [region, cM, lags] = wholeBrain_MotorSignalCorr(fnm,region,st,exclude, 
 
 %Cortical - motor signal xcorr
 
+%Setup defaults: 
+if nargin < 6 || isempty(rsFactor), rsFactor = 1; end
+
 %Check for/Make motor signal:
 if isfield(region,'motorSignal')
-	decY2 = region.motorSignal; 
+	if rsFactor ~=1
+		decY2 = resample(region.motorSignal,1,rsFactor); 
+	else
+		decY2 = region.motorSignal; 
+	end
 else
 	error('region.motorSignal not found')
 end
-
-%Setup defaults: 
 
 if nargin < 5 || isempty(makePlots), makePlots = 0; end
 
@@ -98,6 +106,10 @@ for j = 1:numel(st)
 	end      
       
     cActvFraction = cActvFraction ./ numel(str);
+
+	if rsFactor ~=1
+		cActvFraction = resample(cActvFraction,1,rsFactor); 
+	end
 
     titleStr = str;  
 

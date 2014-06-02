@@ -1,32 +1,32 @@
-function [T, SM] = otsuthresh(h)
-%otsuthresh Otsu's optimum threshold given a histogram
-%[T,SM] = otsuthresh(h) computes an optimum threshold, T, in the range [0,1] using Otsu's method for a given histogram, h, which should be a column vector
+function [level, EM] = otsuthresh(h)
+%otsuthresh Otsu's threshold given an image histogram
+%[level,EM] = otsuthresh(h) computes a grayscale image intensity threshold in the range [0,1] using Otsu's method for a given image histogram, h
+%
+% Inputs:
+% h, a column vector
+%
+% OUTPUT:
+% level - threshold
+% Reference:
+% N. Otsu, "A Threshold Selection Method from Gray-Level Histograms," IEEE Transactions on Systems, Man, and Cybernetics, vol. 9, no. 1, pp. 62-66, 1979.
+% [#Gonzalez:2009]: Digital Image Processing Using MATLAB, 2nd edition, by R.C. Gonzalez, R.E. Woods, and S.L. Eddins, Gatesmark Publishing, 2009.
 
 %Normalize the histogram
 h = h/sum(h);
-h = h(:); %h must be a column vector
+h = h(:); 
 
-%Representation of all possible intensities for the given dynamic range in the histogram (256 for 8bit)
-i = (1:numel(h))';
-
-%Values of P1 for all values of k
-P1 = cumsum(h);
-
-%Values of the mean for all values of k
+i = (1:numel(h))';  %All possible intensities for the dynamic range in the histogram (256 for 8bit)
+p = cumsum(h);
 m=cumsum(i.*h);
+mu = m(end);
+sigSq = ((mu*p - m).^2)./(p.*(1 - p) + eps);
 
-%Image mean
-mG = m(end);
+%Find max of sig squared. Optimum threshold will be at the max. If more than one contiguous max values, average to obtain final threshold.
+maxval = max(sigSq);
+level = mean(find(sigSq == maxval));
 
-%Between class variance
-sigSq = ((mG*P1 - m).^2)./(P1.*(1 - P1) + eps);
+%Normalize the threshold to range [0,1]. 1 is subtracted since image intensities start at 0 instead of at the matlab index of 1.
+level = (level - 1)/(numel(h) - 1);
 
-%Find max of sig squared. The index where the max occurs is the optimum threshold. There may be several contiguous max values. Average them to obtain the final threshold.
-maxSigSq = max(sigSq);
-T = mean(find(sigSq == maxSigSq));
-
-%Normalize the threshold to range [0,1]. 1 is subtracted for matlab indexing starting at 1 since image intensities start at 0.
-T = (T - 1)/(numel(h) - 1);
-
-%Calculate the Separability measure
-SM = maxSigSq / (sum(((i - mG).^2) .* h) + eps);
+%Calculate the effectiveness metric
+EM = maxval / (sum(((i - mu).^2) .* h) + eps);

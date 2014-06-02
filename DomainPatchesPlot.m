@@ -4,8 +4,8 @@ function DomainPatchesPlot(domains, CC, STATS, plotType, axesHandle, removArtifa
 % >>DomainPatchesPlot(region.domainData.domains, region.domainData.CC, region.domainData.STATS,1,[],1) 
 %USE:
 % 	domains --  domains data returned from DomainSegmentationAssignment.m. Usually stored at region.domainData.domains
-% 	CC --  CC data structure returned from wholeBrain_kmeans.m. Usually stored at region.domainData.CC
-% 	STATS --  STATS data structure returned from wholeBrain_kmeans.m. Usually stored at region.domainData.STATS
+% 	CC --  CC data structure returned from wholeBrain_detect.m. Usually stored at region.domainData.CC
+% 	STATS --  STATS data structure returned from wholeBrain_detect.m. Usually stored at region.domainData.STATS
 %Options:
 %plotType--
 %'1' = plot domains colored by time of onset activation

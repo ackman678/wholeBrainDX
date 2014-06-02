@@ -62,7 +62,12 @@ end
 
 currdir = pwd;  %This assumes that the script calling wholeBrain_batch has already cd'd into the flat directory containing both .tif movie files and dummy .mat files
 %Otherwise this currdir can be changed within this mainfcnloop and the paths to the files for loading .mat and .tif files ('f' and 'fn' below inside 'mainfcnloop') can be changed
-dirname = datestr(now,'yyyy-mm-dd-HHMMSS');
+
+if isfield(handles,'dirname')
+	dirname = handles.dirname;
+else
+	dirname = datestr(now,'yyyy-mm-dd-HHMMSS');
+end
 mkdir(dirname);
 cd(dirname);
 
@@ -154,8 +159,8 @@ else
 	pthr = handles.pthr;
 end
 
-if ~isfield(handles,'sigma)
-	sigma = 56.75/region.spaceres; end  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
+if ~isfield(handles,'sigma')
+	sigma = 56.75/region.spaceres;  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
 else
 	sigma = handles.sigma;
 end
@@ -183,18 +188,19 @@ case 'none'
 	makeInitMovies = 0;
 end
 
-tic;
 [A2, A, thresh, Amin] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma);
-toc;  
 region.graythresh = thresh;
 region.Amin = Amin;
 
+disp(['Segmentation finished: ' datestr(now,'yyyymmdd-HHMMSS')])
+
 %==2==Detection============================
-tic;             
-[A3, CC, STATS] = wholeBrain_kmeans(A2,A,[4 3],makeInitMovies,fnm,region,hemisphereIndices);        %3clusters and using motorSignal with sqDistance for kmeans
+[A3, CC, STATS] = wholeBrain_detect(A2,A,[4 3],makeInitMovies,fnm,region,hemisphereIndices);
 fnm2 = [fnm(1:length(fnm)-4) '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
-toc;        
 save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3')  
+clear A2 A3;
+
+disp(['Detection finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
 %rsync -av -e ssh jba38@louise.hpc.yale.edu:~/data/120518i/120518_09....mat ~/Desktop  
 
@@ -204,6 +210,7 @@ domains = DomainSegmentationAssignment(CC,STATS, 'false');
 region.domainData.domains = domains;      
 region.domainData.CC = CC;      
 region.domainData.STATS = STATS;  
+clear CC STATS domains;
 
 if ~isfield(region.domainData.STATS, 'descriptor')      
 	for i = 1:length(region.domainData.STATS)    
@@ -216,11 +223,13 @@ if isfield(region, 'taggedCentrBorders')
 end
 
 locationIndices = find(~strcmp(region.name,'field') & ~strcmp(region.name,'craniotomy'));  %because region.location may be empty to this point (usually gets tagged only as a lut for cells are grid rois)
-region = Domains2region(domains, region.domainData.CC,region.domainData.STATS,region,locationIndices);
+region = Domains2region(region.domainData.domains, region.domainData.CC,region.domainData.STATS,region,locationIndices);
 
 fnm = fnm2;  
 fnm = [fnm(1:end-4) '_d2r' '.mat'];       
 save(fnm,'region','-v7.3')   
+
+disp(['Domain assignment finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
 
 %==4==Get active fraction signals=============================
@@ -252,6 +261,8 @@ fnm2 = [fnm(1:end-4) 'actvFraction' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
 print(gcf, '-dpng', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.png']);      
 print(gcf, '-depsc', [fnm2(1:end-4) '-' datestr(now,'yyyymmdd-HHMMSS') '.eps']);   
 
+disp(['Active fraction finished: ' datestr(now,'yyyymmdd-HHMMSS')])
+
 %==5==More Plots=========================
 %--Single contour activity map-----
 wholeBrainActivityMapFig(region,[],2,1,20,[],[],'pixelFreq');  
@@ -268,6 +279,7 @@ for j =1:length(mapTypes)
 	print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
 	disp(['complete: wholeBrainActivityMapFig, mapType=' mapTypes{j}])
 end
+
 
 %--Drug state contour activity maps if applicable
 if isfield(region,'stimuli');
@@ -322,6 +334,7 @@ if isfield(region,'stimuli');
 		end 
 	end	
 end 
+%}
 
 %DomainPatchesPlot(region.domainData.domains, region.domainData.CC, region.domainData.STATS,1,[],1)   %DomainPatchesPlot won't work on a linux server because of a segmentation fault with drawing alpha transparency in matlab
 %fnm2 = [fnm(1:end-4) 'DomainPatchesPlot' datestr(now,'yyyymmdd-HHMMSS') '.mat'];              
@@ -366,13 +379,18 @@ imagesc(A6); title('maxproj of dFoF movie array raw adjust'); colorbar('location
 fnm2 = [fnm(1:length(fnm)-4) '_maxProj3_' datestr(now,'yyyymmdd-HHMMSS')];    
 print('-dpng', [fnm2 '.png'])
 print('-depsc', [fnm2 '.eps']) 
+clear A A3 A4 A5 A6;
 
+
+disp(['Maps finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
 %==6==Batch fetch datasets=======================
 batchFetchDomainProps({fnm},region,fullfile(pwd,'dDomainProps.txt'));
 batchFetchLocationProps({fnm},region,fullfile(pwd,'dLocationProps.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
 batchFetchLocationPropsFreq({fnm},region,fullfile(pwd,'dLocationPropsFreq.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});	
+%}
 
+disp(['All batch fetch domains, location finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
 %==7==Get spatial correlation results and plots==============
 region = wholeBrain_SpatialCOMCorr(fnm,region,{'cortex.L' 'cortex.R'},1);
@@ -423,3 +441,6 @@ else
 		end
 	end
 end
+
+disp(['All batch fetch corr finished: ' datestr(now,'yyyymmdd-HHMMSS')])
+close all
