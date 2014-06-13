@@ -1,5 +1,5 @@
-function [A3proj,handles] = wholeBrainActivityMapFig(region, frames, plotType, figType, levels, stimuliToPlot, handles, mapType)
-%wholeBrainActivityMapFig(region, frames, plotType, figType, stimuliToPlot)
+function [A3proj,handles] = wholeBrainActivityMapFig(region, frames, plotType, figType, levels, stimuliToPlot, handles, mapType, makePlots)
+%wholeBrainActivityMapFig(region, frames, plotType, figType, stimuliToPlot, handles, mapType, makePlots)
 % Plots the normalized pixel activation frequency image for a wholeBrain movie
 % Examples
 %	wholeBrainActivityMapFig(region);
@@ -24,7 +24,8 @@ function [A3proj,handles] = wholeBrainActivityMapFig(region, frames, plotType, f
 % levels -- the number of contour levels you want. If the input is 0, then a raw image of the normalized sumProjection is plotted instead of a contour plot
 % stimuliToPlot -- a multi element integer vector indicating the indices, i of the region.stimuli{i} you want to plot
 % handles -- figure handles to pass the plot to a previously generated figure window (handles.figHandle, handles.axesHandle, handles.clims)
-% mapType -- string, switch to change summary map type.  'pixelFreq', 'domainFreq', 'domainDur', 'domainDiam', or 'domainAmpl'. Currently only works with 
+% mapType -- string, switch to change summary map type.  'pixelFreq', 'domainFreq', 'domainDur', 'domainDiam', or 'domainAmpl'.
+% makePlots -- binary, 1 or 0, switch to plot the data.  Useful for just fetching the projection map and handles.clims for combining maps from multiple recordings.
 
 % James B. Ackman 2013-10-10 14:31:28
 
@@ -41,34 +42,39 @@ if (nargin < 6 || isempty(stimuliToPlot)) && ~isempty(region.stimuli) && figType
 end
 
 if nargin < 7 || isempty(handles)
-	handles.figHandle = figure;
-	handles.axesHandle = subplot(1,1,1);
+	if makePlots
+		handles.figHandle = figure;
+		handles.axesHandle = subplot(1,1,1);
+	end
 	handles.clims = [];
 else
-	if ~isfield(handles,'axesHandle')
-		if isfield(handles,'axes1')
-			handles.axesHandle = handles.axes1;
-		else
-			error('handles.axes1 not found')
+	if makePlots
+		if ~isfield(handles,'axesHandle')
+			if isfield(handles,'axes1')
+				handles.axesHandle = handles.axes1;
+			else
+				error('handles.axes1 not found')
+			end
 		end
+		if ~isfield(handles,'figHandle')
+			axes(handles.axesHandle);
+			handles.figHandle = gcf;
+		end	
 	end
-	if ~isfield(handles,'figHandle')
-		axes(handles.axesHandle);
-		handles.figHandle = gcf;
-	end	
 	if ~isfield(handles,'clims')
 		handles.clims = [];
 	end
 end
 
 if nargin < 8 || isempty(mapType), mapType = 'pixelFreq'; end
+if nargin < 9 || isempty(makePlots), makePlots = 1; end
 
 
 %------------------------------------------------------------------------
 
 switch figType
 	case 1
-		updateFigBackground(handles);
+		if makePlots; updateFigBackground(handles); end
 		[A3proj,frames] = wholeBrainActivityMapProj(region, frames, plotType, mapType);
 		handles.frames = frames;
 		
@@ -105,10 +111,11 @@ switch figType
 		if isempty(handles.clims),
 			handles.clims = [0 mxNormSig]; 
 		end
-		wholeBrainActivityMapPlot(img, mxNormSig, handles, levels)
+		
+		if makePlots; wholeBrainActivityMapPlot(img, mxNormSig, handles, levels); end
 
 	case 2
-		updateFigBackground(handles);
+		if makePlots; updateFigBackground(handles); end
 
 		[Allproj,frames] = wholeBrainActivityMapProj(region, frames, 1);
 		[Goodproj,frames] = wholeBrainActivityMapProj(region, frames, 2);
@@ -148,7 +155,7 @@ switch figType
 		disp(['mx normBadproj = ' num2str(mxNormBadproj)])
 		handles.axesHandle = subplot(1,3,3);		
 		handles.axesTitle = 'Noise px count norm to max sig count. MaxNoise=';
-		wholeBrainActivityMapPlot(normBadproj, mxNormBadproj, handles);
+		if makePlots; wholeBrainActivityMapPlot(normBadproj, mxNormBadproj, handles); end
 		
 	case 3	
 	%----start-------
@@ -190,14 +197,14 @@ switch figType
 			disp(['mx normA3proj = ' num2str(mxNormSig)])
 		
 			handles.clims = [0 mxNormSig];
-			wholeBrainActivityMapPlot(img, mxNormSig, handles)
+			if makePlots; wholeBrainActivityMapPlot(img, mxNormSig, handles); end
 		end
 	end
 	%--------end
 
 	case 4  %individual scales
 	%----start-------
-		updateFigBackground(handles);		
+		if makePlots; updateFigBackground(handles); end		
 		sz=region.domainData.CC.ImageSize;
 		[rows, cols] = setupPlotMatrix(stimuliToPlot, 2);
 
@@ -242,14 +249,14 @@ switch figType
 			disp(['mx normA3proj = ' num2str(mxNormSig)])
 	
 			handles.clims = [0 mxNormSig];
-			wholeBrainActivityMapPlot(img, mxNormSig, handles)
+			if makePlots; wholeBrainActivityMapPlot(img, mxNormSig, handles); end
 		end
 	%--------end
 
 
 	case 5  %normalized scale
 	%----start-------
-		updateFigBackground(handles);
+		if makePlots; updateFigBackground(handles); end
 		sz=region.domainData.CC.ImageSize;
 		[rows, cols] = setupPlotMatrix(stimuliToPlot, 2);
 
@@ -323,12 +330,12 @@ switch figType
 			maxSig = MxresponseNorm(j);
 
 %			handles.clims = [0 max([mxNormAllproj mxNormGoodproj mxNormBadproj])];
-			wholeBrainActivityMapPlot(responseNorm{j}, maxSig, handles, levels)
+			if makePlots; wholeBrainActivityMapPlot(responseNorm{j}, maxSig, handles, levels); end
 		end
 
 	case 6  %Differential plot with normalized scale
 	%----start-------
-		updateFigBackground(handles);
+		if makePlots; updateFigBackground(handles); end
 		sz=region.domainData.CC.ImageSize;
 		[rows, cols] = setupPlotMatrix(stimuliToPlot, 2);
 
@@ -402,12 +409,12 @@ switch figType
 			maxSig = MxresponseNorm(j);
 
 %			handles.clims = [0 max([mxNormAllproj mxNormGoodproj mxNormBadproj])];
-			wholeBrainActivityMapPlot(responseNorm{j}, maxSig, handles)
+			if makePlots; wholeBrainActivityMapPlot(responseNorm{j}, maxSig, handles); end
 		end
 
 	case 7  %normalized scale by mapType
 	%----start-------
-		updateFigBackground(handles);
+		if makePlots; updateFigBackground(handles); end
 		sz=region.domainData.CC.ImageSize;
 		[rows, cols] = setupPlotMatrix(stimuliToPlot, 2);
 
@@ -499,7 +506,7 @@ switch figType
 			handles.frames = [];
 
 			maxSig = MxresponseNorm(j);
-			wholeBrainActivityMapPlot(img, maxSig, handles, levels)
+			if makePlots; wholeBrainActivityMapPlot(img, maxSig, handles, levels); end
 		end
 
 end

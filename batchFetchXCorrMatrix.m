@@ -1,4 +1,18 @@
 function results = batchFetchXCorrMatrix(filelist, region, varin)
+%batchFetchXCorrMatrix(fileilst, region, varin)
+% Fetches and plots the xcorr matrix between all brain regions and the motor movement signal
+% Examples
+% varin.timeres=0.2;  
+% varin.nframes=3000;  
+% filelist = readtext('filesP3.txt',' ');    
+% resultsP3 = batchFetchXCorrMatrix(filelist,[],varin);  
+%
+% INPUTS
+% filelist -- cell array of strings, full path names to the region domains2region, *d2r*.mat files
+% region -- region formatted data structure (as from CalciumDX, domains2region, etc) that includes CC and STATS data structures returned from wholeBrain_segmentation.m and wholeBrain_detect.m
+% varin -- optional additional arguments.  e.g. varin.timeres & varin.nframes info for resampling timeseries so that all results matrices will be on same scale
+
+% James B. Ackman 2014-06-11 16:34:03  
 
 if nargin< 2 || isempty(region), region = []; end
 if nargin< 3 || isempty(varin), varin = []; end
