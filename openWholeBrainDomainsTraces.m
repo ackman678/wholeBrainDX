@@ -81,7 +81,7 @@ load(fnm,'region');
 if nargin < 3 || isempty(hemisphereIndices), hemisphereIndices = find(strcmp(region.name,'cortex.L') | strcmp(region.name,'cortex.R') | strcmp(region.name,'OB.L') | strcmp(region.name,'OB.R') | strcmp(region.name,'SC.L') | strcmp(region.name,'SC.R')); end  %index location of the hemisphere region outlines in the 'region' calciumdx struct
 
 if ~isempty(hemisphereIndices)
-	bothMasks=logical(zeros(sz(1),sz(2)));
+	bothMasks=false(sz(1),sz(2));
 	for nRoi=1:length(hemisphereIndices)
 		regionMask = poly2mask(region.coords{hemisphereIndices(nRoi)}(:,1),region.coords{hemisphereIndices(nRoi)}(:,2),sz(1),sz(2));
 		%regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{hemisphereIndices(2)}(:,2),sz(1),sz(2));
@@ -122,14 +122,12 @@ else
 end
 
 %--Make binary mask movie------------------------------------------------------------------------
-sz=region.domainData.CC.ImageSize;        
-tmp = zeros(sz,'uint8');        
-A3 = logical(tmp);        
-clear tmp;      
-for i = 1:region.domainData.CC.NumObjects      
-	if ~strcmp(region.domainData.STATS(i).descriptor, 'artifact')    
-		A3(region.domainData.CC.PixelIdxList{i}) = 1;      
-	end          
+sz=region.domainData.CC.ImageSize;
+A3 = false(sz);
+for i = 1:region.domainData.CC.NumObjects
+	if ~strcmp(region.domainData.STATS(i).descriptor, 'artifact')
+		A3(region.domainData.CC.PixelIdxList{i}) = 1;
+	end
 end
 %--Run gui------------------------------------------------------------------------
 plotWholeBrainDomainsTraces(A,A3,region,plot4,movieTitles,[])  	

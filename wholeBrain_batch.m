@@ -233,11 +233,8 @@ disp(['Domain assignment finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
 
 %==4==Get active fraction signals=============================
-sz=region.domainData.CC.ImageSize;        
-
-tmp = zeros(sz,'uint8');        
-A3 = logical(tmp);        
-clear tmp;      
+sz=region.domainData.CC.ImageSize;
+A3 = false(sz); 
 
 for i = 1:region.domainData.CC.NumObjects      
 	if ~strcmp(region.domainData.STATS(i).descriptor, 'artifact')    
