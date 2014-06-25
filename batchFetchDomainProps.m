@@ -53,7 +53,7 @@ end
 if nargin< 2 || isempty(region); region = []; end
 
 %---**functionHandles.workers and functionHandles.main must be valid functions in this program or in matlabpath to provide an array of function_handles
-functionHandles.workers = {@filename @matlab_filename @domainInd @region_name1 @region_name2 @volume_px @xwidth_px @ywidth_px @xcentr_px @ycentr_px @zcentr_px @MeanIntensity @MaxIntensity @onset_fr @offset_fr @Duration_s};
+functionHandles.workers = {@filename @matlab_filename @domainInd @region_name1 @region_name2 @volume_px @xwidth_px @ywidth_px @xcentr_px @ycentr_px @zcentr_px @MeanIntensity @MaxIntensity @onset_fr @offset_fr @Duration_s @theta_deg @rho_px};
 functionHandles.main = @wholeBrain_getDomainStats;
 %tableHeaders = {'filename' 'matlab.filename' 'region.name' 'roi.number' 'nrois' 'roi.height.px' 'roi.width.px' 'xloca.px' 'yloca.px' 'xloca.norm' 'yloca.norm' 'freq.hz' 'intvls.s' 'onsets.s' 'durs.s' 'ampl.df'};
 %filename %roi no. %region.name %roi size %normalized xloca %normalized yloca %region.stimuli{numStim}.description %normalized responseFreq %absolutefiringFreq(dFreq) %meanLatency %meanAmpl %meanDur
@@ -288,6 +288,15 @@ out = ceil(varin.region.domainData.STATS(varin.idx).BoundingBox(:,3)) + (ceil(va
 function out = Duration_s(varin)
 %location name descriptor string
 out = round(varin.region.domainData.STATS(varin.idx).BoundingBox(:,6)) * varin.region.timeres;
+
+function out = theta_deg(varin)
+%location name descriptor string
+out = varin.region.domainData.Vsum(varin.idx).theta .* 180/pi;
+
+function out = rho_px(varin)
+%location name descriptor string
+out = varin.region.domainData.Vsum(varin.idx).rho;
+
 
 
 %========domainFreq_hz====================================================================

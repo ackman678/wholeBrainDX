@@ -1,21 +1,26 @@
 function batchFetchOptFlow(filelist, region, varin)
-%batchFetchOptFlow(fileilst, region, varin)
+%batchFetchOptFlow(filelist, region, varin)
 % Fetches and makes movies of the optic flow calculation for each domain mask movie described by the region d2r file in filelist
 % Examples
-% filelist = readtext('files.txt',' ');    
-% batchFetchOptFlow(fileilst, region, varin);  
+% filelist = readtext('files.txt',' ');
+% batchFetchOptFlow(filelist);
+% varin.makePlots=1; batchFetchOptFlow(filelist, region, varin);
 %
 % INPUTS
 % filelist -- cell array of strings, full path names to the region domains2region, *d2r*.mat files
 % region -- region formatted data structure (as from CalciumDX, domains2region, etc) that includes CC and STATS data structures returned from wholeBrain_segmentation.m and wholeBrain_detect.m
 % varin -- optional additional arguments.
-
+%
+% See also wholeBrain_opticFlowByDomain.m, batchfetchDomainProps.m, wholeBrain_batch.m, optFlowLk.m
+%
 % James B. Ackman 2014-06-25 13:37:27  
 
 if nargin< 2 || isempty(region), region = []; end
 if nargin< 3 || isempty(varin), varin = []; end
+if ~isfield(varin,'makePlots'), varin.makePlots=0; end
 
-results = mainfcnLoop(filelist, region, varin);
+mainfcnLoop(filelist, region, varin);
+
 
 function results = mainfcnLoop(filelist, region, varin)
 %start loop through files-----------------------------------------------------------------
@@ -44,12 +49,12 @@ for j=1:numel(fnms)
     disp('--------------------------------------------------------------------')
 	
 	A3 = setupMovieArray(region);
-	[Vsum, ~, ~] = wholeBrain_opticFlowByDomain(A3,region,region.filename);
+	[Vsum, ~, ~] = wholeBrain_opticFlowByDomain(A3,region,region.filename,varin.makePlots);
 	region.domainData.Vsum = Vsum;
 	save(fnms{j},'region','-v7.3') 
 
-	[pathstr, name, ext] = fileparts(fnms{j});
-	region.matfilename = [name ext];
+	% [pathstr, name, ext] = fileparts(fnms{j});
+	% region.matfilename = [name ext];
 	
 	if ismac | ispc
 		h = waitbar(j/numel(fnms));
@@ -71,4 +76,3 @@ for i = 1:region.domainData.CC.NumObjects
 		A3(region.domainData.CC.PixelIdxList{i}) = 1;      
 	end  
 end
-
