@@ -35,7 +35,7 @@ else
 end
 
 imagesc(img,handles.clims);
-title([frTxt ',' handles.axesTitle num2str(maxSig)]); 
+title([handles.axesTitle [num2str(maxSig) ', ' frTxt]], 'Interpreter','none'); 
 myColors = jet(256);
 myColors(1,:) = [0 0 0];
 colormap(myColors);

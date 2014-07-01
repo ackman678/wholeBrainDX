@@ -8,6 +8,7 @@ Thanks goes to the following authors for their excellent matlab functions. Each 
 * [clickableLegend.m](http://www.mathworks.com/matlabcentral/fileexchange/21799-clickablelegend/content/clickableLegend.m) by Ameya Deoras.
 * [getpos.m](http://www.mathworks.com/matlabcentral/fileexchange/13927-setpos-1-2-getpos-1-2) by Jerome Briot.
 * [freezeColors.m](http://www.mathworks.com/matlabcentral/fileexchange/7943-freezecolors---unfreezecolors) by John Iversen.
+* [arrow.m](http://www.mathworks.com/matlabcentral/fileexchange/278-arrow-m) by Erik A Johnson.
 
 Copyright (c) 2009, The MathWorks, Inc.
 All rights reserved.

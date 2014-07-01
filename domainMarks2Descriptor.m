@@ -15,9 +15,7 @@ end
 
 %----end setup defaults-------
 sz=region.domainData.CC.ImageSize;
-tmp = zeros(sz,'uint8');
-BW = logical(tmp);
-clear tmp;
+BW = false(sz);
 
 for fr = 1:length(data(dataInd).frame);
 	for j = 1:length(data(dataInd).frame(fr).badDomains.x)

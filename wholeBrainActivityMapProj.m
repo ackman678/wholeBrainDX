@@ -103,9 +103,7 @@ otherwise
 end
 
 function BW = makeBlankArray(sz)
-tmp = zeros(sz,'uint8');
-BW = logical(tmp);
-clear tmp;
+BW = false(sz);
 
 %-----------functions-------------
 function A3 = makeBinaryPixelArray(A3, CC)

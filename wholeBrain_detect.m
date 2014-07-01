@@ -262,7 +262,7 @@ diameters = mean([roiBoundingBox(:,4) roiBoundingBox(:,5)], 2);
 %Assuming region is loaded into workspace
 if ~isempty(region)
     sz = size(region.image);
-    bothMasks=logical(zeros(sz(1),sz(2)));
+    bothMasks=false(sz(1),sz(2));
     for nRoi=1:length(hemisphereIndices)
 		regionMask = poly2mask(region.coords{hemisphereIndices(nRoi)}(:,1),region.coords{hemisphereIndices(nRoi)}(:,2),sz(1),sz(2));
 		%regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{hemisphereIndices(2)}(:,2),sz(1),sz(2));
@@ -307,11 +307,10 @@ end
 
 function A3 = getMovie(CC,A2,fnm2,sz,showFigure)
 %Now make a binary movie array based on the segmented functional signal domains
-A3 = zeros(sz,'uint8');
+A3 = false(sz);
 for i = 1:CC.NumObjects
     A3(CC.PixelIdxList{i}) = 1;
 end
-A3 = logical(A3);
 
 %L = labelmatrix(CC);
 %imshow(label2rgb(L));
