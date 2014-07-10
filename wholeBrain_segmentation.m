@@ -6,6 +6,21 @@ function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadi
 %updated, improved algorithm with gaussian smooth 2013-02-01 by J.B.A.
 %modified 2013-03-28 14:25:44 by J.B.A.
 % Optimized and simplified algoritm 2014-05-21 16:06:48 by J.B.A.
+%
+% Except where otherwise noted, all code in this program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 2 of the License, or
+% (at your option) any later version.
+
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+
+% You should have received a copy of the GNU General Public License along
+% with this program; if not, write to the Free Software Foundation, Inc.,
+% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 
 if nargin < 9 || isempty(sigma), sigma = 56.75/region.spaceres; end  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
 if nargin < 8 || isempty(pthr), pthr = 0.99; end

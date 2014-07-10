@@ -19,6 +19,22 @@ function [A3, CC, STATS] = wholeBrain_detect(A2,A,NclustersAll,showFigure,fnm,re
 % update 2013-11-21 JBA to implemented sqDist algo to be passed to clustering.
 % update 2013-12-31 JBA set default to just remove detected components lasting <2 frames in duration as default for wholeBrain paper.
 % update 2014-05-01 14:15:54 JBA changed name to wholeBrain_detect.m and edited documentation.
+%
+% Except where otherwise noted, all code in this program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 2 of the License, or
+% (at your option) any later version.
+
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+
+% You should have received a copy of the GNU General Public License along
+% with this program; if not, write to the Free Software Foundation, Inc.,
+% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+
 
 %-----setup default parameters-------
 %assuming [2 3] are the region.name location indices for 'cortex.L' and 'cortex.R'
