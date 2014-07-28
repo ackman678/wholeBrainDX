@@ -18,8 +18,11 @@ function [maxProj, Iarr] = timeColorMapProj(A, frStart, frEnd, filename, nStdev)
 % frEnd - end frame
 % filename - string, the 'filename.tif' that the data come from and the string from which the output filename will be formatted
 % nStdev - two element vector of [-nStd +nStd] for number of stdev to set to min/max for converting a double Df/F array. 
+%
+% See also Iarr2montage.m, Iarr2avi.m
+%
 %James B. Ackman 2014-07-09 03:27:32
-%Iinspired by Time-Lapse_Color_Coder.ijm plugin written by Kota Miura for ImageJ
+%Inspired by Time-Lapse_Color_Coder.ijm plugin written by Kota Miura for ImageJ
 
 sz=size(A);
 if nargin < 5 || isempty(nStdev), nStdev = []; end
@@ -29,9 +32,17 @@ if sz(3) < 2
 	error('Need an array to make time projection')
 end
 
-if ~isinteger(A) || ~isempty(nStdev)
-	if isempty(nStdev), nStdev = [-3 7]; end
-	Iarr = convertDfArray(A,nStdev(1), nStdev(2));
+if islogical(A)
+	Iarr = convertBWArray(A);
+elseif ~isinteger(A) || ~isempty(nStdev)
+	mnA = min(A,[],3);
+	mn = min(mnA(:));
+	if mn < 0  %test if the double array input is a dF/F array (centered on zero)
+		if isempty(nStdev), nStdev = [-3 7]; end
+		Iarr = convertDfArray(A,nStdev(1), nStdev(2));
+	else
+		Iarr = convertDblArray(A);
+	end
 else
 	Iarr=A;
 end
@@ -73,4 +84,15 @@ stdDev = std(A(:));
 newMin=nStdMin*stdDev;
 newMax=nStdMax*stdDev;
 A2=mat2gray(A,[newMin newMax]);   %scale the whole array so that min = 0, max = 1
+[Iarr, ~] = gray2ind(A2, 256); %convert the whole array to 8bit indexed
+
+
+function Iarr = convertBWArray(A)
+%Convert a logical array.
+[Iarr, ~] = gray2ind(A, 256); %convert the whole array to 8bit indexed
+
+
+function Iarr = convertDblArray(A)
+%Convert a double positive array. No contrast enhancement.
+A2=mat2gray(A);   %scale the whole array so that min = 0, max = 1
 [Iarr, ~] = gray2ind(A2, 256); %convert the whole array to 8bit indexed
