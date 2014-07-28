@@ -19,6 +19,7 @@ function wholeBrain_batch(filename,handles)
 % 	handles.backgroundRemovRadius - single numeric in pixels. Default corresponds to 681 µm radius (round(681/region.spaceres)) for the circular structured element used for background subtraction.
 % 	handles.pthr - single numeric. Default is 0.99. Percentile threshold for the sobel edge based detection algorithm in wholeBrain_segmentation.m
 % 	handles.makeThresh - single numeric logical. Default is 1, for estimating the graythreshold using Otsu's method for each movie separately. Alternative is to use previous movie graythresh (like for subsequent recordings).
+%	handles.sigma - %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
 %
 % Check the workflow sequence below at wholeBrain_workflow(). Briefly it is:
 %	1. Segmentation

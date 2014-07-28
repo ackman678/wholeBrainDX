@@ -1,6 +1,26 @@
 function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh,pthr,sigma)
 %PURPOSE -- segment functional domains in wholeBrain calcium imaging movies into ROIs
-%USAGE -- A2 = wholeBrain_segmentation(fnm,[],region)
+%USAGE -- 	[A2, A] = wholeBrain_segmentation(fnm,[],region)
+%			[A2, A, thresh, Amin] = wholeBrain_segmentation('120518_07.tif',60,region,[2 3],0,1,[],0.99,5);
+%			[A2, A, thresh, Amin] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma);
+%
+%INPUTS
+%	fnm - string, raw movie filename. This name will be passed to bfopen.m for reading in the imaging data. This name will also be formatted for writing .avi movies.
+% 	backgroundRemovRadius - single numeric in pixels. Default corresponds to 681 µm radius (round(681/region.spaceres)) for the circular structured element used for background subtraction.
+%	region - 
+% 	hemisphereIndices - vector of integers, region.coord index locations in region.name for gross anatomical brain regions like 'cortex.L' and 'cortex.R' and others (e.g. 'OB.L', 'OB.R', 'SC.L', 'SC.R', etc).
+%	showFigure - binary true/false to show intermediate plots. Default is 0 (false). As of 2014-07-28 09:24:06 this functionality probabaly work properly and needs to be updated. 
+% 	makeMovies - binary true/false to indicate if you want to make avis. Defaults to 1 (true)
+% 	thresh - single numeric logical. Default is 1, for estimating the graythreshold using Otsu's method for each movie separately. Alternative is to use previous movie graythresh (like for subsequent recordings).
+% 	pthr - single numeric. Default is 0.99. Percentile threshold for the sobel edge based detection algorithm in wholeBrain_segmentation.m
+%	sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
+%
+%OUTPUTS
+%	A2 - binary array of segmented signals
+%	A  - double array of raw dF/F movie, positively shifted
+%	thresh - the calculated Otsu threshold
+%	Amin - the minimum value from the original zero centered dF/F array, (can be used to calculate original zero centered dF/F signal amplitudes).
+%
 %James B. Ackman
 %2012-12-20
 %updated, improved algorithm with gaussian smooth 2013-02-01 by J.B.A.
@@ -11,12 +31,12 @@ function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadi
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 2 of the License, or
 % (at your option) any later version.
-
+%
 % This program is distributed in the hope that it will be useful,
 % but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
-
+%
 % You should have received a copy of the GNU General Public License along
 % with this program; if not, write to the Free Software Foundation, Inc.,
 % 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.

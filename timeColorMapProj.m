@@ -18,6 +18,9 @@ function [maxProj, Iarr] = timeColorMapProj(A, frStart, frEnd, filename, nStdev)
 % frEnd - end frame
 % filename - string, the 'filename.tif' that the data come from and the string from which the output filename will be formatted
 % nStdev - two element vector of [-nStd +nStd] for number of stdev to set to min/max for converting a double Df/F array. 
+%
+% See also Iarr2montage.m, Iarr2avi.m
+%
 %James B. Ackman 2014-07-09 03:27:32
 %Inspired by Time-Lapse_Color_Coder.ijm plugin written by Kota Miura for ImageJ
 

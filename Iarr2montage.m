@@ -1,5 +1,5 @@
 function [Im] = Iarr2montage(Iarr, frStart, frEnd, Iter, filename, nrow, ncol)
-%Iarr2montage - Make time based montage from indexed array
+%Iarr2montage - Make time based montage from 8 bit indexed array
 %PURPOSE -- Make time based montage from indexed array. Calls matlab builtin function 'montage'
 %USAGE -- 	[Im] = Iarr2montage(Iarr,1638,1757, 5);
 %			Iarr2montage(Iarr,1638,1757, [], 'filename.tif');
@@ -11,6 +11,9 @@ function [Im] = Iarr2montage(Iarr, frStart, frEnd, Iter, filename, nrow, ncol)
 % filename - string, the 'filename.tif' that the data come from and the string from which the output filename will be formatted
 % nrow - number of rows for the montage, default is to let builtin montage calculate for approx square montage
 % ncol - number of cols for the montage, default is to let builtin montage calculate for approx square montage
+%
+% See also timeColorMapProj.m, Iarr2avi.m
+%
 %James B. Ackman 2014-07-27 20:39:50
 
 sz=size(Iarr);
