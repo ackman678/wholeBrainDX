@@ -391,12 +391,17 @@ imagesc(A6); title('maxproj of dFoF movie array raw adjust'); colorbar('location
 fnm2 = [fnm(1:length(fnm)-4) '_maxProj3_' datestr(now,'yyyymmdd-HHMMSS')];    
 print('-dpng', [fnm2 '.png'])
 print('-depsc', [fnm2 '.eps']) 
-clear A A3 A4 A5 A6;
+clear A A4 A5 A6;
 
 
 disp(['Maps finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
-%==6==Batch fetch datasets=======================
+%==6==Get opticflow==============================
+[Vsum, ~, ~] = wholeBrain_opticFlowByDomain(A3,region,fnm,makeInitMovies);
+region.domainData.Vsum = Vsum;
+
+
+%==7==Batch fetch datasets=======================
 batchFetchDomainProps({fnm},region,fullfile(pwd,'dDomainProps.txt'));
 batchFetchLocationProps({fnm},region,fullfile(pwd,'dLocationProps.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});
 batchFetchLocationPropsFreq({fnm},region,fullfile(pwd,'dLocationPropsFreq.txt'), 'true', {'motor.state.active' 'motor.state.quiet' 'drug.state.control' 'drug.state.isoflurane'});	
@@ -404,11 +409,11 @@ batchFetchLocationPropsFreq({fnm},region,fullfile(pwd,'dLocationPropsFreq.txt'),
 
 disp(['All batch fetch domains, location finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
-%==7==Get spatial correlation results and plots==============
+%==8==Get spatial correlation results and plots==============
 region = wholeBrain_SpatialCOMCorr(fnm,region,{'cortex.L' 'cortex.R'},1);
 batchFetchSpatialCOMCorrData({fnm},region,fullfile(pwd,'dCorticalCorr.txt'),1);
 
-%==8==Get temporal correlation results and plots for cortical hemispheres=================
+%==9==Get temporal correlation results and plots for cortical hemispheres=================
 region = wholeBrain_CorticalActiveFractionCorr(fnm,region,{'cortex.L' 'cortex.R'});
 batchFetchCorticalCorrData({fnm},region,fullfile(pwd,'dCorticalCorr.txt'),1);
 save(fnm,'region','-v7.3') ;
@@ -416,12 +421,12 @@ save(fnm,'region','-v7.3') ;
 %===If region contains coords for more than just 'field', 'cortex.L', and 'cortex.R' proceed to fetch data and plots making use of these parcellations (functional correlation matrices, motor corr, etc)
 if length(region.name) > length(hemisphereIndices)+1
 
-	%==9==Get correlation matrix and plots======================== 
+	%==10==Get correlation matrix and plots======================== 
 	exclude = {'cortex.L' 'cortex.R'};
 	region = wholeBrain_corrData(fnm, region, exclude);  %will also print and save corr matrix and raster plot of the traces (activeFraction) that went into the corr matrix
 	save(fnm,'region','-v7.3') ;
 
-	%==10==Get cortical - motor corr results and plots=============
+	%==11==Get cortical - motor corr results and plots=============
 	if isfield(region,'motorSignal')
 		clear st  
 		st(1).str = {'HL.L' 'HL.R' 'T.L' 'T.R' 'FL.L' 'FL.R'};    
@@ -441,7 +446,7 @@ if length(region.name) > length(hemisphereIndices)+1
 		save(fnm,'region','-v7.3') ;
 	end
 
-	%==11==Batch fetch remaining datasets=============
+	%==12==Batch fetch remaining datasets=============
 	batchFetchCorrData({fnm},region,fullfile(pwd,'dCorr.txt'),1);
 	batchFetchMotorCorrData({fnm},region,fullfile(pwd,'dMotorCorr.txt'),1);
 
