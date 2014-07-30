@@ -280,8 +280,8 @@ Tags: analysis, wholeBrain, programming, matlab
 * (8) Run the batch script. Perform within the folder containing the data files and 'files.txt':    
 
 	```matlab
-	matlabpool close force local
-	matlabpool open 8          
+	%matlabpool close force local %delete(gcp) %for 2014a %**Only needed if using branch 'parfor'**
+	%matlabpool open 8  %parpool(8)  %for 2014a
 	diary on
 	disp(datestr(now,'yyyymmdd-HHMMSS'))
 	
@@ -300,8 +300,8 @@ Tags: analysis, wholeBrain, programming, matlab
 
 	```matlab
 	% Multiple directories
-	matlabpool close force local
-	matlabpool open 8
+	%matlabpool close force local %delete(gcp) %for 2014a %**Only needed if using branch 'parfor'**
+	%matlabpool open 8  %parpool(8)  %for 2014a
 	dirpath = '/scratch2/netid/';
 	dirnames = {'folder1/'  'folder2/'  'folder3/'};
 	beginT = datestr(now,'yyyymmdd-HHMMSS');
