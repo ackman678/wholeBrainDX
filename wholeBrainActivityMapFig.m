@@ -41,6 +41,9 @@ if (nargin < 6 || isempty(stimuliToPlot)) && ~isempty(region.stimuli) && figType
 	stimuliToPlot=1:numel(region.stimuli); 
 end
 
+if nargin < 8 || isempty(mapType), mapType = 'pixelFreq'; end
+if nargin < 9 || isempty(makePlots), makePlots = 1; end
+
 if nargin < 7 || isempty(handles)
 	if makePlots
 		handles.figHandle = figure;
@@ -65,10 +68,6 @@ else
 		handles.clims = [];
 	end
 end
-
-if nargin < 8 || isempty(mapType), mapType = 'pixelFreq'; end
-if nargin < 9 || isempty(makePlots), makePlots = 1; end
-
 
 %------------------------------------------------------------------------
 
