@@ -261,46 +261,50 @@ parfor fr = 1:szZ;
 	%Detect connected components in the frame and return ROI CC data structure----------------
 	%CC = bwconncomp(bw);
 	S = regionprops(bw, 'Area', 'Centroid', 'PixelIdxList');
-	sa = [S.Area];
 
-	vCentrs=vertcat(S.Centroid);
-%	centrInd = sub2ind(sz, round(vCentrs(:,2))', round(vCentrs(:,1))', round(vCentrs(:,3))'); 
-	centrInd = sub2ind(szXY, round(vCentrs(:,2))', round(vCentrs(:,1))'); 
-	pxInd = {S.PixelIdxList};
+	if ~isempty(S)
+		sa = [S.Area];
+		vCentrs=vertcat(S.Centroid);
+	%	centrInd = sub2ind(sz, round(vCentrs(:,2))', round(vCentrs(:,1))', round(vCentrs(:,3))'); 
+		centrInd = sub2ind(szXY, round(vCentrs(:,2))', round(vCentrs(:,1))'); 
+		pxInd = {S.PixelIdxList};
 
-	%sa = cellfun(@numel, pxInd);
+		%sa = cellfun(@numel, pxInd);
 
-	[~,ia] = setdiff(centrInd,backgroundIndices);
+		[~,ia] = setdiff(centrInd,backgroundIndices);
 
-	%function C = inters2(pxIdxList)
-	%C = intersect(pxIdxList,imageBorderIndices);
-	%end
-	%
-	%IN = cellfun(@inters2, pxInd, 'UniformOutput', false);
-	%lenIN = cellfun(@numel, IN);
+		%function C = inters2(pxIdxList)
+		%C = intersect(pxIdxList,imageBorderIndices);
+		%end
+		%
+		%IN = cellfun(@inters2, pxInd, 'UniformOutput', false);
+		%lenIN = cellfun(@numel, IN);
 
-	C1 = intersect(find(sa > nPixelThreshold), ia);
-	%C2 = intersect(find(lenIN < 1), C1);
+		C1 = intersect(find(sa > nPixelThreshold), ia);
+		%C2 = intersect(find(lenIN < 1), C1);
 
-	%idxToKeep = S.PixelIdxList(sa > nPixelThreshold);
-	idxToKeep = pxInd(C1);
-	
-	%imagebord intersect
-	lenIN=zeros(1,numel(idxToKeep));
-	for i=1:numel(lenIN)
-	C = intersect(idxToKeep{i},imageBorderIndices);
-	lenIN(1,i)=numel(C);
+		%idxToKeep = S.PixelIdxList(sa > nPixelThreshold);
+		idxToKeep = pxInd(C1);
+		
+		%imagebord intersect
+		lenIN=zeros(1,numel(idxToKeep));
+		for i=1:numel(lenIN)
+		C = intersect(idxToKeep{i},imageBorderIndices);
+		lenIN(1,i)=numel(C);
+		end
+		
+		idxToKeep2=idxToKeep(lenIN < 1);
+		idxToKeep2 = vertcat(idxToKeep2{:});
+
+		bw2 = false(size(bw));
+		bw2(idxToKeep2) = true;
+		
+		bw2 = imdilate(bw2,seSm1);	
+		bw2 = imclose(bw2,seSm2);
+	else
+		bw2=bw;
 	end
-	
-	idxToKeep2=idxToKeep(lenIN < 1);
-	idxToKeep2 = vertcat(idxToKeep2{:});
 
-	bw2 = false(size(bw));
-	bw2(idxToKeep2) = true;
-	
-	bw2 = imdilate(bw2,seSm1);	
-	bw2 = imclose(bw2,seSm2);
-	
 	A2(:,:,fr) = bothMasks & bw2;
 	%A2(:,:,fr) = bw2;
 	%-----------------------------------------------------------------------------------------
