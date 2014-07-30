@@ -114,11 +114,7 @@ if isfield(region,'motorSignal')
 		plot4(1).legendText = ['rectDecMotorSig'];  
 		plot4(1).Fs=1;   %sampling rate (Hz).  Used to convert data point indices to appropriate time units.  Leave at '1' for no conversion (like plotting the indices, 'frames')  
 		plot4(1).unitConvFactor = 1; 
-	else
-		plot4 =[];
 	end
-else 
-	plot4 =[];
 end
 
 %--Make binary mask movie------------------------------------------------------------------------
