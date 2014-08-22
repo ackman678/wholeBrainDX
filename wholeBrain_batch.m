@@ -425,39 +425,41 @@ if length(region.name) > length(hemisphereIndices)+1
 	exclude = {'cortex.L' 'cortex.R'};
 	region = wholeBrain_corrData(fnm, region, exclude);  %will also print and save corr matrix and raster plot of the traces (activeFraction) that went into the corr matrix
 	save(fnm,'region','-v7.3') ;
+	batchFetchCorrData({fnm},region,fullfile(pwd,'dCorr.txt'),1);
 
 	%==11==Get cortical - motor corr results and plots=============
 	if isfield(region,'motorSignal')
-		clear st  
-		st(1).str = {'HL.L' 'HL.R' 'T.L' 'T.R' 'FL.L' 'FL.R'};    
-		st(2).str = {'M1.L' 'M1.R' 'M2.L' 'M2.R'};    
-		st(3).str = {'barrel.L' 'barrel.R' 'AS.L' 'AS.R'};    
-		st(4).str = {'barrel.L' 'barrel.R'};    
-		st(5).str = {'RSA.L' 'RSA.R'};    
-		st(6).str = {'PPC.L' 'PPC.R'};    
-		st(7).str = {'V1.L' 'V1.R'};    
-		st(8).str = {'V2L.L' 'V2L.R' 'V2M.L' 'V2M.R'};    
-		st(9).str = {'V2L.L' 'V2L.R' 'V2M.L' 'V2M.R' 'V1.L' 'V1.R'};    
-		st(10).str = {'cortex.L' 'cortex.R'};
-		st(11).str = {'OB.L' 'OB.R'};
-		st(12).str = {'SC.L' 'SC.R'};	
-	
-		region = wholeBrain_MotorSignalCorr(fnm,region,st,[],1);
-		save(fnm,'region','-v7.3') ;
+		if ~isempty(region.motorSignal)
+			clear st  
+			st(1).str = {'HL.L' 'HL.R' 'T.L' 'T.R' 'FL.L' 'FL.R'};    
+			st(2).str = {'M1.L' 'M1.R' 'M2.L' 'M2.R'};    
+			st(3).str = {'barrel.L' 'barrel.R' 'AS.L' 'AS.R'};    
+			st(4).str = {'barrel.L' 'barrel.R'};    
+			st(5).str = {'RSA.L' 'RSA.R'};    
+			st(6).str = {'PPC.L' 'PPC.R'};    
+			st(7).str = {'V1.L' 'V1.R'};    
+			st(8).str = {'V2L.L' 'V2L.R' 'V2M.L' 'V2M.R'};    
+			st(9).str = {'V2L.L' 'V2L.R' 'V2M.L' 'V2M.R' 'V1.L' 'V1.R'};    
+			st(10).str = {'cortex.L' 'cortex.R'};
+			st(11).str = {'OB.L' 'OB.R'};
+			st(12).str = {'SC.L' 'SC.R'};	
+		
+			region = wholeBrain_MotorSignalCorr(fnm,region,st,[],1);
+			save(fnm,'region','-v7.3') ;
+			batchFetchMotorCorrData({fnm},region,fullfile(pwd,'dMotorCorr.txt'),1);
+		end
 	end
-
-	%==12==Batch fetch remaining datasets=============
-	batchFetchCorrData({fnm},region,fullfile(pwd,'dCorr.txt'),1);
-	batchFetchMotorCorrData({fnm},region,fullfile(pwd,'dMotorCorr.txt'),1);
 
 else
 	if isfield(region,'motorSignal')
 		if ~isempty(region.motorSignal)
 			st(1).str = {'cortex.L' 'cortex.R'};	
-			wholeBrain_MotorSignalCorr(fnm,region,st);
+			region = wholeBrain_MotorSignalCorr(fnm,region,st,[],1);
+			save(fnm,'region','-v7.3') ;
+			batchFetchMotorCorrData({fnm},region,fullfile(pwd,'dMotorCorr.txt'),1);
 		end
 	end
 end
 
-disp(['All batch fetch corr finished: ' datestr(now,'yyyymmdd-HHMMSS')])
+disp(['Batch finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 close all

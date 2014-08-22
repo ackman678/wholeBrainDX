@@ -78,49 +78,51 @@ end
 mx = max(vertcat(Vsum.rho)); %max vector magnitude in the population for normalization of lengths
 
 %--------Plot movie frames--------------------------------------------------
-if makePlots
-	disp('Making movie...')
-	% nDomains = numel(region.domainData.STATS);
-	% Vsum(1:nDomains) = struct('theta',[],'rho',[]);
-	h=figure;
-	for fr = 1:sz(3)-1
-		
-		if mod(fr,100)<1
-			disp([num2str(fr) '/' num2str(sz(3)-1)])
-		end
-
-		img1 = A(:,:,fr);
-		imagesc(img1,clims); colormap(gray)  % By default, imagesc sets the YDir property to reverse already. Use set(gca,'YDir','normal') if normal coords are desired, but then theta has to be flipped below in pol2cart.
-		hold on
-		for k = 1:nDomains
-			if fr >= onsets(k) & fr <= offsets(k)
-				% [theta, rho]= cart2pol(sum(AVx(region.domainData.STATS(k).PixelIdxList)), sum(AVy(region.domainData.STATS(k).PixelIdxList)));
-				% Vsum(k).theta = theta;
-				% Vsum(k).rho = rho;
-
-				theta=Vsum(k).theta;
-				rho=Vsum(k).rho;
-				xpts = region.domainData.STATS(k).Centroid(1);
-				ypts = region.domainData.STATS(k).Centroid(2);
-				% [dxpts,dypts] = pol2cart(theta.* -1,rho);
-				[dxpts,dypts] = pol2cart(theta.*-1,(rho./mx).*arrowLength);
-				% amquiver(X, Y, Vx, Vy);
-				arrow([xpts, ypts], [xpts + dxpts, ypts + dypts], 10, 15, 20, 1, 'EdgeColor', 'b', 'FaceColor', 'b', 'LineWidth', 2);
+if sum(get(0, 'ScreenSize')) > 4  %hack to test whether matlab is started with no display which would give get(0, 'ScreenSize') = [1 1 1 1]
+	if makePlots
+		disp('Making movie...')
+		% nDomains = numel(region.domainData.STATS);
+		% Vsum(1:nDomains) = struct('theta',[],'rho',[]);
+		h=figure;
+		for fr = 1:sz(3)-1
+			
+			if mod(fr,100)<1
+				disp([num2str(fr) '/' num2str(sz(3)-1)])
 			end
+
+			img1 = A(:,:,fr);
+			imagesc(img1,clims); colormap(gray)  % By default, imagesc sets the YDir property to reverse already. Use set(gca,'YDir','normal') if normal coords are desired, but then theta has to be flipped below in pol2cart.
+			hold on
+			for k = 1:nDomains
+				if fr >= onsets(k) & fr <= offsets(k)
+					% [theta, rho]= cart2pol(sum(AVx(region.domainData.STATS(k).PixelIdxList)), sum(AVy(region.domainData.STATS(k).PixelIdxList)));
+					% Vsum(k).theta = theta;
+					% Vsum(k).rho = rho;
+
+					theta=Vsum(k).theta;
+					rho=Vsum(k).rho;
+					xpts = region.domainData.STATS(k).Centroid(1);
+					ypts = region.domainData.STATS(k).Centroid(2);
+					% [dxpts,dypts] = pol2cart(theta.* -1,rho);
+					[dxpts,dypts] = pol2cart(theta.*-1,(rho./mx).*arrowLength);
+					% amquiver(X, Y, Vx, Vy);
+					arrow([xpts, ypts], [xpts + dxpts, ypts + dypts], 10, 15, 20, 1, 'EdgeColor', 'b', 'FaceColor', 'b', 'LineWidth', 2);
+				end
+			end
+
+			hold off
+			set(h,'Renderer','zbuffer')
+			M(fr) = im2frame(zbuffer_cdata(h));  %grab figure data for frame without getframe screen draw issues
 		end
 
-		hold off
-		set(h,'Renderer','zbuffer')
-		M(fr) = im2frame(zbuffer_cdata(h));  %grab figure data for frame without getframe screen draw issues
-	end
+		%--------Write movie---------------------------------------
+		vidObj = VideoWriter(fnm2)
+		open(vidObj)
+		for i =1:numel(M)
+		writeVideo(vidObj,M(i))
+		end
+		close(vidObj)
 
-	%--------Write movie---------------------------------------
-	vidObj = VideoWriter(fnm2)
-	open(vidObj)
-	for i =1:numel(M)
-	writeVideo(vidObj,M(i))
+		close all
 	end
-	close(vidObj)
-
-	close all
 end
