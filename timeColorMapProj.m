@@ -1,4 +1,4 @@
-function [maxProj, Iarr] = timeColorMapProj(A, frStart, frEnd, filename, nStdev)
+function [maxProj, Iarr, MnMx] = timeColorMapProj(A, frStart, frEnd, filename, nStdev, MnMx)
 %timeColorMapProj - Make time based colored projection maps from raw deltaF/F movies
 %PURPOSE -- Make a time lapse color map projection from a dF/F input array
 %USAGE -- 	[maxProj, Iarr] = timeColorMapProj(A,1638,1757, [], [-3 7]);
@@ -18,6 +18,7 @@ function [maxProj, Iarr] = timeColorMapProj(A, frStart, frEnd, filename, nStdev)
 % frEnd - end frame
 % filename - string, the 'filename.tif' that the data come from and the string from which the output filename will be formatted
 % nStdev - two element vector of [-nStd +nStd] for number of stdev to set to min/max for converting a double Df/F array. 
+% MnMx - two element vector of [-min +max] for actual values of min and max for converting a double Df/F array (convertDfArray() function below). e.g. can pass the values returned from one movie for usage in scaling a following movie (like before or after drug treatment).
 %
 % See also Iarr2montage.m, Iarr2avi.m
 %
@@ -25,6 +26,7 @@ function [maxProj, Iarr] = timeColorMapProj(A, frStart, frEnd, filename, nStdev)
 %Inspired by Time-Lapse_Color_Coder.ijm plugin written by Kota Miura for ImageJ
 
 sz=size(A);
+if nargin < 6 || isempty(MnMx), MnMx = []; end
 if nargin < 5 || isempty(nStdev), nStdev = []; end
 if nargin < 3 || isempty(frEnd), frEnd=sz(3); end
 if nargin < 2 || isempty(frStart), frStart=1; end
@@ -39,7 +41,7 @@ elseif ~isinteger(A) || ~isempty(nStdev)
 	mn = min(mnA(:));
 	if mn < 0  %test if the double array input is a dF/F array (centered on zero)
 		if isempty(nStdev), nStdev = [-3 7]; end
-		Iarr = convertDfArray(A,nStdev(1), nStdev(2));
+		[Iarr,MnMx] = convertDfArray(A,nStdev(1), nStdev(2), MnMx);
 	else
 		Iarr = convertDblArray(A);
 	end
@@ -76,14 +78,17 @@ if ~isempty(filename)
 end
 
 
-function Iarr = convertDfArray(A,nStdMin,nStdMax)
+function [Iarr,MnMx] = convertDfArray(A,nStdMin,nStdMax,MnMx)
 %Convert a DF/F array. A DF/F array is centered around zero, so the no. of negative and positive std dev can give Amin and Amax for mat2gray conversion.
 if nargin < 3 || isempty(nStdMax), nStdMax = 7; end
 if nargin < 2 || isempty(nStdMin), nStdMin = -3; end
-stdDev = std(A(:)); 
-newMin=nStdMin*stdDev;
-newMax=nStdMax*stdDev;
-A2=mat2gray(A,[newMin newMax]);   %scale the whole array so that min = 0, max = 1
+if nargin < 4 || isempty(MnMx),
+	stdDev = std(A(:)); 
+	newMin=nStdMin*stdDev;
+	newMax=nStdMax*stdDev;
+	MnMx = [newMin newMax];
+end
+A2=mat2gray(A,MnMx);   %scale the whole array so that min = 0, max = 1
 [Iarr, ~] = gray2ind(A2, 256); %convert the whole array to 8bit indexed
 
 
