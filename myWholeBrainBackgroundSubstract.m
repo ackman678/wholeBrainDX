@@ -62,7 +62,7 @@ fnm3=[fnm(1:end-4) '_bkgndSubtr-no_' num2str(diskRadius) '_dF-' deltaF '-' dates
 
 %{
 %--------for direct write------------------------------------
-parfor fr = 1:szZ;
+for fr = 1:szZ; % or parfor fr = 1:szZ;
 I = A(:,:,fr);
     %fr=26;
 % 	img1 = A(:,:,fr);
@@ -103,7 +103,7 @@ A2 = zeros([sz szZ]);
 %Array2 = zeros([sz szZ],'uint16');
 
 %--------for write to memory------------------------------------
-parfor fr = 1:szZ;
+for fr = 1:szZ; %parfor fr = 1:szZ;
 I = A(:,:,fr);
     %fr=26;
 % 	img1 = A(:,:,fr);
