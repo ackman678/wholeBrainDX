@@ -38,6 +38,12 @@ clear V M
 i=0;
 h=figure;
 
+%TODO: change optFlowLk usage to newer opticalFlow.m in piotrImageVideoProcessingToolbox
+chkFile = exist('optFlowLk.m');
+if chkFile ~= 2
+	error('optFlowLk from piotrImageVideoProcessingToolbox v.2.61 not installed')
+end
+
 %--------Start frame loop---------------------------------------
 for fr = frStart:frEnd-1
 	i = i+1;
@@ -46,7 +52,6 @@ for fr = frStart:frEnd-1
 
 	imagesc(img1,[0 1]); set(gca,'ydir','reverse'); colormap(gray)
 	hold on
-
 	[Vx,Vy,reliab] = optFlowLk( img1, img2, [], winSig, sigma, 3e-6);
 	% Normalize the lengths of the arrows
 	mag = sqrt(Vx.^2 + Vy.*2);

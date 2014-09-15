@@ -20,7 +20,7 @@ Usage instructions at [wholeBrain_workflow.md](wholeBrain_workflow.md)
 
 * matlab with the signal processing and image processing toolboxes
 * [CalciumDX](https://github.com/ackman678/CalciumDX) This is used mostly just to help with setting up dummy parcellation files for inputs to wholeBrain_batch.m (explained in [wholeBrain_workflow.md](wholeBrain_workflow.md)). Also calls myOpenOMEtiff.m for tiff movie opening.
-* [piotrImageVideoProcessingToolbox][piotrToolbox]. Uses gaussSmooth, xcorrn, and optFlowLk from this toolbox.
+* [piotrImageVideoProcessingToolbox][piotrToolbox]. Uses gaussSmooth and xcorrn from this toolbox.
 * [bfmatlab](http://www.openmicroscopy.org/site/support/bio-formats5/users/matlab/index.html), a matlab toolbox containing the bio-formats java plugin and a `bfopen.m` reader function for opening many different microscopy image/tiff file formats.
 
 ## Non-core dependencies ##

@@ -291,12 +291,19 @@ out = round(varin.region.domainData.STATS(varin.idx).BoundingBox(:,6)) * varin.r
 
 function out = theta_deg(varin)
 %location name descriptor string
-out = varin.region.domainData.Vsum(varin.idx).theta .* 180/pi;
+if isfield(varin.region.domainData, 'Vsum')
+	out = varin.region.domainData.Vsum(varin.idx).theta .* 180/pi;
+else
+	out = NaN;
+end
 
 function out = rho_px(varin)
 %location name descriptor string
-out = varin.region.domainData.Vsum(varin.idx).rho;
-
+if isfield(varin.region.domainData, 'Vsum')
+	out = varin.region.domainData.Vsum(varin.idx).rho;
+else
+	out = NaN;
+end
 
 
 %========domainFreq_hz====================================================================

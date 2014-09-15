@@ -397,9 +397,14 @@ clear A A4 A5 A6;
 disp(['Maps finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
 %==6==Get opticflow==============================
+%TODO: change optFlowLk usage to newer opticalFlow.m in piotrImageVideoProcessingToolbox
+chkFile = exist('optFlowLk.m');
+if chkFile == 2
 [Vsum, ~, ~] = wholeBrain_opticFlowByDomain(A3,region,fnm,makeInitMovies);
 region.domainData.Vsum = Vsum;
-
+else
+	disp('Skipping opticflow...optFlowLk from piotrImageVideoProcessingToolbox v.2.61 not installed')
+end
 
 %==7==Batch fetch datasets=======================
 batchFetchDomainProps({fnm},region,fullfile(pwd,'dDomainProps.txt'));

@@ -56,6 +56,12 @@ AVx=zeros(sz);
 AVy=zeros(sz);
 
 %--------Get optic flow in frame loop ---------------------------------------
+%TODO: change optFlowLk usage to newer opticalFlow.m in piotrImageVideoProcessingToolbox
+chkFile = exist('optFlowLk.m');
+if chkFile ~= 2
+	error('optFlowLk from piotrImageVideoProcessingToolbox v.2.61 not installed')
+end
+
 disp('Processing optFlowLk...')
 for fr = 1:sz(3)-1 %or parfor fr = 1:sz(3)-1
 	img1 = A(:,:,fr);
