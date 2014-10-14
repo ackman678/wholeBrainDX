@@ -362,6 +362,12 @@ To run plotWholeBrainDomainsTraces simply type:
 
 	openWholeBrainDomainsTraces
 
+Example screenshots:  
+
+![](assets/img/Screen_Shot_2013-04-18_at_8.59.38_AM.png)
+![](assets/img/Screen_Shot_2013-04-18_at_8.52.51_AM.png)
+![](assets/img/Screen_Shot_2013-04-30_at_3.02.20_PM.png)
+
 
 domainTaggingGui
 : gui for marking domains
