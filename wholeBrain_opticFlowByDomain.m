@@ -63,7 +63,7 @@ if chkFile ~= 2
 end
 
 disp('Processing optFlowLk...')
-for fr = 1:sz(3)-1 %or parfor fr = 1:sz(3)-1
+for fr = 1:sz(3)-1; %option:parfor
 	img1 = A(:,:,fr);
 	img2 = A(:,:,fr+1);
 	[Vx,Vy,reliab] = optFlowLk( img1, img2, [], winSig, sigma, 3e-6);
