@@ -20,6 +20,7 @@ function wholeBrain_batch(filename,handles)
 % 	handles.pthr - single numeric. Default is 0.99. Percentile threshold for the sobel edge based detection algorithm in wholeBrain_segmentation.m
 % 	handles.makeThresh - single numeric logical. Default is 1, for estimating the graythreshold using Otsu's method for each movie separately. Alternative is to use previous movie graythresh (like for subsequent recordings).
 %	handles.sigma - %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
+%	handles.useSobel - single numeric logical. Default is 1, to use the sobel gradient transformation of the movie array to select edge pixels within the brain that will be used to determine otsu's threshold for signal detection in the movie and resulting segmentation.
 %
 % Check the workflow sequence below at wholeBrain_workflow(). Briefly it is:
 %	1. Segmentation
@@ -180,6 +181,12 @@ else
 	sigma = handles.sigma;
 end
 
+if ~isfield(handles,'useSobel')
+	useSobel = 1;  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
+else
+	useSobel = handles.useSobel;
+end
+
 if ~isfield(handles,'makeThresh'), 
 	makeThresh = 1; 
 else
@@ -203,7 +210,7 @@ case 'none'
 	makeInitMovies = 0;
 end
 
-[A2, A, thresh, Amin] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma);
+[A2, A, thresh, Amin] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma,useSobel);
 region.graythresh = thresh;
 region.Amin = Amin;
 

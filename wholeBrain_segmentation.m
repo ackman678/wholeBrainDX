@@ -1,4 +1,4 @@
-function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh,pthr,sigma)
+function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh,pthr,sigma,useSobel)
 %PURPOSE -- segment functional domains in wholeBrain calcium imaging movies into ROIs
 %USAGE -- 	[A2, A] = wholeBrain_segmentation(fnm,[],region)
 %			[A2, A, thresh, Amin] = wholeBrain_segmentation('120518_07.tif',60,region,[2 3],0,1,[],0.99,5);
@@ -41,7 +41,7 @@ function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadi
 % with this program; if not, write to the Free Software Foundation, Inc.,
 % 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
+if nargin < 10 || isempty(useSobel), useSobel = 1; end
 if nargin < 9 || isempty(sigma), sigma = 56.75/region.spaceres; end  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
 if nargin < 8 || isempty(pthr), pthr = 0.99; end
 if nargin < 7 || isempty(thresh), 
@@ -232,7 +232,11 @@ markerImage = G > Q;
 if showFigure > 0; figure; imshow(markerImage,[]); end
 
 %	fp = f.*markerImage; 
-fp = Iarr.*markerImage; 
+if useSobel
+	fp = Iarr.*markerImage; 
+else
+	fp = Iarr.*bothMasks3D;
+end
 
 if showFigure > 0
 figure, imshow(fp,[])  
