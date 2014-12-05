@@ -97,7 +97,11 @@ function Iarr = convertBWArray(A)
 [Iarr, ~] = gray2ind(A, 256); %convert the whole array to 8bit indexed
 
 
-function Iarr = convertDblArray(A)
-%Convert a double positive array. No contrast enhancement.
-A2=mat2gray(A);   %scale the whole array so that min = 0, max = 1
+function Iarr = convertDblArray(A,MnMx)
+%Convert a double positive array. Optional contrast enhancement.
+if nargin > 1 || ~isempty(MnMx),
+	A2=mat2gray(A,MnMx);   %scale the whole array so that min = 0, max = 1
+else
+	A2=mat2gray(A);   %scale the whole array so that min = 0, max = 1
+end
 [Iarr, ~] = gray2ind(A2, 256); %convert the whole array to 8bit indexed
