@@ -3,7 +3,9 @@ Date: 2013-07-03 12:16:50
 
 # wholeBrainDX
 
-Image analysis software for whole brain calcium imaging movies (Ackman et al. 2012-2014;).
+Image analysis software for whole brain calcium imaging movies (Ackman et al. 2012-2014). Please refer to:  
+
+Ackman JB, Zeng H, Crair MC. 2014. Structured dynamics of neural activity across developing neocortex. [bioRxiv doi: 10.1101/123456](http://www.biorxiv.org/content/early/2014/12/05/012237)
 
 Usage instructions at [wholeBrain_workflow.md](wholeBrain_workflow.md)
 
