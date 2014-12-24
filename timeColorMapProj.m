@@ -67,7 +67,7 @@ for i = 0:totalframes-1
 	frColors = repmat(rgbColors(colorscale+1,:),256,1);
 	frColors = frColors .* intensityfactor;
 	RGB=ind2rgb(Iarr(:,:,fr),frColors);
-	rgbA(:,:,:,fr) = RGB;
+	rgbA(:,:,:,i+1) = RGB;
 end
 
 maxProj = max(rgbA, [], 4);

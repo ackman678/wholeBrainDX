@@ -1,4 +1,4 @@
-function Iarr2avi(Iarr, frStart, frEnd, filename)
+function Iarr2avi(Iarr, frStart, frEnd, filename, useFFmpeg)
 %Iarr2avi - Make avi movie
 %PURPOSE -- Make avi movie from from 8 bit indexed array. Use in conjunction with output from timeColorMapProj.m
 %USAGE -- 	Iarr2avi(Iarr,1638,1757, 'filename.tif');
@@ -10,6 +10,8 @@ function Iarr2avi(Iarr, frStart, frEnd, filename)
 % See also timeColorMapProj.m, Iarr2montage.m, myMovie2avi.m
 %
 %James B. Ackman 2014-07-28 08:06:40
+
+if nargin < 5 || isempty(useFFmpeg), useFFmpeg = 1; end
 
 sz=size(Iarr);
 if nargin < 3 || isempty(frEnd), frEnd=sz(3); end
@@ -36,9 +38,43 @@ for fr = totalframes
 end
 
 disp(['Making ' filename '-----------'])
-vidObj = VideoWriter(filename);
-open(vidObj);
-for i =1:numel(M)
-    writeVideo(vidObj,M(i));
+
+if useFFmpeg
+	if isunix && ~ismac 
+		%rm -rf /dev/shm/wbDXtmp
+		tmpPath = ['/dev/shm/wbDXtmp' datestr(now,'yyyymmddHHMMSS')];
+		%tmpPath = '/tmp/wbDXtmp';
+		%tmpPath = 'wbDXtmp';
+		system(['mkdir ' tmpPath]);
+	else
+		tmpPath = ['wbDXtmp' datestr(now,'yyyymmddHHMMSS')];
+		mkdir(tmpPath)
+	end
+	szZ = numel(M);
+	for fr = 1:szZ; %option:parfor
+		tmpFilename = fullfile(tmpPath, sprintf('img%05d.jpg',fr));
+		imwrite(M(fr).cdata,M(fr).colormap,tmpFilename)
+	end
+	
+	tic
+	disp('ffmpeg running...')
+	try
+		%system('ffmpeg -f image2 -i img%05d.jpg -vcodec mjpeg a4.avi')
+		system(['ffmpeg -f image2 -i ' tmpPath filesep 'img%05d.jpg -vcodec mjpeg ' filename])
+		%system(['ffmpeg -f image2 -i ' tmpPath filesep 'img%05d.jpg -r 30 ' filename])
+		rmdir(tmpPath,'s');
+	catch
+		error(errstr);
+	end
+	toc
+else
+	tic
+	disp('writeVideo running...')
+	vidObj = VideoWriter(filename);
+	open(vidObj);
+	for i =1:numel(M)
+	    writeVideo(vidObj,M(i));
+	end
+	close(vidObj);
+	toc
 end
-close(vidObj);
