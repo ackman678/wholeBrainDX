@@ -3,6 +3,10 @@ function A = openMovie(fn,useBioformats)
 %fn = filename; 
 %useBioformats -- binary 0 or 1 on whether to use the builtin matlab imread or to use the bioformats_package.jar to read in the image array data. Defaults to 0 (use builtin imread)
 if nargin < 2 || isempty(useBioformats), useBioformats = 0; end
+if nargin < 1 || isempty(fn)
+	[filename, pathname] = uigetfile({'*.tif'}, 'Choose raw movie file to open');
+	fn = fullfile(pathname,filename);
+end
 
 if useBioformats
 	if exist('myOpenOMETiff.m') == 2 && exist('bfopen.m') == 2

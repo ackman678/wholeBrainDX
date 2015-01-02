@@ -350,13 +350,7 @@ if showFigure > 0
         [I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
         M(fr) = im2frame(I2,map);
     end
-    
-    vidObj = VideoWriter(fnm2)
-    open(vidObj)
-    for i =1:numel(M)
-        writeVideo(vidObj,M(i));
-    end
-    close(vidObj)
+    writeMovie(M,fnm2);
 end
 
 

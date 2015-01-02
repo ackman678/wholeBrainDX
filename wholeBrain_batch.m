@@ -219,7 +219,7 @@ disp(['Segmentation finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 %==2==Detection============================
 [A3, CC, STATS] = wholeBrain_detect(A2,A,[4 3],makeInitMovies,fnm,region,hemisphereIndices);
 fnm2 = [fnm(1:length(fnm)-4) '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
-save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3')  
+save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3');  
 clear A2 A3;
 
 disp(['Detection finished: ' datestr(now,'yyyymmdd-HHMMSS')])
@@ -249,7 +249,7 @@ region = Domains2region(region.domainData.domains, region.domainData.CC,region.d
 
 fnm = fnm2;  
 fnm = [fnm(1:end-4) '_d2r' '.mat'];       
-save(fnm,'region','-v7.3')   
+save(fnm,'region','-v7.3');   
 
 disp(['Domain assignment finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
@@ -271,7 +271,7 @@ end
 data = wholeBrain_activeFraction(A3,region);   
 
 region.locationData.data = data;    
-save(fnm,'region','-v7.3')     
+save(fnm,'region','-v7.3');     
 
 disp('-----')
 

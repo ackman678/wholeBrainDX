@@ -26,6 +26,7 @@ function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadi
 %updated, improved algorithm with gaussian smooth 2013-02-01 by J.B.A.
 %modified 2013-03-28 14:25:44 by J.B.A.
 % Optimized and simplified algoritm 2014-05-21 16:06:48 by J.B.A.
+% Switched read tiff to imread to make bioformats dependency optional 2014-12-31 09:54:00 J.B.A.
 %
 % Except where otherwise noted, all code in this program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -62,18 +63,6 @@ nPixelThreshold = 50; %round(6.4411e+03/(region.spaceres^2));  %for bwareaopen i
 edgeSmooth = ceil(22.70/region.spaceres); %22.70µm at 11.35um/px to give 2px smooth for the morphological dilation.
 edgeSmooth2 = ceil(34.050/region.spaceres);  %34.0500 at 11.35um/px to give 3px smooth for the second morphological dilation after detection
 
-%{
-%Open the time series if not passed as a dF/F double array as an input
-if nargin < 1 || isempty(A)  
-	[data, series1] = myOpenOMEtiff;
-	A = double(series1);
-	Amean = mean(A,3);
-	for i = 1:size(A,3)
-		A(:,:,i) = (A(:,:,i) - Amean)./Amean;
-	end
-end
-%}
-
 if nargin < 1 || isempty(fnm)
     if exist('pathname','var')
         [filename, pathname] = uigetfile({'*.tif'}, 'Choose image to open',pathname);
@@ -94,9 +83,7 @@ end
 fnm2 = [name '_wholeBrain_segmentation_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
 
 %Read in the primary or first movie file:  
-[~, series1] = myOpenOMEtiff(fnm);
-A = double(series1);
-clear series1
+A = openMovie(fnm);
 
 %Find out whether there are extra movie files that need to be concatenated together with the first one (regular tiffs have 2+GB limit in size):  
 if isfield(region,'extraFiles')
@@ -105,9 +92,9 @@ if isfield(region,'extraFiles')
 		for i = 1:numel(C{1})		
 			if ~strcmp(fnm,C{1}{i})  %if the current filename is not the first one proceed with concatenation				
 				fn=fullfile(pathstr,C{1}{i});
-				[~, series1] = myOpenOMEtiff(fn);
-				A = cat(3, A, double(series1));
-				clear series1
+				B = openMovie(fn);
+				A = cat(3, A, B);
+				clear B
 			end
 		end
 	end
@@ -183,7 +170,7 @@ se = strel('disk',backgroundRemovRadius);
 seSm1 = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
 seSm2 = strel('disk',edgeSmooth2);
 
-for fr = 1:szZ; %option:parfor
+parfor fr = 1:szZ; %option:parfor
 	I = A(:,:,fr);
 	
 	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
@@ -256,7 +243,7 @@ end
 
 
 %======BEGIN segmentation=================================================================
-for fr = 1:szZ; %option:parfor
+parfor fr = 1:szZ; %option:parfor
 
 	bw = Iarr(:,:,fr) > T;
 	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
@@ -323,7 +310,7 @@ end
 thresh = T;
 
 %Optional--Export .avi movie if desired
-%write the motion JPEG .avi to disk using auto-generated datestring based filename
+%write the motion JPEG .avi videos to disk using auto-generated datestring based filename
 if makeMovies
 	Iarr=mat2gray(Iarr);   %scale the whole array
 	bothMasksArr = repmat(bothMasks,[1 1 szZ]);
@@ -343,22 +330,8 @@ if makeMovies
 	end
 
 	fnm3 = [fnm2(1:length(fnm2)-4) '-dFoF' '.avi']; 
-	disp(['Making ' fnm3 '-----------'])
-	vidObj = VideoWriter(fnm3);
-	open(vidObj);
-	for i =1:numel(M)
-		writeVideo(vidObj,M(i));
-	end
-	close(vidObj);
+	writeMovie(M,fnm3);
 
-%write the motion JPEG .avi to disk using auto-generated datestring based filename
 	fnm3 = [fnm2(1:length(fnm2)-4) '-mask' '.avi'];
-	disp(['Making ' fnm3 '-----------']) 
-	vidObj = VideoWriter(fnm3);
-	open(vidObj);
-	for i =1:numel(F)
-		writeVideo(vidObj,F(i));
-	end
-	close(vidObj);
-end
+	writeMovie(F,fnm3);
 end

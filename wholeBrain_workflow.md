@@ -6,7 +6,7 @@ Tags: analysis, wholeBrain, programming, matlab
 
 ## Prep files
 
-* (1) Open AVG-raw.tif image (saved previously with dFoF.avi for each raw .tif movie) and made cortex.L and cortex.R outlines for each file and saved as roi set .zip file from ImageJ. The following macro code snippets can be copied and run from the ImageJ macro interpreter in Fiji to ease this process:  
+* (1) Open the AVG .tif movie image (can be a tiff, jpg, png) (likely saved previously with a dFoF.avi for each raw .tif movie) and make brain hemisphere outlines (e.g. cortex.L, cortex.R, OB.L, OB.R, SC.L, SC.R) for each file and save the roi set as a .zip file from ImageJ (select all in ROI manager --> More --> Save). Can also use additional map images (timeColorMap Projections, domain frequency, duration, or diameter) to make outlines of functional brain region parcellations. The following macro code snippets can be copied and run from the ImageJ macro interpreter in Fiji to ease this process:  
 
 	```javascript
 	//Flip ImageJ ROI horizontally
@@ -62,70 +62,48 @@ Tags: analysis, wholeBrain, programming, matlab
 	makeSelection("polygon", x, y);
 	```
 
+* (2) Make space-delimited plain text list of file names 'files.txt' of the raw .tif movie filenames (1st column) and matching dummy .mat filenames (2nd column) and save in same directory as your raw movie tiff files and where your dummyAreas.mat files will be located.
 
-* (2) Open up the AVG-raw.tif image for each of the following in `calciumdx` and saved a dummy file with single region named 'field' encompassing whole field of view and a single manual dummy roi (so the file saves correctly) to save a 'dummyHemis.mat' file for each.  Be sure to know the spatial and temporal resolutions of your data before progressing with this step (region.spaceres and region.timeres).
-* (3) Make space-delimited filelist names 'files.txt' of the raw .tif movie filenames (1st column) and matching dummy filenames and save in same directory as your dummyHemis.mat files and the raw movie files.
-* (4) Bootup local copy of matlab and cd into the directory containing the files. Setup region file and add ImageJ roi coordinate outlines for the hemispheres.  Do the following for each file independently, change fnms to the appropriate filenames.
-	* (4a) Make **dummyHemis.mat** files:
+	```files
+	131208_01.tif 131208_01_dummyAreas.mat
+	131208_02.tif 131208_02_dummyAreas.mat	
+	...
+	```
+
+* (3) Bootup local copy of matlab and cd into the directory containing the files. Setup dummyAreas.mat region data structure files and add ImageJ roi coordinate outlines for the brain areas. The following code block will loop through these steps based on the number of lines in 'files.txt'. 
+	* note 1: The movie's **spatial resolution** (µm/px), **temporal resolution** (frame period in seconds), and **number of frames** will be input at this stage, along with optional information.
+	* note 2: A movie's average image will be asked for (e.g. one used earlier for hemisphere area outlines). This can be an 8bit or 16bit or RGB jpg, png, or tif image-- it is just stored within the data structure for illustration purposes.
+	* note 3: Optional: Should pass filenames for additional tiff movie files if the movie consists of multiple 2GB tiff files. Should be passed to the '**extraFiles**' variable in the interactive dialog box as a space-delimited character vector e.g. `131208_01@001.tif 131208_01@002.tif`. The resulting 'region.extraFiles' variable will be used by *wholeBrain_segmentation.m* when reading in the movie data to concatenate the movie together:  
+	* Make dummyAreas.mat files:
 		
 	```matlab
 	%matlab
 	addpath(genpath('~/Documents/MATLAB/wholeBrainDX'))
-	addpath(genpath('~/Documents/MATLAB/CalciumDX'))
-	addpath(genpath('~/Documents/MATLAB/bfmatlab'))
 	addpath(genpath('~/Documents/MATLAB/sigTOOL'))
-	addpath(genpath('~/Documents/MATLAB/physioDX'))
 	addpath(genpath('~/Documents/MATLAB/piotrImageVideoProcessingToolbox'))
+	%addpath(genpath('~/Documents/MATLAB/bfmatlab'))
 
 	filelist = readtext('files.txt',' ');
 	fnms = filelist(:,2);  %Second column is dummy region matfiles
 
-	%To make dummyHemis for 1st run through
-	for i = 1:numel(fnms)
-		fnm = fnms{i};
-		load(fnm) 
-		disp(['Please load Rois.zip file for ' fnm])
-		region = myReadImageJROIregionAdd(region,'false');	
-		region.stimuli = [];  
-		region.motorSignal = [];
-		answer = inputdlg({'nframes:'},'Enter total number of frames for whole recording',1,{'3000'});  %Change this the the number of frames so that the motor signal is the correct length
-		region.nframes = str2double(answer{1});   	
-		save(fnm,'region') 
-	end
-	```
-	
-	
-	* (4b) Fix the experimental parameters if needed (Optional: e.g. Need to **pass filenames for additional tiff movie files** if the recording consists of multiple 2GB tiff files). Should be passed to the 'extraFiles' variable in the interactive dialog box as a space-delimited character vector. The resulting 'region.extraFiles' variable will be used by `wholeBrain_segmentation.m` when reading in the movie data to concatenate the movie together:  
-	
-	```matlab
-	filelist = readtext('files.txt',' ');
-	fnms = filelist(:,2);  %Second column is dummy region matfiles
-	def=[];
-	for k = 1:length(fnms)
-		load(fnms{k});
-		disp(['Please input exp params for' fnms{k}])
-		[region, def] = dxInputParams(region, def);
-		save(fnms{k},'region')
-	end
-	```
-	
-		
-	* (4c) Make **dummyAreas.mat** files (Optional:  Only for secondary batch run throughs if parcellation rois have been made):
-		* Make sure to Find and replace 'dummyHemis' for 'dummyAreas' in 'files.txt' after running the following code
-	
-	```matlab
-	%To make dummyAreas for 2nd run through
-	%matlab
-
-	filelist = readtext('files.txt',' ');
-	fnms = filelist(:,2);  %Second column is dummy region matfiles
-	
+	%To make dummyAreas files
+	def1=[]; def2=[];
 	for k = 1:numel(fnms)
 		fnm = fnms{k};
-		load(fnm);
-		disp(['Please load Rois.zip file for ' fnm])
-		region = myReadImageJROIregionAdd(region,'false');	
+		try
+			load(fnm) 
+		catch
+			disp('dummy .mat file not found, making new region dummy file structure')
+			region.image = [];
+		end
+		disp(['Please input required exp params for ' fnm])
+		[region, ~] = dxInputParamsSetup(region, def1); %required line
 
+		%Load brain area rois
+		disp(['Please load Rois.zip file for ' fnm])
+		if length(region.name) < 2, region = myReadImageJROIregionAdd(region,'false');	end 
+
+		%Reorder area roi list of names and coordinates
 		j=0;
 		strOrder = {'field' 'cortex.L' 'cortex.R' 'OB.L' 'OB.R' 'SC.L' 'SC.R' 'V1.L' 'V1.R' 'V2M.R' 'V2M.L' 'V2L.R' 'V2L.L' 'A1.L' 'A1.R' 'barrel.L' 'barrel.R' 'AS.L' 'AS.R' 'PPC.L' 'PPC.R' 'LS.L' 'LS.R' 'FL.L' 'FL.R' 'HL.L' 'HL.R' 'T.L' 'T.R' 'RSA.L' 'RSA.R' 'M1.L' 'M1.R' 'M2.L' 'M2.R'};
 		names2 = region.name;
@@ -138,23 +116,23 @@ Tags: analysis, wholeBrain, programming, matlab
 				coords2{j} = region.coords{idx};
 			end
 		end
-		if length(strOrder) ~= length(region.name)
-			error('strOrder not same length as region.name') 
-		end
 		region.name=names2;
 		region.coords=coords2;
-		fnm = [fnm(1:end-9) 'Areas.mat'];
-		save(fnm,'region') 
-	end	
 
-	%Find and replace 'dummyHemis' for 'dummyAreas' in 'files.txt'	
+		%Add optional info to file, can comment out this line
+		disp(['Please input optional exp params for ' fnm])
+		%[region, def2] = dxInputParamsOpt(region, def2); %optional line
+
+		save(fnm,'region')
+		clear region 
+	end
 	```
-	
-* (5) Optional:  Domain tagging
+
+* (4) Optional:  Domain tagging
 	* Uses d2r.mat files from a previous batch run and `domainTaggingGui`
 		* Option 1: If each recording is the same exact FOV, can do domainTagging for one with artifacts, and use borders for rest of movies in a for loop
 		* Option 2: Or can do multiple movies and manually concatentate the borders together for a merged set of borders
-	* (5a) For individual files:
+	* (4a) Optional tagging for individual files:
 	
 	```matlab
 	filelist = readtext('files.txt',' ');
@@ -189,7 +167,7 @@ Tags: analysis, wholeBrain, programming, matlab
 	end
 	```
 	
-	* (5b) For multiple files:
+	* (4b) Optional tagging for multiple files:
 	
 	```matlab
 	% For a bunch of files:
@@ -219,7 +197,7 @@ Tags: analysis, wholeBrain, programming, matlab
 	end	
 	```
 
-* (6) Optional:  
+* (5) Optional:  
 	* Run `sigTOOL` from matlab and use `Batch Import` in the sigTOOL gui to convert each Spike2.smr file into a .kcl data file for use with sigTOOL for simultaneously acquired signals like motorSignal from photodiode or electrophysiology signals.  
 		* Export motor signal from Spike2.smr file, make filtered signal for dummyfile, and detect motor active periods and save in dummyfile for each movie  
 		* Add other stimuli info to dummy file, using makeMotorStateStimParams.m and makeDrugStateStimParams.m  
@@ -276,12 +254,12 @@ Tags: analysis, wholeBrain, programming, matlab
 
 ## Run batch analysis
 
-* (7) Sync dummy and data files to NAS data server from local computer and to matlab location for analysis (either local PC or HPC).
-* (8) Run the batch script. Perform within the folder containing the data files and 'files.txt':    
+* (6) Sync dummy and data files to NAS data server from local computer and to matlab location for analysis (either local PC or HPC).
+* (7) Run the batch script. Perform within the folder containing the data files and 'files.txt':    
 
 	```matlab
-	%matlabpool close force local %delete(gcp) %for 2014a %**Only needed if using branch 'parfor'**
-	%matlabpool open 8  %parpool(8)  %for 2014a
+	%delete(gcp('nocreate')) %Only needed if using parfor. %Should be 'matlabpool close force local' for matlab versions earlier than 2014a
+	%parpool(8)  %Only needed if using parfor. Change to n cpus. %Should be 'matlabpool open 8' for matlab versions earlier than 2014a
 	diary on
 	disp(datestr(now,'yyyymmdd-HHMMSS'))
 	
@@ -296,12 +274,12 @@ Tags: analysis, wholeBrain, programming, matlab
 	diary off
 	```
 
-* (9) Optional: Run the batch script for multiple experiments, using a 'files.txt' inside each experiment folder:  
+* Optional: Run the batch script for multiple experimental folders, using the 'files.txt' list inside each experiment folder:  
 
 	```matlab
 	% Multiple directories
-	%matlabpool close force local %delete(gcp) %for 2014a %**Only needed if using branch 'parfor'**
-	%matlabpool open 8  %parpool(8)  %for 2014a
+	%delete(gcp('nocreate')) %Only needed if using parfor. %Should be 'matlabpool close force local' for matlab versions earlier than 2014a
+	%parpool(8)  %Only needed if using parfor. Change to n cpus. %Should be 'matlabpool open 8' for matlab versions earlier than 2014a
 	dirpath = '/scratch2/netid/';
 	dirnames = {'folder1/'  'folder2/'  'folder3/'};
 	beginT = datestr(now,'yyyymmdd-HHMMSS');

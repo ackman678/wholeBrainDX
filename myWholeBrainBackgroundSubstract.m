@@ -31,10 +31,7 @@ if nargin < 1 || isempty(fnm)
     save('calciumdxprefs.mat', 'pathname','filename')
 end
 
-
-[data, series1] = myOpenOMEtiff(fnm);
-A = double(series1);
-clear data series1
+A = openMovie(fnm);
 
 %%Make deltaF/F movie
 Amean = mean(A,3);
@@ -62,7 +59,7 @@ fnm3=[fnm(1:end-4) '_bkgndSubtr-no_' num2str(diskRadius) '_dF-' deltaF '-' dates
 
 %{
 %--------for direct write------------------------------------
-for fr = 1:szZ; %option:parfor
+parfor fr = 1:szZ; %option:parfor
 I = A(:,:,fr);
     %fr=26;
 % 	img1 = A(:,:,fr);
@@ -103,7 +100,7 @@ A2 = zeros([sz szZ]);
 %Array2 = zeros([sz szZ],'uint16');
 
 %--------for write to memory------------------------------------
-for fr = 1:szZ; %option:parfor
+parfor fr = 1:szZ; %option:parfor
 I = A(:,:,fr);
     %fr=26;
 % 	img1 = A(:,:,fr);
