@@ -21,7 +21,7 @@ Usage instructions at [wholeBrain_workflow.md](wholeBrain_workflow.md)
 ## Core dependencies ##
 
 * matlab with the image processing and signal processing toolboxes.
-* [piotrImageVideoProcessingToolbox][piotrToolbox]. Uses gaussSmooth and xcorrn from this toolbox.
+* [piotrImageVideoProcessingToolbox][piotrToolbox]. Uses gaussSmooth, xcorrn, and optFlowLk from this toolbox. *Note: Currently optFlowLk.m is used from toolbox v.2.61 or eariler, instead of the opticalFlow.m from more recent toolbox versions.* If optFlowLk.m isn't found, then optic flow is not computed.
 
 
 ## Non-core dependencies ##
