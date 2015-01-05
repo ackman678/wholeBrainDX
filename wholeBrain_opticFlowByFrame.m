@@ -91,9 +91,5 @@ for fr = frStart:frEnd-1
 end
 
 %--------Write movie---------------------------------------
-vidObj = VideoWriter(fnm2)
-open(vidObj)
-for i =1:numel(M)
-writeVideo(vidObj,M(i))
-end
-close(vidObj)
+writeMovie(M,fnm2);
+

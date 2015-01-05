@@ -122,13 +122,7 @@ if sum(get(0, 'ScreenSize')) > 4  %hack to test whether matlab is started with n
 		end
 
 		%--------Write movie---------------------------------------
-		vidObj = VideoWriter(fnm2)
-		open(vidObj)
-		for i =1:numel(M)
-		writeVideo(vidObj,M(i))
-		end
-		close(vidObj)
-
+		writeMovie(M,fnm2,0);  %TODO: need to hack writeMovie imwrite to check for empty colormap at this step so ffmpeg can be used instead
 		close all
 	end
 end

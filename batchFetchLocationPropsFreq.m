@@ -316,11 +316,15 @@ if isfield(varin.region,'domainData')
 	end
  
  	coords = varin.region.coords{strcmp(varin.region.name,varin.locationName)};
+ 	sz = data.CC.ImageSize(1:2);
+	ROImask = poly2mask(coords(:,1),coords(:,2),sz(1),sz(2));
+
 	count = 0;
 	for i = ObjectIndices	
-		centr = data.STATS(i).Centroid;
-		inp = inpolygon(centr(1),centr(2),coords(:,1),coords(:,2));
-		if inp, count = count + 1; end
+		centrRowCol = [round(data.STATS(i).Centroid(2)) round(data.STATS(i).Centroid(1))];
+		if ROImask(centrRowCol(1),centrRowCol(2)) > 0
+			count = count + 1;
+		end
 	end	
 	out = count;
 else

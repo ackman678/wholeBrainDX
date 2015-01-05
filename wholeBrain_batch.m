@@ -90,12 +90,13 @@ cd(dirname);
 levels = zeros(1,numel(fnms));
 for j=1:numel(fnms)
 	[pathstr, name, ext] = fileparts(fnms{j});
-	region.matfilename = [name ext]; 
-	f = fullfile(currdir,region.matfilename);
+	matfilename = [name ext]; 
+	f = fullfile(currdir,matfilename);
 	load(f,'region');  %load the dummy file at fnms{j} containing parcellations, motor signal, etc
 
 	[pathstr, name, ext] = fileparts(fnms2{j});  
 	region.filename = [name ext]; %set the .tif file name
+	region.matfilename = matfilename;
 	fn = fullfile(currdir,region.filename);
 
 	
@@ -219,7 +220,7 @@ disp(['Segmentation finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 %==2==Detection============================
 [A3, CC, STATS] = wholeBrain_detect(A2,A,[4 3],makeInitMovies,fnm,region,hemisphereIndices);
 fnm2 = [fnm(1:length(fnm)-4) '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
-save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3')  
+save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3');  
 clear A2 A3;
 
 disp(['Detection finished: ' datestr(now,'yyyymmdd-HHMMSS')])
@@ -249,7 +250,7 @@ region = Domains2region(region.domainData.domains, region.domainData.CC,region.d
 
 fnm = fnm2;  
 fnm = [fnm(1:end-4) '_d2r' '.mat'];       
-save(fnm,'region','-v7.3')   
+save(fnm,'region','-v7.3');   
 
 disp(['Domain assignment finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 
@@ -260,7 +261,7 @@ A3 = false(sz);
 
 for i = 1:region.domainData.CC.NumObjects      
 	if ~strcmp(region.domainData.STATS(i).descriptor, 'artifact')    
-		A3(region.domainData.CC.PixelIdxList{i}) = 1;      
+		A3(region.domainData.CC.PixelIdxList{i}) = true;      
 	end          
 end      
 
@@ -271,7 +272,7 @@ end
 data = wholeBrain_activeFraction(A3,region);   
 
 region.locationData.data = data;    
-save(fnm,'region','-v7.3')     
+save(fnm,'region','-v7.3');     
 
 disp('-----')
 

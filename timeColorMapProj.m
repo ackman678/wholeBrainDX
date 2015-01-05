@@ -6,8 +6,10 @@ function [maxProj, Iarr, MnMx] = timeColorMapProj(A, frStart, frEnd, filename, n
 %			[maxProj, ~] = timeColorMapProj(A,1638,1757, 'filename.tif');
 % A - movie array, preferably converted to dF/F over time already. Should be of type double or one that is already converted to 8bit (output Iarr from this script)
 % Example movie read and dF/F conversion:  
-	% [~, series1, filename] = myOpenOMEtiff;
-	% A = double(series1);
+	%% [~, series1, filename] = myOpenOMEtiff;
+	%% A = double(series1);
+	%% or
+	%% A = openMovie;
 	% %Make deltaF/F movie
 	% Amean = mean(A,3);
 	% for i = 1:size(A,3)
@@ -67,11 +69,13 @@ for i = 0:totalframes-1
 	frColors = repmat(rgbColors(colorscale+1,:),256,1);
 	frColors = frColors .* intensityfactor;
 	RGB=ind2rgb(Iarr(:,:,fr),frColors);
-	rgbA(:,:,:,fr) = RGB;
+	rgbA(:,:,:,i+1) = RGB;
 end
 
 maxProj = max(rgbA, [], 4);
-imshow(maxProj);
+if sum(get(0, 'ScreenSize')) > 4  %hack to test whether matlab is started with no display which would give get(0, 'ScreenSize') = [1 1 1 1]
+	imshow(maxProj);
+end
 
 if ~isempty(filename)
 	imwrite(maxProj,filename,'png')

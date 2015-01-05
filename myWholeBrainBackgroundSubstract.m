@@ -31,10 +31,7 @@ if nargin < 1 || isempty(fnm)
     save('calciumdxprefs.mat', 'pathname','filename')
 end
 
-
-[data, series1] = myOpenOMEtiff(fnm);
-A = double(series1);
-clear data series1
+A = openMovie(fnm);
 
 %%Make deltaF/F movie
 Amean = mean(A,3);

@@ -771,22 +771,16 @@ function pushbutton9_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 %if handles.makeMovie > 0;
-	nFrames = handles.movieLength;
+nFrames = handles.movieLength;
 %	nFrames = 30;
-	M(1:nFrames) = struct('cdata', [],'colormap', []);
-	i = 1;
-	while i <= nFrames
-		set(handles.slider2,'Value',i);
-		slider2_Callback(hObject, eventdata, handles);
+M(1:nFrames) = struct('cdata', [],'colormap', []);
+i = 1;
+while i <= nFrames
+	set(handles.slider2,'Value',i);
+	slider2_Callback(hObject, eventdata, handles);
 %		guidata(hObject, handles);
-		M(i) = getframe(handles.figure1);
-		i = i + 1;
-	end
-	disp(numel(M));
-	vidObj = VideoWriter(['plotWholeBrainDomainsTraces' datestr(now,'yyyymmdd-HHMMSS') '.avi'])
-	open(vidObj)
-	for i =1:numel(M)
-		writeVideo(vidObj,M(i))
-	end
-	close(vidObj)	
-%end
+	M(i) = getframe(handles.figure1);
+	i = i + 1;
+end
+disp(numel(M));
+writeMovie(M,['plotWholeBrainDomainsTraces' datestr(now,'yyyymmdd-HHMMSS') '.avi']);
