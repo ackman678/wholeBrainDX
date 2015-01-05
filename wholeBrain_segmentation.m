@@ -115,12 +115,17 @@ szZ=sz(3);
 %end  
 %END TESTING---------
 
-%Make deltaF/F movie
-Amean = mean(A,3);
-for i = 1:size(A,3)
-	%     A(:,:,i) = (A(:,:,i) - region.image)./region.image;
-		A(:,:,i) = (A(:,:,i) - Amean)./Amean;
-end
+%Make deltaF/F movie ( (F - F0)/F0 normalizaion at each pixel )
+% Amean = mean(A,3);
+% for i = 1:size(A,3)
+% 		A(:,:,i) = (A(:,:,i) - Amean)./Amean;
+% end
+npix = prod(sz(1:2));
+A = reshape(A, npix, szZ); %reshape 3D array into space-time matrix
+Amean = mean(A,2); %avg at each pixel location in the image over time
+A = A ./ (Amean * ones(1,szZ)) - 1;   % F/F0 - 1 == ((F-F0)/F0);
+A = reshape(A, sz(1), sz(2), szZ);
+
 Amin2D = min(A,[],3);
 Amin = min(Amin2D(:));
 A = A + abs(Amin);  %Scale deltaF array so everything is positive valued
@@ -170,7 +175,7 @@ se = strel('disk',backgroundRemovRadius);
 seSm1 = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
 seSm2 = strel('disk',edgeSmooth2);
 
-parfor fr = 1:szZ; %option:parfor
+for fr = 1:szZ; %option:parfor
 	I = A(:,:,fr);
 	
 	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
@@ -209,7 +214,7 @@ if showFigure > 0; figure; imshow(G(:,:,1),[]); end
 
 [h, ~] = imhist(reshape(G,numel(G),1));
 
-if showFigure > 0; figure; imhist(grad); end
+if showFigure > 0; figure; imhist(reshape(G,numel(G),1)); end
 %	pthr = 0.99;
 Q = prctileThresh(h,pthr);
 %	markerImage = grad > Q;
@@ -243,7 +248,7 @@ end
 
 
 %======BEGIN segmentation=================================================================
-parfor fr = 1:szZ; %option:parfor
+for fr = 1:szZ; %option:parfor
 
 	bw = Iarr(:,:,fr) > T;
 	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
@@ -323,9 +328,7 @@ if makeMovies
 		
 	for fr=1:szZ
 		M(fr) = im2frame(I2arr(:,:,fr),map);  %setup the indexed raw dFoF movie
-
-		I=mat2gray(A2(:,:,fr));  %makes each binary frame into gray image for gray2ind function
-		[I2, map2] = gray2ind(I, 8); %figure; imshow(I2,map)
+		[I2, map2] = gray2ind(A2(:,:,fr), 8); %figure; imshow(I2,map)
 		F(fr) = im2frame(I2,map2);  %setup the binary segmented mask movie
 	end
 

@@ -325,7 +325,7 @@ function A3 = getMovie(CC,A2,fnm2,sz,showFigure)
 %Now make a binary movie array based on the segmented functional signal domains
 A3 = false(sz);
 for i = 1:CC.NumObjects
-    A3(CC.PixelIdxList{i}) = 1;
+    A3(CC.PixelIdxList{i}) = true;
 end
 
 %L = labelmatrix(CC);
@@ -345,9 +345,9 @@ end
 %Transform the binary array into a matlab specific 'movie' data structure that can be written as an motion JPEG .avi to disk.
 %write the motion JPEG .avi to disk using auto-generated datestring based filename
 if showFigure > 0
+    M(size(A3,3)) = struct('cdata',[],'colormap',[]);
     for fr=1:size(A3,3)
-        I=mat2gray(A3(:,:,fr));
-        [I2, map] = gray2ind(I, 8); %figure; imshow(I2,map)
+        [I2, map] = gray2ind(A3(:,:,fr), 8); %figure; imshow(I2,map)
         M(fr) = im2frame(I2,map);
     end
     writeMovie(M,fnm2);

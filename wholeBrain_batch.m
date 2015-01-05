@@ -90,12 +90,13 @@ cd(dirname);
 levels = zeros(1,numel(fnms));
 for j=1:numel(fnms)
 	[pathstr, name, ext] = fileparts(fnms{j});
-	region.matfilename = [name ext]; 
-	f = fullfile(currdir,region.matfilename);
+	matfilename = [name ext]; 
+	f = fullfile(currdir,matfilename);
 	load(f,'region');  %load the dummy file at fnms{j} containing parcellations, motor signal, etc
 
 	[pathstr, name, ext] = fileparts(fnms2{j});  
 	region.filename = [name ext]; %set the .tif file name
+	region.matfilename = matfilename;
 	fn = fullfile(currdir,region.filename);
 
 	
@@ -260,7 +261,7 @@ A3 = false(sz);
 
 for i = 1:region.domainData.CC.NumObjects      
 	if ~strcmp(region.domainData.STATS(i).descriptor, 'artifact')    
-		A3(region.domainData.CC.PixelIdxList{i}) = 1;      
+		A3(region.domainData.CC.PixelIdxList{i}) = true;      
 	end          
 end      
 

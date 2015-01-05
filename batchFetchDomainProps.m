@@ -218,9 +218,10 @@ name = [];
 for locationIndex = 1:length(locationMarkers)
 	locationName = varin.region.locationData.data(locationIndex).name;
 	coords = varin.region.coords{strcmp(varin.region.name,locationName)};
-	centr = data.STATS(varin.idx).Centroid;
-	inp = inpolygon(centr(1),centr(2),coords(:,1),coords(:,2));
-	if inp, 
+	centrRowCol = [round(data.STATS(varin.idx).Centroid(2)) round(data.STATS(varin.idx).Centroid(1))];
+ 	sz = data.CC.ImageSize(1:2);
+	ROImask = poly2mask(coords(:,1),coords(:,2),sz(1),sz(2));
+	if ROImask(centrRowCol(1),centrRowCol(2)) > 0
 		name = locationName; 
 		break
 	end
@@ -236,10 +237,12 @@ name = [];
 for locationIndex = 1:length(locationMarkers)
 	locationName = varin.region.locationData.data(locationIndex).name;
 	coords = varin.region.coords{strcmp(varin.region.name,locationName)};
-	centr = data.STATS(varin.idx).Centroid;
-	inp = inpolygon(centr(1),centr(2),coords(:,1),coords(:,2));
-	if inp, 
+	centrRowCol = [round(data.STATS(varin.idx).Centroid(2)) round(data.STATS(varin.idx).Centroid(1))];
+ 	sz = data.CC.ImageSize(1:2);
+	ROImask = poly2mask(coords(:,1),coords(:,2),sz(1),sz(2));
+	if ROImask(centrRowCol(1),centrRowCol(2)) > 0
 		name = locationName; 
+		break
 	end
 end
 out = name;

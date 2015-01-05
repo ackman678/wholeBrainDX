@@ -29,8 +29,8 @@ Usage instructions at [wholeBrain_workflow.md](wholeBrain_workflow.md)
 * [FFmpeg](https://www.ffmpeg.org). Highly recommended for writing videos (otherwise the matlab builtin function videoWriter is used which will likely be slower). The executable should be 'ffmpeg' and should either be in your matlab search path (windows or mac/unix) or in your system shell path (mac/unix, edit the .bashrc file after install).
 * [sigTOOL][sigtool]. Used with the stimulus movies workflow and dealing with motor signals. This program is useful if going to use simultaneously acquired electrophysiology, stimulation data stored in a data format readable by sigtool, such as CED Spike2 .smr files. This toolbox will read those files and output a .kcl matlab data structure file format.
 * **parfor** loop replacement. Replace `for` with `parfor` loops in a few files for *possibly* increased processing speed. Useful if using an HPC cluster or computers with multiple (>=8?) cpus.
-    * To use parfor use grep (regular expression) find/replacement in a text editor on all files in wholeBrainDX (should find matches in several files):
-    * Find: `(^[ \t]*?)for([ \tA-Za-z0-9=:]+[0-9\(\)-]*?; %option:parfor)`
+    * To use parfor, use grep (regular expression) find/replacement in a text editor on all files in wholeBrainDX (should find matches among several files):
+    * Find: `(^[ \t]*?)for([ \tA-Za-z0-9=:]+[A-Za-z0-9\(\)-]*?; %option:parfor)`
     * Replace: `\1parfor\2`
 ![](assets/img/Screen_Shot_2014-10-15_at_10.02.45_AM.png)
 * [bfmatlab](http://www.openmicroscopy.org/site/support/bio-formats5/users/matlab/index.html), a matlab toolbox containing the bio-formats java plugin and a `bfopen.m` reader function for opening many different microscopy image/tiff file formats. Useful if opening multichannel data or a non-standard tiff or image file format that matlab's builtin `imread` can't handle.

@@ -172,13 +172,14 @@ A3proj = meanProjectArray(A3, CC, STATS, domains, roiMean, tag, frames);
 
 function A3proj = meanProjectArray(A3, CC, STATS, domains, signalMetric, tag, frames)
 %frames should be a vector containing two integers, the startFrame and endFrame for the range you want to plot
-count = ones(CC.ImageSize(1:2));
+sz = CC.ImageSize(1:2);
+count = ones(sz(1),sz(2));
 for i = 1:CC.NumObjects  
 	if strcmp(STATS(i).descriptor, tag) & ceil(STATS(i).BoundingBox(3)) >= frames(1) & ceil(STATS(i).BoundingBox(3)) <= frames(2)
 		sig = signalMetric(i);
-		BW = zeros(CC.ImageSize(1:2));
-		BW2 = zeros(CC.ImageSize(1:2));
-		BW(domains(i).PixelInd) = 1;
+		BW = false(sz(1),sz(2));
+		BW2 = zeros(sz(1),sz(2));
+		BW(domains(i).PixelInd) = true;
 		BW2(domains(i).PixelInd) = sig;
 		count = count + BW;
 		A3 = A3 + BW2;

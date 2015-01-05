@@ -9,15 +9,22 @@ if nargin < 5 || isempty(hemisphereIndices), hemisphereIndices = [2 3]; end  %in
 region.onsets = {};
 region.offsets = {};
 region.contours = {};
-region.location = []
+region.location = [];
+
+sz = CC.ImageSize(1:2);
+nROI = numel(hemisphereIndices);
+ROImasks = false(sz(1),sz(2),nROI);
+for j = 1:nROI
+	ROImasks(:,:,j) = poly2mask(region.coords{hemisphereIndices(j)}(:,1),region.coords{hemisphereIndices(j)}(:,2),sz(1),sz(2));
+	%figure; imshow(regionMask1);
+end
 
 for i = 1:length(domains)
 	onsets = [];
 	offsets = [];
 	%maxampl = [];  %TODO:
 	%meanampl = []; %TODO:
-	
-	
+		
 	OrigIndex = unique(domains(i).OrigDomainIndex);
 	
 	for j = 1:length(OrigIndex)
@@ -27,30 +34,25 @@ for i = 1:length(domains)
 	region.onsets{i} = onsets;
 	region.offsets{i} = offsets;
 	
-%	i=1
-%	j=1
-	BW = zeros(CC.ImageSize(1:2));
-	BW(domains(i).PixelInd) = 1;
-	[BP2,L] = bwboundaries(BW,'noholes');
+	BW = false(CC.ImageSize(1:2));
+	BW(domains(i).PixelInd) = true;
+	[BP2,~] = bwboundaries(BW,'noholes');
 	boundary = BP2{1};
 	locatmp = [boundary(:,2) boundary(:,1)];
 	region.contours{i} = locatmp;
 	
-	CC2 = bwconncomp(BW);
-	STATS2 = regionprops(CC2,'Centroid');
-	centrInd = sub2ind(CC.ImageSize(1:2),round(STATS2(1).Centroid(2)),round(STATS2(1).Centroid(1)));
-	
+	STATS2 = regionprops(BW,'Centroid');
+	% centrInd = sub2ind(CC.ImageSize(1:2),round(STATS2(1).Centroid(2)),round(STATS2(1).Centroid(1)));
+	centrRowCol = [round(STATS2(1).Centroid(2)) round(STATS2(1).Centroid(1))];
+
 	region.location(i) = 1;
 	
-	for j=1:length(hemisphereIndices)
-		sz = CC.ImageSize(1:2);
-		regionMask1 = poly2mask(region.coords{hemisphereIndices(j)}(:,1),region.coords{hemisphereIndices(j)}(:,2),sz(1),sz(2));
-		%regionMask2 = poly2mask(region.coords{hemisphereIndices(2)}(:,1),region.coords{hemisphereIndices(2)}(:,2),sz(1),sz(2));
-		%figure; imshow(regionMask1); 	figure; imshow(regionMask2);
-		
-		if ~isempty(intersect(find(regionMask1), centrInd))
+	for j=1:nROI
+		%regionMask1 = ROImasks(:,:,j);
+		% if regionMask1(centrInd) > 0
+		if ROImasks(centrRowCol(1),centrRowCol(2),j) > 0
 			region.location(i) = hemisphereIndices(j);
-		end		
+		end
 	end
 end 
 

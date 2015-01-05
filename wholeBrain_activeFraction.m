@@ -28,47 +28,43 @@ for locationIndex = 1:length(locationMarkers)   %Can limit this to just hemisphe
 	data(locationIndex).meanActivePixelLocaNormAP = zeros(1,sz(3));
 end
 
-for fr = 1:sz(3)
-	I = A3(:,:,fr);
-	for locationIndex = 1:length(locationMarkers)
-		%imshow(I&binaryMasks(locationIndex).image)
-		[row,col] = find(I&data(locationIndex).binaryMask);
-		data(locationIndex).nPixelsByFrame(1,fr) = numel(row);  %get the number of active pixels by brame
-		data(locationIndex).activeFractionByFrame(1,fr) = data(locationIndex).nPixelsByFrame(1,fr) / data(locationIndex).nPixels; %get the active fraction by frame
-		
-		if isempty(row)
-			data(locationIndex).meanActivePixelLocaRowInd(1,fr) = NaN;
-			data(locationIndex).meanActivePixelLocaColInd(1,fr) = NaN;
-			data(locationIndex).meanActivePixelLocaNormML(1,fr) = NaN;
-			data(locationIndex).meanActivePixelLocaNormAP(1,fr) = NaN;
-		else
-			data(locationIndex).meanActivePixelLocaRowInd(1,fr) = mean(row);  %will be automatically weighted by size of the active domains, reducing influence of the small noise components
-			data(locationIndex).meanActivePixelLocaColInd(1,fr) = mean(col);
+A3 = reshape(A3,prod(sz(1:2)),sz(3)); %space x time matrix
+for locationIndex = 1:length(locationMarkers); %option:parfor
+	ROImask = repmat(data(locationIndex).binaryMask,1,1,sz(3));
+	ROImask = reshape(ROImask,prod(sz(1:2)),sz(3)); %space x time matrix
+	I = A3 & ROImask;
+	data(locationIndex).nPixelsByFrame = sum(I,1);  %get the number of active pixels by frame
+	data(locationIndex).activeFractionByFrame = data(locationIndex).nPixelsByFrame ./ data(locationIndex).nPixels; %get the active fraction by frame
 
-			%Calculate normalized medial-lateral and anterior-posterior distances
-			xlocapx = mean(col);
-			ylocapx = mean(row);
-			mx = max(region.coords{locationMarkers(locationIndex)});  %normally (X, Y) = (cols, rows)
-			mn = min(region.coords{locationMarkers(locationIndex)});  %normally (X, Y) = (cols, rows)
-			
-			%region.orientation.value (Y, X) = (row, cols)
-			%mx and mn give from region.coords will normally be: (X, Y) = (cols, rows)
+	[row,col,k]=ind2sub(sz,find(I));
+
+	%A = accumarray(subs,val,sz,fun,fillval)
+	rowAgg = accumarray(k,row,[sz(3) 1],@mean,NaN);
+	colAgg = accumarray(k,col,[sz(3) 1],@mean,NaN);
+
+	data(locationIndex).meanActivePixelLocaRowInd = rowAgg';
+	data(locationIndex).meanActivePixelLocaColInd = colAgg';
+
+	%Calculate normalized medial-lateral and anterior-posterior distances
+	mx = max(region.coords{locationMarkers(locationIndex)});  %normally (X, Y) = (cols, rows)
+	mn = min(region.coords{locationMarkers(locationIndex)});  %normally (X, Y) = (cols, rows)
+	
+	%region.orientation.value (Y, X) = (row, cols)
+	%mx and mn give from region.coords will normally be: (X, Y) = (cols, rows)
 %			if region.orientation.value(1) < mn(2)
-			if mn(1) < region.orientation.value(2)   %switched for whole brain movies with anterior-medial point being up
-			xlocanorm = (xlocapx - mn(1))/(mx(1) - mn(1));
-			ylocanorm = (ylocapx - mn(2))/(mx(2) - mn(2));
-%			ylocanorm = abs(1-ylocanorm);
-			xlocanorm = abs(1-xlocanorm);  %switched for whole brain movies with anterior-medial point being up
-			else
-			xlocanorm = (xlocapx - mn(1))/(mx(1) - mn(1));
-			ylocanorm = (ylocapx - mn(2))/(mx(2) - mn(2));    
-			end
-			
-			data(locationIndex).meanActivePixelLocaNormML(1,fr) = xlocanorm;
-			data(locationIndex).meanActivePixelLocaNormAP(1,fr) = ylocanorm;
-		end
+	if mn(1) < region.orientation.value(2)   %switched for whole brain movies with anterior-medial point being up
+		xlocanorm = (colAgg' - mn(1))/(mx(1) - mn(1));
+		ylocanorm = (rowAgg' - mn(2))/(mx(2) - mn(2));
+		xlocanorm = abs(1-xlocanorm);  %switched for whole brain movies with anterior-medial point being up
+	else
+		xlocanorm = (colAgg' - mn(1))/(mx(1) - mn(1));
+		ylocanorm = (rowAgg' - mn(2))/(mx(2) - mn(2));    
 	end
+	
+	data(locationIndex).meanActivePixelLocaNormML = xlocanorm;
+	data(locationIndex).meanActivePixelLocaNormAP = ylocanorm;
 end
+
 
 %
 %figure;
