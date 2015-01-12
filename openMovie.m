@@ -21,7 +21,7 @@ else
 	height = info(1).Height;
 	A = zeros(height, width, nt);
 	fprintf('Reading movie... \n    ');
-	for i = 1:nt; %option:parfor
+	parfor i = 1:nt; %option:parfor
 	    A(:,:,i) = imread(fn,i,'Info',info);
 	    % if mod(i,500) == 1
 	    %     fprintf('.');

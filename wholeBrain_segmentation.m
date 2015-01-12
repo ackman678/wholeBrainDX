@@ -175,7 +175,7 @@ se = strel('disk',backgroundRemovRadius);
 seSm1 = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
 seSm2 = strel('disk',edgeSmooth2);
 
-for fr = 1:szZ; %option:parfor
+parfor fr = 1:szZ; %option:parfor
 	I = A(:,:,fr);
 	
 	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
@@ -248,7 +248,7 @@ end
 
 
 %======BEGIN segmentation=================================================================
-for fr = 1:szZ; %option:parfor
+parfor fr = 1:szZ; %option:parfor
 
 	bw = Iarr(:,:,fr) > T;
 	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end

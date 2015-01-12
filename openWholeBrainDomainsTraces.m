@@ -55,14 +55,14 @@ mov(1:nFrames) = ...
 	struct('cdata', zeros(vidHeight, vidWidth, 3, 'uint8'),...
 		   'colormap', []);
 %--Read one frame at a time, takes awhile if it's jpeg compressed avi-------------
-for fr = 1:nFrames; %option:parfor
+parfor fr = 1:nFrames; %option:parfor
 	mov(fr).cdata = read(vidObj, fr);
 end
 
 %--Make 8bit movie array----------------------------------------------------------
 sz = size(mov(1).cdata);
 A = zeros([sz(1) sz(2) nFrames], 'uint8');
-for fr = 1:nFrames; %option:parfor
+parfor fr = 1:nFrames; %option:parfor
 	[im,map] = frame2im(mov(fr));
 	if isempty(map)            %Truecolor system
 	  rgb = im;
@@ -92,7 +92,7 @@ if ~isempty(hemisphereIndices)
 	bothMasksArr = repmat(bothMasks,[1 1 nFrames]);
 	tmp = A(bothMasksArr);
 	LOW_HIGH = stretchlim(tmp);
-	for fr=1:nFrames; %option:parfor
+	parfor fr=1:nFrames; %option:parfor
 		A(:,:,fr) = imadjust(A(:,:,fr),LOW_HIGH,[]);
 	end
 	%[I2arr, map] = gray2ind(A, 256); %convert the whole array to 8bit indexed
@@ -129,5 +129,7 @@ for i = 1:region.domainData.CC.NumObjects
 		A3(region.domainData.CC.PixelIdxList{i}) = true;
 	end
 end
+disp([num2str(region.domainData.CC.NumObjects) ' total domains'])
+
 %--Run gui------------------------------------------------------------------------
 plotWholeBrainDomainsTraces(A,A3,region,plot4,movieTitles,[])  	

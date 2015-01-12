@@ -204,6 +204,8 @@ Tags: analysis, wholeBrain, programming, matlab
 		* Save region fnm  
 
 	```matlab
+	filelist = readtext('files.txt',' ');
+	fnms = filelist(:,2);  %Second column is dummy region matfiles
 	k = 0;  %Initialization only. For using the following code on multiple files in a directory
 	
 	%---START Add motor signal---
