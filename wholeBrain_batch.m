@@ -84,7 +84,10 @@ if isfield(handles,'dirname')
 else
 	dirname = datestr(now,'yyyy-mm-dd-HHMMSS');
 end
-mkdir(dirname);
+if exist(fullfile(currdir,dirname),'dir') ~= 7
+	%If the directory does not exist locally, create it.
+	mkdir(dirname);
+end
 cd(dirname);
 
 levels = zeros(1,numel(fnms));
@@ -211,9 +214,30 @@ case 'none'
 	makeInitMovies = 0;
 end
 
-[A2, A, thresh, Amin] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma,useSobel);
+if ~isfield(handles,'thresh'), 
+	thresh = 2; 
+else
+	thresh = handles.thresh;
+end
+
+if isfield(handles, 'mov'), 
+	preload = 1;
+else
+	preload = 0;
+end
+
+if preload
+	if ~isempty(handles.mov)
+		[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fn,handles.mov,region,thresh,sigma,hemisphereIndices,makeInitMovies);
+	else
+		error('handles.mov is empty')
+	end
+else
+	[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma,useSobel);
+end
 region.graythresh = thresh;
 region.Amin = Amin;
+region.Amax = Amax;
 
 disp(['Segmentation finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 

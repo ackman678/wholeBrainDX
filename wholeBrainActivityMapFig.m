@@ -97,9 +97,11 @@ switch figType
 				handles.axesTitle = 'domainAmpl, Mean domain, scaled dF/F MaxSig=';
 				img = A3proj;
 				if isfield(region,'Amin')
-					Amin = region.Amin;
-					img = img - abs(Amin); %because the raw dFoF array, A in wholeBrain_segmentation.m was originally scaled to be all positive based by adding abs(Amin) (not centered on 0)
+					%Amin = region.Amin;
+					%img = img - abs(Amin); %because the raw dFoF array, A in wholeBrain_segmentation.m was originally scaled to be all positive based by adding abs(Amin) (not centered on 0)
 					handles.clims = [min(img(:)) max(img(:))];
+				else
+					handles.clims = [min(img(:)) max(img(:))];					
 				end				
 			otherwise
 				warning('Unexpected plot type. No plot created.');
@@ -456,17 +458,20 @@ switch figType
 		switch mapType
 		case 'domainAmpl'		
 			if isfield(region,'Amin')
-				Amin = region.Amin;
-				MxresponseNorm = MxresponseNorm-abs(Amin);
-				MnresponseNorm = MnresponseNorm-abs(Amin);
-				handles.clims = [mnNormSig-abs(Amin) mxNormSig-abs(Amin)];
+				% Amin = region.Amin;
+				% MxresponseNorm = MxresponseNorm-abs(Amin);
+				% MnresponseNorm = MnresponseNorm-abs(Amin);
+				% handles.clims = [mnNormSig-abs(Amin) mxNormSig-abs(Amin)];
+				handles.clims = [mnNormSig mxNormSig];
+			else
+				handles.clims = [mnNormSig mxNormSig];
 			end		
 		otherwise
 			handles.clims = [0 mxNormSig];
 		end
 		
-		disp(['max vals: ' num2str(MxresponseNorm)])
-		disp(['min vals: ' num2str(MnresponseNorm)])
+		% disp(['max vals: ' num2str(MxresponseNorm)])
+		% disp(['min vals: ' num2str(MnresponseNorm)])
 		disp(['clims: ' num2str(handles.clims)])
 		
 		j = 0;
@@ -489,10 +494,10 @@ switch figType
 					handles.axesTitle = 'domainDiam, Mean domain diameter, um MaxSig=';
 				case 'domainAmpl'
 					handles.axesTitle = 'domainAmpl, Mean domain, scaled dF/F MaxSig=';
-					if isfield(region,'Amin')
-						Amin = region.Amin;
-						img = img - abs(Amin); %because the raw dFoF array, A in wholeBrain_segmentation.m was originally scaled to be all positive based by adding abs(Amin) (not centered on 0)
- 					end				
+					% if isfield(region,'Amin')
+					% 	Amin = region.Amin;
+					% 	img = img - abs(Amin); %because the raw dFoF array, A in wholeBrain_segmentation.m was originally scaled to be all positive based by adding abs(Amin) (not centered on 0)
+ 				% 	end				
 				otherwise
 					warning('Unexpected plot type. No plot created.');
 			end	

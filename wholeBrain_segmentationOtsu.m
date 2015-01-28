@@ -1,4 +1,4 @@
-function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh,pthr,sigma,useSobel)
+function [A2, A, thresh, Amin, Amax] = wholeBrain_segmentationOtsu(fnm,backgroundRemovRadius,region,hemisphereIndices,showFigure,makeMovies,thresh,pthr,sigma,useSobel,A)
 %PURPOSE -- segment functional domains in wholeBrain calcium imaging movies into ROIs
 %USAGE -- 	[A2, A] = wholeBrain_segmentation(fnm,[],region)
 %			[A2, A, thresh, Amin] = wholeBrain_segmentation('120518_07.tif',60,region,[2 3],0,1,[],0.99,5);
@@ -41,7 +41,11 @@ function [A2, A, thresh, Amin] = wholeBrain_segmentation(fnm,backgroundRemovRadi
 % You should have received a copy of the GNU General Public License along
 % with this program; if not, write to the Free Software Foundation, Inc.,
 % 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+if nargin < 11 || isempty(A), 
+	loadMovie = 1; 
+else
+	loadMovie = 0;
+end
 if nargin < 10 || isempty(useSobel), useSobel = 1; end
 if nargin < 9 || isempty(sigma), sigma = 56.75/region.spaceres; end  %sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
 if nargin < 8 || isempty(pthr), pthr = 0.99; end
@@ -63,6 +67,7 @@ nPixelThreshold = 50; %round(6.4411e+03/(region.spaceres^2));  %for bwareaopen i
 edgeSmooth = ceil(22.70/region.spaceres); %22.70µm at 11.35um/px to give 2px smooth for the morphological dilation.
 edgeSmooth2 = ceil(34.050/region.spaceres);  %34.0500 at 11.35um/px to give 3px smooth for the second morphological dilation after detection
 
+if loadMovie
 if nargin < 1 || isempty(fnm)
     if exist('pathname','var')
         [filename, pathname] = uigetfile({'*.tif'}, 'Choose image to open',pathname);
@@ -78,28 +83,20 @@ if nargin < 1 || isempty(fnm)
     fnm = [pathname filename];
     save('calciumdxprefs.mat', 'pathname','filename')
 end
-
+end
 [pathstr, name, ext] = fileparts(fnm);
 fnm2 = [name '_wholeBrain_segmentation_' datestr(now,'yyyymmdd-HHMMSS') '.avi']; 
 
-%Read in the primary or first movie file:  
-A = openMovie(fnm);
-
-%Find out whether there are extra movie files that need to be concatenated together with the first one (regular tiffs have 2+GB limit in size):  
-if isfield(region,'extraFiles')
-	if ~isempty(region.extraFiles)
-		C = textscan(region.extraFiles,'%s', ' ');  %region.extraFiles should be a single space-delimited character vector of additional movie filenames		
-		for i = 1:numel(C{1})		
-			if ~strcmp(fnm,C{1}{i})  %if the current filename is not the first one proceed with concatenation				
-				fn=fullfile(pathstr,C{1}{i});
-				B = openMovie(fn);
-				A = cat(3, A, B);
-				clear B
-			end
-		end
+if loadMovie
+	if isfield(region,'extraFiles')
+	    if ~isempty(region.extraFiles)
+	        extraFiles = region.extraFiles;
+	    end
+	else
+	    extraFiles = [];
 	end
+	A = openMovie(fnm,extraFiles);
 end
-
 sz = size(A);
 szXY = sz(1:2);
 szZ=sz(3);
@@ -120,15 +117,16 @@ szZ=sz(3);
 % for i = 1:size(A,3)
 % 		A(:,:,i) = (A(:,:,i) - Amean)./Amean;
 % end
+if loadMovie
 npix = prod(sz(1:2));
 A = reshape(A, npix, szZ); %reshape 3D array into space-time matrix
 Amean = mean(A,2); %avg at each pixel location in the image over time
 A = A ./ (Amean * ones(1,szZ)) - 1;   % F/F0 - 1 == ((F-F0)/F0);
 A = reshape(A, sz(1), sz(2), szZ);
-
-Amin2D = min(A,[],3);
-Amin = min(Amin2D(:));
-A = A + abs(Amin);  %Scale deltaF array so everything is positive valued
+end
+Amin = min(reshape(A,prod(size(A)),1));
+Amax = max(reshape(A,prod(size(A)),1));
+A = mat2gray(A);  %Scale deltaF array
 
 bothMasks= false(sz(1),sz(2));
 for nRoi=1:length(hemisphereIndices)
@@ -175,7 +173,7 @@ se = strel('disk',backgroundRemovRadius);
 seSm1 = strel('disk',edgeSmooth); %smooth edges, has not much effect with gaussSmooth used above
 seSm2 = strel('disk',edgeSmooth2);
 
-parfor fr = 1:szZ; %option:parfor
+for fr = 1:szZ; %option:parfor
 	I = A(:,:,fr);
 	
 	background = imopen(I,se);  %make sure backgroundRemovRadius strel object is bigger than the biggest objects (functional domains) that you want to detect in the image
@@ -212,16 +210,16 @@ if showFigure > 0; figure; imshow(G(:,:,1),[]); end
 
 %	[h, ~] = imhist(grad); %For indexed images, imhist returns the histogram counts for each colormap entry so the length of counts is the same as the length of the colormap.
 
-[h, ~] = imhist(reshape(G,numel(G),1));
+[h, x] = imhist(reshape(G,numel(G),1));
 
-if showFigure > 0; figure; imhist(reshape(G,numel(G),1)); end
+if showFigure > 0; figure; stem(x,h); end
 %	pthr = 0.99;
 Q = prctileThresh(h,pthr);
 %	markerImage = grad > Q;
 markerImage = G > Q;
 %	[level,est] = graythresh(grad);  %Otsu's threshold from Image Processing Toolbox  
 %	markerImage = im2bw(grad,level);  %Make binary based on Otsu's threshold
-if showFigure > 0; figure; imshow(markerImage,[]); end
+if showFigure > 0; figure; imshow(markerImage(:,:,1),[]); end
 
 %	fp = f.*markerImage; 
 if useSobel
@@ -230,29 +228,31 @@ else
 	fp = Iarr.*bothMasks3D;
 end
 
+[hp, x] = imhist(reshape(fp,numel(fp),1));
 if showFigure > 0
-figure, imshow(fp,[])  
-figure, imhist(fp)
+figure, imshow(fp(:,:,1),[])
+figure, stem(x,hp)
 end
-[hp, ~] = imhist(reshape(fp,numel(fp),1));
 
-hp(1) = 0;
-if showFigure > 0; figure; bar(hp,0); end
+hp(1) = 0;  %assumes that most pixels in bin #1 are black level pixels that shouldn't count towards the Otsu threshold calculation
+if showFigure > 0; 
+figure; stem(x,hp); 
+figure; hist((reshape(Iarr,prod(size(Iarr)),1) .* (Amax - Amin)) - abs(Amin),40)
+end
 T = otsuthresh(hp);
 %	T*(numel(hp) - 1)
-
 if makeThresh < 1
 	%If false, ignore the threshold, T, set above and use preexisting otsu threshold (for drug movies) passed as handle
 	T = thresh;
 end
 
+disp(['mat2gray T ' num2str(T)])
+disp(['orig scale T ' num2str((T* (Amax - Amin)) - abs(Amin))])
 
 %======BEGIN segmentation=================================================================
-parfor fr = 1:szZ; %option:parfor
+for fr = 1:szZ; %option:parfor
 
 	bw = Iarr(:,:,fr) > T;
-	if showFigure > 0; figure; imshow(bw); title([num2str(pthr) ' percentile']); end
-	% 	levels(1,fr) = T;
 
 	%Detect connected components in the frame and return ROI CC data structure----------------
 	%CC = bwconncomp(bw);
@@ -304,12 +304,6 @@ parfor fr = 1:szZ; %option:parfor
 	A2(:,:,fr) = bothMasks & bw2;
 	%A2(:,:,fr) = bw2;
 	%-----------------------------------------------------------------------------------------
-
-	%Optional--Show the frame and prep for .avi movie making if desired
-	if showFigure > 0
-		imshow(label2rgb(L));	
-		M(fr) = getframe;
-	end
 end
 
 thresh = T;

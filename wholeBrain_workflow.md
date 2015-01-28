@@ -6,7 +6,71 @@ Tags: analysis, wholeBrain, programming, matlab
 
 ## Prep files
 
-* (1) Open the AVG .tif movie image (can be a tiff, jpg, png) (likely saved previously with a dFoF.avi for each raw .tif movie) and make brain hemisphere outlines (e.g. cortex.L, cortex.R, OB.L, OB.R, SC.L, SC.R) for each file and save the roi set as a .zip file from ImageJ (select all in ROI manager --> More --> Save). Can also use additional map images (timeColorMap Projections, domain frequency, duration, or diameter) to make outlines of functional brain region parcellations. The following macro code snippets can be copied and run from the ImageJ macro interpreter in Fiji to ease this process:  
+### Fetch maps and average images
+
+* (1) Make space-delimited plain text list of file names 'files.txt' of the raw .tif movie filenames (1st column) and matching dummy .mat filenames (2nd column) and save in same directory as your raw movie tiff files and where your dummyAreas.mat files will be eventually located.
+
+	```files
+	131208_01.tif 131208_01_dummyAreas.mat
+	131208_02.tif 131208_02_dummyAreas.mat	
+	...
+	```
+
+
+Then run the following code block to generate time Color Map Projections, dF/F .avis, and AVG.jpg images for a folder full of experimental recordings:  
+
+	%parpool('local',32); %only if using the parfor option
+    filelist = readtext('files.txt',' ');
+    for f=3:size(filelist,1)
+        filename = filelist{f,1};
+        tmp = dir([filename(1:length(filename)-4) '@00*.tif']);
+        A = openMovie(filename);
+        if ~isempty(tmp)
+            for j = 1:numel(tmp)
+                fn = tmp(j).name;
+                B = openMovie(fn);
+                A = cat(3, A, B);
+                clear B
+            end
+        end
+
+        %Make deltaF/F movie
+        sz = size(A); szZ=sz(3);
+        npix = prod(sz(1:2));
+        A = reshape(A, npix, szZ); %reshape 3D array into space-time matrix
+        Amean = mean(A,2); %avg at each pixel location in the image over time
+        A = A ./ (Amean * ones(1,szZ)) - 1;   % F/F0 - 1 == ((F-F0)/F0);
+        Amean = reshape(Amean,sz(1),sz(2));
+        A = reshape(A, sz(1), sz(2), szZ);
+
+        %Write average image
+        fnm = [filename(1:length(filename)-4) '_AVG.jpg'];
+        imwrite(mat2gray(Amean), fnm);
+        disp(filename)
+        %Write multiple time projection maps
+        frStart=1;
+        frEnd=size(A,3);
+        iter = round(frEnd/10);
+        for j = 1:iter:frEnd
+            if j == 1
+                [maxProj, Iarr] = timeColorMapProj(A,j, min([j+iter-1 frEnd]), filename);
+            else
+                [maxProj, ~] = timeColorMapProj(Iarr,j, min([j+iter-1 frEnd]), filename);
+            end
+        end
+        clear Iarr
+        [maxProj, Iarr] = timeColorMapProj(A,frStart, frEnd, filename);
+        clear A
+        %Iarr2montage(Iarr, frStart, frEnd, 10, filename);
+        %Write avi movie
+        Iarr2avi(Iarr, frStart, frEnd, filename)
+    end
+
+
+
+### Prepare dummy files
+
+* (2) Open the AVG .tif movie image (can be a tiff, jpg, png) (likely saved previously with a dFoF.avi for each raw .tif movie) and make brain hemisphere outlines (e.g. cortex.L, cortex.R, OB.L, OB.R, SC.L, SC.R) for each file and save the roi set as a .zip file from ImageJ (select all in ROI manager --> More --> Save). Can also use additional map images (timeColorMap Projections, domain frequency, duration, or diameter) to make outlines of functional brain region parcellations. The following macro code snippets can be copied and run from the ImageJ macro interpreter in Fiji to ease this process:  
 
 	```javascript
 	//Flip ImageJ ROI horizontally
@@ -60,14 +124,6 @@ Tags: analysis, wholeBrain, programming, matlab
 		y[i] = (y[i] * factor) - 540;
 	}
 	makeSelection("polygon", x, y);
-	```
-
-* (2) Make space-delimited plain text list of file names 'files.txt' of the raw .tif movie filenames (1st column) and matching dummy .mat filenames (2nd column) and save in same directory as your raw movie tiff files and where your dummyAreas.mat files will be located.
-
-	```files
-	131208_01.tif 131208_01_dummyAreas.mat
-	131208_02.tif 131208_02_dummyAreas.mat	
-	...
 	```
 
 * (3) Bootup local copy of matlab and cd into the directory containing the files. Setup dummyAreas.mat region data structure files and add ImageJ roi coordinate outlines for the brain areas. The following code block will loop through these steps based on the number of lines in 'files.txt'. 
@@ -252,6 +308,74 @@ Tags: analysis, wholeBrain, programming, matlab
 	region = makeDrugStateStimParams(region, [1], [3000], 'isoflurane') %where the frame indices inputs are drugOns and drugOffs
 	save(fnm,'region')
 	```
+
+
+## Perform SVD
+
+Optional, but recommended.
+
+    fnm = 'filename.tif'
+    [~,f,~]=fileparts(fnm);
+    load([f '_dummyAreas.mat'])
+
+    if isfield(region,'extraFiles')
+        if ~isempty(region.extraFiles)
+            extraFiles = region.extraFiles;
+        end
+    else
+        extraFiles = [];
+    end
+    A = openMovie(fnm,extraFiles);
+    nPCs = 300;
+
+    sz = size(A); szZ=sz(3);
+    npix = prod(sz(1:2));
+    A = reshape(A, npix, szZ); %reshape 3D array into space-time matrix
+    Amean = mean(A,2); %avg at each pixel location in the image over time
+    A = A ./ (Amean * ones(1,szZ)) - 1;   % F/F0 - 1 == ((F-F0)/F0);
+    Amean = reshape(Amean,sz(1),sz(2));
+    A = reshape(A, sz(1), sz(2), szZ);
+
+    [mixedsig, mixedfilters, CovEvals, covtrace, movtm] = wholeBrainSVD(fnm, A, nPCs);
+
+    clear A
+
+    %---START interactive block---
+    viewPCs(mixedfilters(:,:,1:300));
+
+    figure; plot(CovEvals); ylabel('eigenvalue, \lambda^2'); xlabel('eigenvalue index (PC mode no.)'); zoom xon
+
+    figure; PlotPCspectrum(fnm, CovEvals, 1:250); zoom xon
+    %---END interactive block---
+
+
+    badPCs = [1:2 6 11];  %***change these values***
+    sz=size(mixedfilters);
+    npix = prod(sz(1:2));
+    szXY = sz(1:2); szZ = size(mixedsig,2);
+    PCuse=setdiff([1:250],badPCs);  %***change these values***
+    mixedfilters2 = reshape(mixedfilters(:,:,PCuse),npix,length(PCuse));  
+    mov = mixedfilters2 * diag(CovEvals(PCuse).^(1/2)) * mixedsig(PCuse,:);  
+    mov = zscore(reshape(mov,npix*szZ,1));
+    mov = reshape(mov, szXY(1), szXY(2), szZ);  
+
+    %implay(mat2gray(mov,[-6 6]))
+
+	% Can change these to any other frames
+    figure; fr=1; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+    figure; fr=10; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+    figure; fr=391; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+    figure; fr=3000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+    figure; fr=6000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+
+
+    %disp(datestr(now,'yyyymmdd-HHMMSS'))
+    %[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fnm,mov,region,2,3,[2 3],1);  %Only required if you immediately want to see the segmentation results
+
+	% Save the svd results in the following format
+    save([fnm(1:end-4) '_svd_' datestr(now,'yyyymmdd-HHMMSS') '.mat'], 'mixedfilters', 'mixedsig', 'CovEvals', 'badPCs', 'PCuse', 'Amean','movtm','covtrace')
+
+
 
 
 ## Run batch analysis

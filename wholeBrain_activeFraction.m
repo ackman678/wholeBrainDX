@@ -29,7 +29,7 @@ for locationIndex = 1:length(locationMarkers)   %Can limit this to just hemisphe
 end
 
 A3 = reshape(A3,prod(sz(1:2)),sz(3)); %space x time matrix
-parfor locationIndex = 1:length(locationMarkers); %option:parfor
+for locationIndex = 1:length(locationMarkers); %option:parfor
 	ROImask = repmat(data(locationIndex).binaryMask,1,1,sz(3));
 	ROImask = reshape(ROImask,prod(sz(1:2)),sz(3)); %space x time matrix
 	I = A3 & ROImask;

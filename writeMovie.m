@@ -44,7 +44,7 @@ if useFFmpeg
 		mkdir(tmpPath)
 	end
 	szZ = numel(M);
-	parfor fr = 1:szZ; %option:parfor
+	for fr = 1:szZ; %option:parfor
 		tmpFilename = fullfile(tmpPath, sprintf('img%05d.jpg',fr));
 		if isempty(M(fr).colormap)
 			imwrite(M(fr).cdata,tmpFilename)

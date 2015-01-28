@@ -45,7 +45,7 @@ elseif ~isinteger(A) || ~isempty(nStdev)
 		if isempty(nStdev), nStdev = [-3 7]; end
 		[Iarr,MnMx] = convertDfArray(A,nStdev(1), nStdev(2), MnMx);
 	else
-		Iarr = convertDblArray(A);
+		Iarr = convertDblArray(A,MnMx);
 	end
 else
 	Iarr=A;
@@ -103,7 +103,7 @@ function Iarr = convertBWArray(A)
 
 function Iarr = convertDblArray(A,MnMx)
 %Convert a double positive array. Optional contrast enhancement.
-if nargin > 1 || ~isempty(MnMx),
+if nargin > 1 && ~isempty(MnMx),
 	A2=mat2gray(A,MnMx);   %scale the whole array so that min = 0, max = 1
 else
 	A2=mat2gray(A);   %scale the whole array so that min = 0, max = 1
