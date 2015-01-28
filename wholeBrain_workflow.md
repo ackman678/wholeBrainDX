@@ -316,67 +316,68 @@ end
 
 Optional, but recommended.
 
-    fnm = 'filename.tif'
-    [~,f,~]=fileparts(fnm);
-    load([f '_dummyAreas.mat'])
+```matlab
+fnm = 'filename.tif'
+[~,f,~]=fileparts(fnm);
+load([f '_dummyAreas.mat'])
 
-    if isfield(region,'extraFiles')
-        if ~isempty(region.extraFiles)
-            extraFiles = region.extraFiles;
-        end
-    else
-        extraFiles = [];
+if isfield(region,'extraFiles')
+    if ~isempty(region.extraFiles)
+        extraFiles = region.extraFiles;
     end
-    A = openMovie(fnm,extraFiles);
-    nPCs = 300;
+else
+    extraFiles = [];
+end
+A = openMovie(fnm,extraFiles);
+nPCs = 300;
 
-    sz = size(A); szZ=sz(3);
-    npix = prod(sz(1:2));
-    A = reshape(A, npix, szZ); %reshape 3D array into space-time matrix
-    Amean = mean(A,2); %avg at each pixel location in the image over time
-    A = A ./ (Amean * ones(1,szZ)) - 1;   % F/F0 - 1 == ((F-F0)/F0);
-    Amean = reshape(Amean,sz(1),sz(2));
-    A = reshape(A, sz(1), sz(2), szZ);
+sz = size(A); szZ=sz(3);
+npix = prod(sz(1:2));
+A = reshape(A, npix, szZ); %reshape 3D array into space-time matrix
+Amean = mean(A,2); %avg at each pixel location in the image over time
+A = A ./ (Amean * ones(1,szZ)) - 1;   % F/F0 - 1 == ((F-F0)/F0);
+Amean = reshape(Amean,sz(1),sz(2));
+A = reshape(A, sz(1), sz(2), szZ);
 
-    [mixedsig, mixedfilters, CovEvals, covtrace, movtm] = wholeBrainSVD(fnm, A, nPCs);
+[mixedsig, mixedfilters, CovEvals, covtrace, movtm] = wholeBrainSVD(fnm, A, nPCs);
 
-    clear A
+clear A
 
-    %---START interactive block---
-    viewPCs(mixedfilters(:,:,1:300));
+%---START interactive block---
+viewPCs(mixedfilters(:,:,1:300));
 
-    figure; plot(CovEvals); ylabel('eigenvalue, \lambda^2'); xlabel('eigenvalue index (PC mode no.)'); zoom xon
+figure; plot(CovEvals); ylabel('eigenvalue, \lambda^2'); xlabel('eigenvalue index (PC mode no.)'); zoom xon
 
-    figure; PlotPCspectrum(fnm, CovEvals, 1:250); zoom xon
-    %---END interactive block---
-
-
-    badPCs = [1:2 6 11];  %***change these values***
-    sz=size(mixedfilters);
-    npix = prod(sz(1:2));
-    szXY = sz(1:2); szZ = size(mixedsig,2);
-    PCuse=setdiff([1:250],badPCs);  %***change these values***
-    mixedfilters2 = reshape(mixedfilters(:,:,PCuse),npix,length(PCuse));  
-    mov = mixedfilters2 * diag(CovEvals(PCuse).^(1/2)) * mixedsig(PCuse,:);  
-    mov = zscore(reshape(mov,npix*szZ,1));
-    mov = reshape(mov, szXY(1), szXY(2), szZ);  
-
-    %implay(mat2gray(mov,[-6 6]))
-
-	% Can change these to any other frames
-    figure; fr=1; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
-    figure; fr=10; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
-    figure; fr=391; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
-    figure; fr=3000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
-    figure; fr=6000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+figure; PlotPCspectrum(fnm, CovEvals, 1:250); zoom xon
+%---END interactive block---
 
 
-    %disp(datestr(now,'yyyymmdd-HHMMSS'))
-    %[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fnm,mov,region,2,3,[2 3],1);  %Only required if you immediately want to see the segmentation results
+badPCs = [1:2 6 11];  %***change these values***
+sz=size(mixedfilters);
+npix = prod(sz(1:2));
+szXY = sz(1:2); szZ = size(mixedsig,2);
+PCuse=setdiff([1:250],badPCs);  %***change these values***
+mixedfilters2 = reshape(mixedfilters(:,:,PCuse),npix,length(PCuse));  
+mov = mixedfilters2 * diag(CovEvals(PCuse).^(1/2)) * mixedsig(PCuse,:);  
+mov = zscore(reshape(mov,npix*szZ,1));
+mov = reshape(mov, szXY(1), szXY(2), szZ);  
 
-	% Save the svd results in the following format
-    save([fnm(1:end-4) '_svd_' datestr(now,'yyyymmdd-HHMMSS') '.mat'], 'mixedfilters', 'mixedsig', 'CovEvals', 'badPCs', 'PCuse', 'Amean','movtm','covtrace')
+%implay(mat2gray(mov,[-6 6]))
 
+% Can change these to any other frames
+figure; fr=1; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+figure; fr=10; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+figure; fr=391; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+figure; fr=3000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+figure; fr=6000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+
+
+%disp(datestr(now,'yyyymmdd-HHMMSS'))
+%[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fnm,mov,region,2,3,[2 3],1);  %Only required if you immediately want to see the segmentation results
+
+% Save the svd results in the following format
+save([fnm(1:end-4) '_svd_' datestr(now,'yyyymmdd-HHMMSS') '.mat'], 'mixedfilters', 'mixedsig', 'CovEvals', 'badPCs', 'PCuse', 'Amean','movtm','covtrace')
+```
 
 
 
