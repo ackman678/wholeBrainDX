@@ -364,7 +364,7 @@ mov = reshape(mov, szXY(1), szXY(2), szZ);
 
 %implay(mat2gray(mov,[-6 6]))
 
-% Can change these to any other frames
+%can change these frames
 figure; fr=1; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
 figure; fr=10; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
 figure; fr=391; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
@@ -373,9 +373,9 @@ figure; fr=6000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis im
 
 
 %disp(datestr(now,'yyyymmdd-HHMMSS'))
-%[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fnm,mov,region,2,3,[2 3],1);  %Only required if you immediately want to see the segmentation results
+%[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fnm,mov,region,2,3,[2 3],1);
 
-% Save the svd results in the following format
+%Save the results in the following format
 save([fnm(1:end-4) '_svd_' datestr(now,'yyyymmdd-HHMMSS') '.mat'], 'mixedfilters', 'mixedsig', 'CovEvals', 'badPCs', 'PCuse', 'Amean','movtm','covtrace')
 ```
 
