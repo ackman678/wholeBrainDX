@@ -1,4 +1,5 @@
 Date: 2014-02-04 10:51:07  
+Date modified: 2015-01-28 14:13:33  
 Author: James B. Ackman  
 Tags: analysis, wholeBrain, programming, matlab 
 
@@ -19,53 +20,54 @@ Tags: analysis, wholeBrain, programming, matlab
 
 Then run the following code block to generate time Color Map Projections, dF/F .avis, and AVG.jpg images for a folder full of experimental recordings:  
 
-	%parpool('local',32); %only if using the parfor option
-    filelist = readtext('files.txt',' ');
-    for f=3:size(filelist,1)
-        filename = filelist{f,1};
-        tmp = dir([filename(1:length(filename)-4) '@00*.tif']);
-        A = openMovie(filename);
-        if ~isempty(tmp)
-            for j = 1:numel(tmp)
-                fn = tmp(j).name;
-                B = openMovie(fn);
-                A = cat(3, A, B);
-                clear B
-            end
+```matlab
+%parpool('local',32); %only if using the parfor option
+filelist = readtext('files.txt',' ');
+for f=3:size(filelist,1)
+    filename = filelist{f,1};
+    tmp = dir([filename(1:length(filename)-4) '@00*.tif']);
+    A = openMovie(filename);
+    if ~isempty(tmp)
+        for j = 1:numel(tmp)
+            fn = tmp(j).name;
+            B = openMovie(fn);
+            A = cat(3, A, B);
+            clear B
         end
-
-        %Make deltaF/F movie
-        sz = size(A); szZ=sz(3);
-        npix = prod(sz(1:2));
-        A = reshape(A, npix, szZ); %reshape 3D array into space-time matrix
-        Amean = mean(A,2); %avg at each pixel location in the image over time
-        A = A ./ (Amean * ones(1,szZ)) - 1;   % F/F0 - 1 == ((F-F0)/F0);
-        Amean = reshape(Amean,sz(1),sz(2));
-        A = reshape(A, sz(1), sz(2), szZ);
-
-        %Write average image
-        fnm = [filename(1:length(filename)-4) '_AVG.jpg'];
-        imwrite(mat2gray(Amean), fnm);
-        disp(filename)
-        %Write multiple time projection maps
-        frStart=1;
-        frEnd=size(A,3);
-        iter = round(frEnd/10);
-        for j = 1:iter:frEnd
-            if j == 1
-                [maxProj, Iarr] = timeColorMapProj(A,j, min([j+iter-1 frEnd]), filename);
-            else
-                [maxProj, ~] = timeColorMapProj(Iarr,j, min([j+iter-1 frEnd]), filename);
-            end
-        end
-        clear Iarr
-        [maxProj, Iarr] = timeColorMapProj(A,frStart, frEnd, filename);
-        clear A
-        %Iarr2montage(Iarr, frStart, frEnd, 10, filename);
-        %Write avi movie
-        Iarr2avi(Iarr, frStart, frEnd, filename)
     end
 
+    %Make deltaF/F movie
+    sz = size(A); szZ=sz(3);
+    npix = prod(sz(1:2));
+    A = reshape(A, npix, szZ); %reshape 3D array into space-time matrix
+    Amean = mean(A,2); %avg at each pixel location in the image over time
+    A = A ./ (Amean * ones(1,szZ)) - 1;   % F/F0 - 1 == ((F-F0)/F0);
+    Amean = reshape(Amean,sz(1),sz(2));
+    A = reshape(A, sz(1), sz(2), szZ);
+
+    %Write average image
+    fnm = [filename(1:length(filename)-4) '_AVG.jpg'];
+    imwrite(mat2gray(Amean), fnm);
+    disp(filename)
+    %Write multiple time projection maps
+    frStart=1;
+    frEnd=size(A,3);
+    iter = round(frEnd/10);
+    for j = 1:iter:frEnd
+        if j == 1
+            [maxProj, Iarr] = timeColorMapProj(A,j, min([j+iter-1 frEnd]), filename);
+        else
+            [maxProj, ~] = timeColorMapProj(Iarr,j, min([j+iter-1 frEnd]), filename);
+        end
+    end
+    clear Iarr
+    [maxProj, Iarr] = timeColorMapProj(A,frStart, frEnd, filename);
+    clear A
+    %Iarr2montage(Iarr, frStart, frEnd, 10, filename);
+    %Write avi movie
+    Iarr2avi(Iarr, frStart, frEnd, filename)
+end
+```
 
 
 ### Prepare dummy files
