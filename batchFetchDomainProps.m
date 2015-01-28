@@ -274,11 +274,13 @@ out = varin.region.domainData.STATS(varin.idx).Centroid(:,3);
 
 function out = MeanIntensity(varin)
 %location name descriptor string
-out = varin.region.domainData.STATS(varin.idx).MeanIntensity - abs(varin.region.Amin);  %To correct for the min value originally used to Scale deltaF/F array so everything was positive valued in wholeBrain_segmentation.m
+% out = varin.region.domainData.STATS(varin.idx).MeanIntensity - abs(varin.region.Amin);  %To correct for the min value originally used to Scale deltaF/F array so everything was positive valued in wholeBrain_segmentation.m
+out = varin.region.domainData.STATS(varin.idx).MeanIntensity;
 
 function out = MaxIntensity(varin)
 %location name descriptor string
-out = varin.region.domainData.STATS(varin.idx).MaxIntensity - abs(varin.region.Amin);  %To correct for the min value originally used to Scale deltaF/F array so everything was positive valued in wholeBrain_segmentation.m
+% out = varin.region.domainData.STATS(varin.idx).MaxIntensity - abs(varin.region.Amin);  %To correct for the min value originally used to Scale deltaF/F array so everything was positive valued in wholeBrain_segmentation.m
+out = varin.region.domainData.STATS(varin.idx).MaxIntensity;
 
 function out = onset_fr(varin)
 %location name descriptor string

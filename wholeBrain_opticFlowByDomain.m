@@ -90,15 +90,16 @@ if sum(get(0, 'ScreenSize')) > 4  %hack to test whether matlab is started with n
 		% nDomains = numel(region.domainData.STATS);
 		% Vsum(1:nDomains) = struct('theta',[],'rho',[]);
 		h=figure;
+		imgAx=imagesc(A(:,:,1),clims); colormap(gray)
 		for fr = 1:sz(3)-1
 			
 			if mod(fr,100)<1
 				disp([num2str(fr) '/' num2str(sz(3)-1)])
 			end
 
-			img1 = A(:,:,fr);
-			imagesc(img1,clims); colormap(gray)  % By default, imagesc sets the YDir property to reverse already. Use set(gca,'YDir','normal') if normal coords are desired, but then theta has to be flipped below in pol2cart.
-			hold on
+			delete(findobj(gca,'Type','line'))
+		    set(imgAx,'CData',A(:,:,fr)); %set image data directly instead of making new imagesc call
+		 
 			for k = 1:nDomains
 				if fr >= onsets(k) & fr <= offsets(k)
 					% [theta, rho]= cart2pol(sum(AVx(region.domainData.STATS(k).PixelIdxList)), sum(AVy(region.domainData.STATS(k).PixelIdxList)));
@@ -112,17 +113,18 @@ if sum(get(0, 'ScreenSize')) > 4  %hack to test whether matlab is started with n
 					% [dxpts,dypts] = pol2cart(theta.* -1,rho);
 					[dxpts,dypts] = pol2cart(theta.*-1,(rho./mx).*arrowLength);
 					% amquiver(X, Y, Vx, Vy);
-					arrow([xpts, ypts], [xpts + dxpts, ypts + dypts], 10, 15, 20, 1, 'EdgeColor', 'b', 'FaceColor', 'b', 'LineWidth', 2);
+					%arrow([xpts, ypts], [xpts + dxpts, ypts + dypts], 10, 15, 20, 1, 'EdgeColor', 'b', 'FaceColor', 'b', 'LineWidth', 2);
+					line(xpts,ypts,'LineStyle','none','Marker','o','MarkerSize',8,'Color','b')
+				    line([xpts xpts+dxpts],[ypts ypts+dypts],'LineWidth',2,'Color','b')
 				end
 			end
 
-			hold off
-			set(h,'Renderer','zbuffer')
+			set(h,'Renderer','zbuffer') %TODO: remove zbuffer dependency in these two lines and replace with cdata=print(h,'-RGBImage')
 			M(fr) = im2frame(zbuffer_cdata(h));  %grab figure data for frame without getframe screen draw issues
 		end
 
 		%--------Write movie---------------------------------------
-		writeMovie(M,fnm2,0);  %TODO: need to hack writeMovie imwrite to check for empty colormap at this step so ffmpeg can be used instead
+		writeMovie(M,fnm2);
 		close all
 	end
 end

@@ -37,6 +37,7 @@ clear V M
 % V(1:numel(frEnd-frStart)) = struct('Vx',zeros(sz(1:2)),'Vy',zeros(sz(1:2)));
 i=0;
 h=figure;
+imgAx = imagesc(A(:,:,1),[0 1]); colormap(gray) % By default, imagesc sets the YDir property to reverse already.
 
 %TODO: change optFlowLk usage to newer opticalFlow.m in piotrImageVideoProcessingToolbox
 chkFile = exist('optFlowLk.m');
@@ -50,8 +51,9 @@ for fr = frStart:frEnd-1
 	img1 = A(:,:,fr);
 	img2 = A(:,:,fr+1);
 
-	imagesc(img1,[0 1]); set(gca,'ydir','reverse'); colormap(gray)
-	hold on
+	delete(findobj(gca,'Type','line'))
+    set(imgAx,'CData',img1); %set image data directly instead of making new imagesc call
+
 	[Vx,Vy,reliab] = optFlowLk( img1, img2, [], winSig, sigma, 3e-6);
 	% Normalize the lengths of the arrows
 	mag = sqrt(Vx.^2 + Vy.*2);
@@ -80,12 +82,13 @@ for fr = frStart:frEnd-1
 			% [dxpts,dypts] = pol2cart(theta.* -1,rho);
 			[dxpts,dypts] = pol2cart(theta,rho);
 			% amquiver(X, Y, Vx, Vy);
-			arrow([xpts, ypts], [xpts + dxpts, ypts + dypts], 10, 12, 16, 'EdgeColor', 'b', 'FaceColor', 'b', 'LineWidth', 2);
+			%arrow([xpts, ypts], [xpts + dxpts, ypts + dypts], 10, 12, 16, 'EdgeColor', 'b', 'FaceColor', 'b', 'LineWidth', 2);
+			line(xpts,ypts,'LineStyle','none','Marker','o','MarkerSize',8,'Color','b')
+		    line([xpts xpts+dxpts],[ypts ypts+dypts],'LineWidth',2,'Color','b')
 		end
 	end
 
-	hold off
-	set(h,'Renderer','zbuffer')
+	set(h,'Renderer','zbuffer') %TODO: remove zbuffer dependency in these two lines and replace with cdata=print(h,'-RGBImage')
 	M(i) = im2frame(zbuffer_cdata(h));  %grab figure data for frame without getframe screen draw issues
 	disp([num2str(i) '/' num2str(frEnd-frStart)])		
 end

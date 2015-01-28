@@ -46,7 +46,11 @@ if useFFmpeg
 	szZ = numel(M);
 	for fr = 1:szZ; %option:parfor
 		tmpFilename = fullfile(tmpPath, sprintf('img%05d.jpg',fr));
-		imwrite(M(fr).cdata,M(fr).colormap,tmpFilename)
+		if isempty(M(fr).colormap)
+			imwrite(M(fr).cdata,tmpFilename)
+		else
+			imwrite(M(fr).cdata,M(fr).colormap,tmpFilename)
+		end
 	end
 	
 	tic

@@ -129,5 +129,7 @@ for i = 1:region.domainData.CC.NumObjects
 		A3(region.domainData.CC.PixelIdxList{i}) = true;
 	end
 end
+disp([num2str(region.domainData.CC.NumObjects) ' total domains'])
+
 %--Run gui------------------------------------------------------------------------
 plotWholeBrainDomainsTraces(A,A3,region,plot4,movieTitles,[])  	
