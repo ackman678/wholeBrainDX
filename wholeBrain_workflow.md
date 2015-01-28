@@ -316,67 +316,68 @@ end
 
 Optional, but recommended.
 
-    fnm = 'filename.tif'
-    [~,f,~]=fileparts(fnm);
-    load([f '_dummyAreas.mat'])
+```matlab
+fnm = 'filename.tif'
+[~,f,~]=fileparts(fnm);
+load([f '_dummyAreas.mat'])
 
-    if isfield(region,'extraFiles')
-        if ~isempty(region.extraFiles)
-            extraFiles = region.extraFiles;
-        end
-    else
-        extraFiles = [];
+if isfield(region,'extraFiles')
+    if ~isempty(region.extraFiles)
+        extraFiles = region.extraFiles;
     end
-    A = openMovie(fnm,extraFiles);
-    nPCs = 300;
+else
+    extraFiles = [];
+end
+A = openMovie(fnm,extraFiles);
+nPCs = 300;
 
-    sz = size(A); szZ=sz(3);
-    npix = prod(sz(1:2));
-    A = reshape(A, npix, szZ); %reshape 3D array into space-time matrix
-    Amean = mean(A,2); %avg at each pixel location in the image over time
-    A = A ./ (Amean * ones(1,szZ)) - 1;   % F/F0 - 1 == ((F-F0)/F0);
-    Amean = reshape(Amean,sz(1),sz(2));
-    A = reshape(A, sz(1), sz(2), szZ);
+sz = size(A); szZ=sz(3);
+npix = prod(sz(1:2));
+A = reshape(A, npix, szZ); %reshape 3D array into space-time matrix
+Amean = mean(A,2); %avg at each pixel location in the image over time
+A = A ./ (Amean * ones(1,szZ)) - 1;   % F/F0 - 1 == ((F-F0)/F0);
+Amean = reshape(Amean,sz(1),sz(2));
+A = reshape(A, sz(1), sz(2), szZ);
 
-    [mixedsig, mixedfilters, CovEvals, covtrace, movtm] = wholeBrainSVD(fnm, A, nPCs);
+[mixedsig, mixedfilters, CovEvals, covtrace, movtm] = wholeBrainSVD(fnm, A, nPCs);
 
-    clear A
+clear A
 
-    %---START interactive block---
-    viewPCs(mixedfilters(:,:,1:300));
+%---START interactive block---
+viewPCs(mixedfilters(:,:,1:300));
 
-    figure; plot(CovEvals); ylabel('eigenvalue, \lambda^2'); xlabel('eigenvalue index (PC mode no.)'); zoom xon
+figure; plot(CovEvals); ylabel('eigenvalue, \lambda^2'); xlabel('eigenvalue index (PC mode no.)'); zoom xon
 
-    figure; PlotPCspectrum(fnm, CovEvals, 1:250); zoom xon
-    %---END interactive block---
-
-
-    badPCs = [1:2 6 11];  %***change these values***
-    sz=size(mixedfilters);
-    npix = prod(sz(1:2));
-    szXY = sz(1:2); szZ = size(mixedsig,2);
-    PCuse=setdiff([1:250],badPCs);  %***change these values***
-    mixedfilters2 = reshape(mixedfilters(:,:,PCuse),npix,length(PCuse));  
-    mov = mixedfilters2 * diag(CovEvals(PCuse).^(1/2)) * mixedsig(PCuse,:);  
-    mov = zscore(reshape(mov,npix*szZ,1));
-    mov = reshape(mov, szXY(1), szXY(2), szZ);  
-
-    %implay(mat2gray(mov,[-6 6]))
-
-	% Can change these to any other frames
-    figure; fr=1; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
-    figure; fr=10; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
-    figure; fr=391; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
-    figure; fr=3000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
-    figure; fr=6000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+figure; PlotPCspectrum(fnm, CovEvals, 1:250); zoom xon
+%---END interactive block---
 
 
-    %disp(datestr(now,'yyyymmdd-HHMMSS'))
-    %[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fnm,mov,region,2,3,[2 3],1);  %Only required if you immediately want to see the segmentation results
+badPCs = [1:2 6 11];  %***change these values***
+sz=size(mixedfilters);
+npix = prod(sz(1:2));
+szXY = sz(1:2); szZ = size(mixedsig,2);
+PCuse=setdiff([1:250],badPCs);  %***change these values***
+mixedfilters2 = reshape(mixedfilters(:,:,PCuse),npix,length(PCuse));  
+mov = mixedfilters2 * diag(CovEvals(PCuse).^(1/2)) * mixedsig(PCuse,:);  
+mov = zscore(reshape(mov,npix*szZ,1));
+mov = reshape(mov, szXY(1), szXY(2), szZ);  
 
-	% Save the svd results in the following format
-    save([fnm(1:end-4) '_svd_' datestr(now,'yyyymmdd-HHMMSS') '.mat'], 'mixedfilters', 'mixedsig', 'CovEvals', 'badPCs', 'PCuse', 'Amean','movtm','covtrace')
+%implay(mat2gray(mov,[-6 6]))
 
+% Can change these to any other frames
+figure; fr=1; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+figure; fr=10; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+figure; fr=391; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+figure; fr=3000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+figure; fr=6000; imagesc(mov(:,:,fr),[-6 6]); title(['fr' num2str(fr)]); axis image; colorbar
+
+
+%disp(datestr(now,'yyyymmdd-HHMMSS'))
+%[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fnm,mov,region,2,3,[2 3],1);  %Only required if you immediately want to see the segmentation results
+
+% Save the svd results in the following format
+save([fnm(1:end-4) '_svd_' datestr(now,'yyyymmdd-HHMMSS') '.mat'], 'mixedfilters', 'mixedsig', 'CovEvals', 'badPCs', 'PCuse', 'Amean','movtm','covtrace')
+```
 
 
 
@@ -386,19 +387,19 @@ Optional, but recommended.
 * (7) Run the batch script. Perform within the folder containing the data files and 'files.txt':    
 
 	```matlab
-	%delete(gcp('nocreate')) %Only needed if using parfor. %Should be 'matlabpool close force local' for matlab versions earlier than 2014a
-	%parpool(8)  %Only needed if using parfor. Change to n cpus. %Should be 'matlabpool open 8' for matlab versions earlier than 2014a
-	diary on
-	disp(datestr(now,'yyyymmdd-HHMMSS'))
-	
-	handles.makeMovies = 'all';
-	%handles.makeMovies = 'some';
-	handles.sigma = 3; %3px sigma for gauss smooth
-	handles.pthr = 0.99; %99th percentile in histo of pixel edge signal intensities for estimating otsu's thresh on the sobel image.
-	handles.backgroundRemovRadius = 60; %60px background radius for the circular element used in tophat filter
-	
-	wholeBrain_batch('files.txt',handles)
-	disp(datestr(now,'yyyymmdd-HHMMSS'))
+	%delete(gcp('nocreate')) %Only needed if using parfor.
+    %parpool('local',32); %Only needed if using parfor.
+    diary on
+    dirpath = '/path/to/myfolder/';
+    cd(dirpath)
+    handles.thresh=2;  %threshold in no. of std dev
+    handles.sigma=3;  %3px gauss smooth
+    handles.mov=1;
+    handles.makeMovies = 'all';
+    handles.dirname = [datestr(now,'yyyy-mm-dd-HHMMSS') '_sigma' num2str(handles.sigma) '_thresh' num2str(handles.thresh)];
+    disp(datestr(now,'yyyymmdd-HHMMSS'))
+    wholeBrain_batch('files.txt',handles)
+    disp(datestr(now,'yyyymmdd-HHMMSS'))
 	diary off
 	```
 
