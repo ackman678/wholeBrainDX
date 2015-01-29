@@ -233,7 +233,7 @@ if preload
 		error('handles.mov is empty')
 	end
 else
-	[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma,useSobel);
+	[A2, A, thresh, Amin, Amax] = wholeBrain_segmentationOtsu(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma,useSobel);
 end
 region.graythresh = thresh;
 region.Amin = Amin;

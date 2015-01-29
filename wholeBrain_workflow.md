@@ -23,7 +23,7 @@ Then run the following code block to generate time Color Map Projections, dF/F .
 ```matlab
 %parpool('local',32); %only if using the parfor option
 filelist = readtext('files.txt',' ');
-for f=3:size(filelist,1)
+for f=1:size(filelist,1)
     filename = filelist{f,1};
     tmp = dir([filename(1:length(filename)-4) '@00*.tif']);
     A = openMovie(filename);
@@ -352,11 +352,11 @@ figure; PlotPCspectrum(fnm, CovEvals, 1:250); zoom xon
 %---END interactive block---
 
 
-badPCs = [1:2 6 11];  %***change these values***
+badPCs = [1:2];  %***change these values***
 sz=size(mixedfilters);
 npix = prod(sz(1:2));
 szXY = sz(1:2); szZ = size(mixedsig,2);
-PCuse=setdiff([1:250],badPCs);  %***change these values***
+PCuse=setdiff([1:300],badPCs);  %***change these values***
 mixedfilters2 = reshape(mixedfilters(:,:,PCuse),npix,length(PCuse));  
 mov = mixedfilters2 * diag(CovEvals(PCuse).^(1/2)) * mixedsig(PCuse,:);  
 mov = zscore(reshape(mov,npix*szZ,1));
@@ -501,7 +501,7 @@ domainTaggingGui:
 * Fetch pearsons ML, AP correlations between hemispheres
 * Fetch pearsons, autocorr, xcorr motor signal correlations
 * plots
-	* activeFraction from above
+	* activeFraction
 	* wholeBrainActivityMapFig
 	* wholeBrain_actvFractionMotorPlot
 	* corr matrix
@@ -509,6 +509,8 @@ domainTaggingGui:
 	* batchFetchDomainProps
 	* batchFetchLocationProps
 	* batchFetchLocationPropsFreq
-	* batchFetchCorrData
+	* batchFetchCorrDat
+	* batchFetchXcorr
+	* batchFetchOptFlow
 	* batch output for motor - cortical signal xcorr  
 	* batch output for ML, AP correlations  

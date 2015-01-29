@@ -105,6 +105,7 @@ else
     % Load the other set of principal components
     [mixedsig] = reload_moviedata(nt, mov', mixedfilters, CovEvals);
 end
+nPCs = size(mixedsig,1);
 mixedfilters = reshape(mixedfilters, pixw,pixh,nPCs);
 
 %------------
