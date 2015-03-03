@@ -78,8 +78,8 @@ if ~isfield(region,'orientation')
 	prompt = {'Provide description of orientation coordinate in image:','orientation coordinate in image [Y]:', 'orientation coordinate in image [X]:'};
 	dlg_title = 'Input experimental parameters';
 	num_lines = 1;
-	def = {def_ans1,num2str(def_ans2(1)),num2str(def_ans2(2))};
-	answer = inputdlg(prompt,dlg_title,num_lines,def);
+	def2 = {def_ans1,num2str(def_ans2(1)),num2str(def_ans2(2))};
+	answer = inputdlg(prompt,dlg_title,num_lines,def2);
 	region.orientation.description = answer{1};
 	region.orientation.value = [str2double(answer{2}) str2double(answer{3})];
 	close(imgfig)

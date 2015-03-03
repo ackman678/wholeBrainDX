@@ -23,7 +23,8 @@ Then run the following code block to generate time Color Map Projections, dF/F .
 ```matlab
 %parpool('local',32); %only if using the parfor option
 filelist = readtext('files.txt',' ');
-for f=1:size(filelist,1)
+nmov = size(filelist,1);
+for f=1:nmov
     filename = filelist{f,1};
     tmp = dir([filename(1:length(filename)-4) '@00*.tif']);
     A = openMovie(filename);
@@ -46,8 +47,10 @@ for f=1:size(filelist,1)
     A = reshape(A, sz(1), sz(2), szZ);
 
     %Write average image
-    fnm = [filename(1:length(filename)-4) '_AVG.jpg'];
-    imwrite(mat2gray(Amean), fnm);
+    fnm = [filename(1:length(filename)-4) '_AVG.tif'];
+    Amean=mat2gray(Amean);
+    [AmeanInd, cmap] = gray2ind(Amean,65536);
+    imwrite(AmeanInd, fnm);
     disp(filename)
     %Write multiple time projection maps
     frStart=1;
@@ -67,6 +70,7 @@ for f=1:size(filelist,1)
     %Write avi movie
     Iarr2avi(Iarr, frStart, frEnd, filename)
 end
+
 ```
 
 
@@ -155,7 +159,7 @@ end
 			region.image = [];
 		end
 		disp(['Please input required exp params for ' fnm])
-		[region, ~] = dxInputParamsSetup(region, def1); %required line
+		[region, def1] = dxInputParamsSetup(region, def1); %required line
 
 		%Load brain area rois
 		disp(['Please load Rois.zip file for ' fnm])
@@ -268,6 +272,7 @@ end
 	
 	%---START Add motor signal---
 	k = k+1;
+	for k = 1:length(fnms)
 	fnm = fnms{k};  %***change iterator to desired filename***
 	load(fnm,'region')
 	
@@ -304,10 +309,12 @@ end
 	print(gcf,'-dpng',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.png'])        
 	print(gcf,'-depsc',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
 	%---END Add motor signal---
-
+	close all
+	end
+	
 	%---------------------------------------------------------------------------
 	%**Optional, if a drug movie
-	region = makeDrugStateStimParams(region, [1], [3000], 'isoflurane') %where the frame indices inputs are drugOns and drugOffs
+	region = makeDrugStateStimParams(region, [1], [region.nframes], 'isoflurane') %where the frame indices inputs are drugOns and drugOffs
 	save(fnm,'region')
 	```
 

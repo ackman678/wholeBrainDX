@@ -87,7 +87,7 @@ A2=false(size(A));
 Iarr=zeros(size(A));
 bothMasks3D = repmat(bothMasks,[1 1 szZ]);
 
-for fr = 1:szZ; %option:parfor
+parfor fr = 1:szZ; %option:parfor
 	I = A(:,:,fr);
 		I2 = gaussSmooth(I,sigma,'same');
 	Iarr(:,:,fr) = I2;
