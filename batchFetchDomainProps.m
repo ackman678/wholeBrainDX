@@ -142,11 +142,8 @@ function output = wholeBrain_getDomainStats(region, functionHandles, datafilenam
 %Should get an extra location signal too-- for combined locations/hemisphere periods.
 %2013-04-11 18:00:23  Added under the batchFetchLocation generalized wrapper table functions
 
-%locationMarkers = unique(region.location);
 varin.datafilename=datafilename;
 varin.region=region;
-%locationName = region.locationData.data(locationIndex).name;
-
 
 if strcmp(useStimuli,'true') & isempty(stimuliIndices) & isfield(region,'stimuli'); 
 	stimuliIndices=1:numel(region.stimuli);
@@ -213,14 +210,16 @@ out = varin.idx;
 function out = region_name1(varin)
 %location name descriptor string
 data = varin.region.domainData;
-locationMarkers = unique(varin.region.location);
+locationMarkers = {varin.region.locationData.data.name};
 name = [];
+se = strel('disk',1);
 for locationIndex = 1:length(locationMarkers)
 	locationName = varin.region.locationData.data(locationIndex).name;
 	coords = varin.region.coords{strcmp(varin.region.name,locationName)};
 	centrRowCol = [round(data.STATS(varin.idx).Centroid(2)) round(data.STATS(varin.idx).Centroid(1))];
  	sz = data.CC.ImageSize(1:2);
 	ROImask = poly2mask(coords(:,1),coords(:,2),sz(1),sz(2));
+	ROImask = imdilate(ROImask,se);
 	if ROImask(centrRowCol(1),centrRowCol(2)) > 0
 		name = locationName; 
 		break
@@ -232,17 +231,18 @@ out = name;
 function out = region_name2(varin)
 %location name descriptor string
 data = varin.region.domainData;
-locationMarkers = unique(varin.region.location);
+locationMarkers = {varin.region.locationData.data.name};
 name = [];
+se = strel('disk',1);
 for locationIndex = 1:length(locationMarkers)
 	locationName = varin.region.locationData.data(locationIndex).name;
 	coords = varin.region.coords{strcmp(varin.region.name,locationName)};
 	centrRowCol = [round(data.STATS(varin.idx).Centroid(2)) round(data.STATS(varin.idx).Centroid(1))];
  	sz = data.CC.ImageSize(1:2);
 	ROImask = poly2mask(coords(:,1),coords(:,2),sz(1),sz(2));
+	ROImask = imdilate(ROImask,se);
 	if ROImask(centrRowCol(1),centrRowCol(2)) > 0
 		name = locationName; 
-		break
 	end
 end
 out = name;

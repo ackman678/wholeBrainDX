@@ -295,7 +295,7 @@ end
 
 data = wholeBrain_activeFraction(A3,region);   
 
-region.locationData.data = data;    
+region.locationData.data = data; clear data
 save(fnm,'region','-v7.3');     
 
 disp('-----')
@@ -434,6 +434,7 @@ chkFile = exist('optFlowLk.m');
 if chkFile == 2
 [Vsum, ~, ~] = wholeBrain_opticFlowByDomain(A3,region,fnm,makeInitMovies);
 region.domainData.Vsum = Vsum;
+clear Vsum
 else
 	disp('Skipping opticflow...optFlowLk from piotrImageVideoProcessingToolbox v.2.61 not installed')
 end
@@ -500,3 +501,4 @@ end
 
 disp(['Batch finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 close all
+clear region

@@ -5,7 +5,7 @@ function wholeBrain_displayActiveFractionPeriods(data,region)
 %Want this script to be flexible to fetch data for any number of location Markers as well as duration distributions for both non-active and active periods.  
 %Should get an extra location signal too-- for combined locations/hemisphere periods.
 
-locationMarkers = unique(region.location);
+locationMarkers = {data.name};
 disp(['name ' 'period.type ' 'maxDuration.s ' 'minDuration.s ' 'medianDuration.s ' 'meanDuration.s ' 'sdDuration.s ' 'sumDuration.s'])
 
 SignalMatrix = zeros(length(locationMarkers),size(data(1).activeFractionByFrame,2));

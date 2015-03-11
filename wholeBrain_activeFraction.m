@@ -119,7 +119,6 @@ zoom xon
 %	disp([data(locationIndex).name ' ' num2str(data(locationIndex).activeFraction)]) 
 %end
 
-%locationMarkers = unique(region.location);
 disp(['name ' 'actvFraction ' 'maxFraction ' 'minFraction ' 'meanFraction ' 'sdFraction ' 'meanActvFraction ' 'sdActvFraction ' 'actvFrames ' 'actvTimeFraction ' 'nonActvFrames ' 'nonActvTimeFraction'])
 
 for locationIndex = 1:length(locationMarkers)
