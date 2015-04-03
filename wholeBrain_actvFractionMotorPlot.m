@@ -34,12 +34,14 @@ switch plotType
 
 		ax(1) = subplot(2,1,1);
 		minY = min(cActvFraction); maxY = max(cActvFraction);
+		if maxY == 0 | isnan(maxY); minY=0; maxY=1; end
 		plotStimuli(region,stimuli,minY,maxY,mycolors)
 		hold on
 		plot(cActvFraction,'k-');    ylabel(ylabel1); title(titleStr1); ylim([minY maxY]); xlim([0 length(cActvFraction)])      
 
 		ax(2) = subplot(2,1,2);      
 		minY = min(decY2); maxY = max(decY2);
+		if maxY == 0 | isnan(maxY); minY=0; maxY=1; end
 		plotStimuli(region,stimuli,minY,maxY,mycolors)
 		hold on
 		plot(decY2,'k-'); ylabel(ylabel2); title(titleStr2); ylim([minY maxY]); xlim([0 length(cActvFraction)])
@@ -84,6 +86,7 @@ switch plotType
 		clear h    
 		ax(1) = subplot(4,1,1); xlim([0 N]);  
 		minY = min(x); maxY = max(x);
+		if maxY == 0 | isnan(maxY); minY=0; maxY=1; end
 		plotStimuli(region,stimuli,minY,maxY,mycolors)
 		hold on
 		plot(x,'-k'); ylabel('Active fraction'); 
@@ -92,6 +95,7 @@ switch plotType
 
 		ax(2) = subplot(4,1,2); xlim([0 N]);     
 		minY = min(y); maxY = max(y);
+		if maxY == 0 | isnan(maxY); minY=0; maxY=1; end
 		plotStimuli(region,stimuli,minY,maxY,mycolors)
 		hold on
 		plot(y,'-k'); ylabel('Motor activity'); 
@@ -102,6 +106,7 @@ switch plotType
 		ax(3) = subplot(4,1,3); xlim([0 N]); hold all; ylabel('Avg actvFraction'); 
 	%	grid minor;
 		minY = min(rateChannels(1).x); maxY = max(rateChannels(1).x);
+		if maxY == 0 | isnan(maxY); minY=0; maxY=1; end
 		plotStimuli(region,stimuli,minY,maxY,mycolors)
 		hold on
 	
@@ -113,6 +118,7 @@ switch plotType
 	
 		ax(4) = subplot(4,1,4); xlim([0 N]); hold all; ylabel('Avg motor activity (uV)');
 		minY = min(rateChannels(1).y); maxY = max(rateChannels(1).y);
+		if maxY == 0 | isnan(maxY); minY=0; maxY=1; end
 		plotStimuli(region,stimuli,minY,maxY,mycolors)
 		hold on
 	
@@ -133,6 +139,7 @@ switch plotType
 		minY1 = min(cActvFraction); maxY1 = max(cActvFraction);
 		minY2 = min(decY2); maxY2 = max(decY2);
 		minY = min([minY1 minY2]); maxY = max([maxY1 maxY2]);
+		if maxY == 0 | isnan(maxY); minY=0; maxY=1; end
 		plotStimuli(region,stimuli,minY,maxY,mycolors)
 		hold on
 		pHand(1) = plot(cActvFraction,'LineStyle','-','Color',myColors(1,:),'LineWidth',1); ylabel(ylabel1);

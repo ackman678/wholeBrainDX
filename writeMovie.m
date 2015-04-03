@@ -35,16 +35,18 @@ end
 if useFFmpeg
 	if isunix && ~ismac 
 		%rm -rf /dev/shm/wbDXtmp
-		tmpPath = ['/dev/shm/wbDXtmp' datestr(now,'yyyymmddHHMMSS')];
+		rng('shuffle')
+		tmpPath = ['/dev/shm/wbDXtmp' num2str(round(rand(1)*1e09))];
 		%tmpPath = '/tmp/wbDXtmp';
 		%tmpPath = 'wbDXtmp';
 		system(['mkdir ' tmpPath]);
 	else
-		tmpPath = ['wbDXtmp' datestr(now,'yyyymmddHHMMSS')];
+		rng('shuffle')
+		tmpPath = ['wbDXtmp' num2str(round(rand(1)*1e09))];
 		mkdir(tmpPath)
 	end
 	szZ = numel(M);
-	parfor fr = 1:szZ; %option:parfor
+	for fr = 1:szZ; %option:parfor
 		tmpFilename = fullfile(tmpPath, sprintf('img%05d.jpg',fr));
 		if isempty(M(fr).colormap)
 			imwrite(M(fr).cdata,tmpFilename)

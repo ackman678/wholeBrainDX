@@ -29,7 +29,7 @@ for locationIndex = 1:length(locationMarkers)   %Can limit this to just hemisphe
 end
 
 A3 = reshape(A3,prod(sz(1:2)),sz(3)); %space x time matrix
-parfor locationIndex = 1:length(locationMarkers); %option:parfor
+for locationIndex = 1:length(locationMarkers); %option:parfor
 	ROImask = repmat(data(locationIndex).binaryMask,1,1,sz(3));
 	ROImask = reshape(ROImask,prod(sz(1:2)),sz(3)); %space x time matrix
 	I = A3 & ROImask;
@@ -101,11 +101,13 @@ ax(nPlots) = subplot(nPlots,1,nPlots);
 hold all
 for locationIndex = 1:length(locationMarkers)
 	minY = min(data(locationIndex).activeFractionByFrame); maxY = max(data(locationIndex).activeFractionByFrame);
+	if maxY == 0 | isnan(maxY); minY=0; maxY=1; end
 	plotStimuli(region,stimuli,minY,maxY,[0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8],stimDesc);
 	plot(1:sz(3),data(locationIndex).activeFractionByFrame,'LineWidth',lineSize)
 	%legendText{locationIndex} = data(locationIndex).name;
 end
 %title('Active Fraction by Frame')
+if ymax == 0 | isnan(ymax); ymax=1; end
 set(ax,'ylim', [0 ymax]);
 xlabel('frame no.'); ylabel('Fraction of pixels active'); legend(legendText);
 linkaxes(ax,'x');

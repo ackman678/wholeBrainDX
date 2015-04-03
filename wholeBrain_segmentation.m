@@ -1,16 +1,16 @@
 function [A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fnm,A,region,thresh,sigma,hemisphereIndices,makeMovies)
-%PURPOSE -- segment functional domains in wholeBrain calcium imaging movies into ROIs
+%PURPOSE -- segment functional signals in wholeBrain calcium imaging movies
 %USAGE -- 	[A2, A] = wholeBrain_segmentation(fnm,[],region)
-%			[A2, A, thresh, Amin] = wholeBrain_segmentation('120518_07.tif',60,region,[2 3],0,1,[],0.99,5);
-%			[A2, A, thresh, Amin] = wholeBrain_segmentation(fn,backgroundRemovRadius,region,hemisphereIndices,0,makeInitMovies,grayThresh,pthr,sigma);
+%			[A2, A, thresh, Amin, Amax] = wholeBrain_segmentation('120518_07.tif',[],region,1,3,[2 3],1);
 %
 %INPUTS
 %	fnm - string, raw movie filename. This name will be passed to bfopen.m for reading in the imaging data. This name will also be formatted for writing .avi movies.
-%	region - 
+%	region - dummyAreas.mat region data structure with brain region names and coordinates. See wholeBrain_workflow.md
+%   A - double movie array. Can be a dfof movie used with a custom threshold, thresh. If A is empty or a single numeric the program defaults to looking for a saved svd decomposition with filename fnm*svd*.mat in the same directory as fnm. See wholeBrain_workflow.md for more information.
+% 	thresh - single numeric, threshold to use for signal detection. Defaults to 1 for a 1 sd threshold, assuming an svd decomposition will be converted to a zscore. But this threshold could be a different unit associated with an array A if passed as an input.
+%	sigma - is the standard deviation in pixels of the gaussian for smoothing. Defaults to 3 px.
 % 	hemisphereIndices - vector of integers, region.coord index locations in region.name for gross anatomical brain regions like 'cortex.L' and 'cortex.R' and others (e.g. 'OB.L', 'OB.R', 'SC.L', 'SC.R', etc).
-% 	makeMovies - binary true/false to indicate if you want to make avis. Defaults to 1 (true)
-% 	thresh - single numeric, threshold to use for signal detection. Defaults to 2 standard deviations.
-%	sigma is the standard deviation in pixels of the gaussian for smoothing. It is 56.75µm at 11.35µm/px dimensions to give a **5px sigma**. gaussSmooth.m multiplies the sigma by 2.25 standard deviations for the filter size by default.
+% 	makeMovies - binary true/false to indicate if you want to make avis. Defaults to 1 (true).
 %
 %OUTPUTS
 %	A2 - binary array of segmented signals
@@ -19,12 +19,15 @@ function [A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fnm,A,region,thre
 %	Amin - the minimum value from the original movie array
 %	Amax - the maximum value from the original movie array
 %
+% See also wholeBrain_batch.m, wholeBrain_workflow.md, wholeBrain_detect.m
+%
 %James B. Ackman
 %2012-12-20
 %updated, improved algorithm with gaussian smooth 2013-02-01 by J.B.A.
 %modified 2013-03-28 14:25:44 by J.B.A.
 % Optimized and simplified algoritm 2014-05-21 16:06:48 by J.B.A.
 % Switched read tiff to imread to make bioformats dependency optional 2014-12-31 09:54:00 J.B.A.
+% Optimized for svd based preprocessing workflow 2014-12 -- 2015-01 J.B.A
 %
 % Except where otherwise noted, all code in this program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -43,18 +46,17 @@ function [A2, A, thresh, Amin, Amax] = wholeBrain_segmentation(fnm,A,region,thre
 if nargin < 7 || isempty(makeMovies), makeMovies = 1; end
 if nargin < 6 || isempty(hemisphereIndices), hemisphereIndices = find(strcmp(region.name,'cortex.L') | strcmp(region.name,'cortex.R')); end  %index location of the hemisphere region outlines in the 'region' calciumdx struct
 if nargin < 5 || isempty(sigma), sigma = 3; end
-if nargin < 4 || isempty(thresh), thresh = 2; end
+if nargin < 4 || isempty(thresh), thresh = 1; end
 if nargin < 2 || isempty(A) || size(A,3) == 1
 	%Try loading and reconstructing a movie from a saved svd decomposition that has PCuse (principal components to use) defined.
 	try
-	[pathstr,name,~]=fileparts(fnm);
-	%Find .mat files in movie directory with svd*.mat in the name.
-	listing = dir([fullfile(pathstr,name) '*svd*.mat']);
-	n=length(listing);
-	load(fullfile(pathstr,listing(n).name));  %Load the most recent svd mat file
-	catch exception
-		rethrow(exception)
-		error('cannot find the svd.mat file...')
+		[pathstr,name,~]=fileparts(fnm);
+		%Find .mat files in movie directory with svd*.mat in the name.
+		listing = dir([fullfile(pathstr,name) '*svd*.mat']);
+		n=length(listing);
+		load(fullfile(pathstr,listing(n).name));  %Load the most recent svd mat file
+	catch 
+		error('Cannot find the *svd*.mat file associcated with this movie name...')
 	end
 	sz=size(mixedfilters);
     npix = prod(sz(1:2));
@@ -87,7 +89,7 @@ A2=false(size(A));
 Iarr=zeros(size(A));
 bothMasks3D = repmat(bothMasks,[1 1 szZ]);
 
-parfor fr = 1:szZ; %option:parfor
+for fr = 1:szZ; %option:parfor
 	I = A(:,:,fr);
 		I2 = gaussSmooth(I,sigma,'same');
 	Iarr(:,:,fr) = I2;

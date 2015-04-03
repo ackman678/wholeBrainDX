@@ -124,12 +124,30 @@ end
 	//Scale ImageJ ROI
 	factor = 1.97; //scaling factor
 	//factor = getNumber("Factor", 0.5);
+    dx = -640; //no. of pixels to move ROI
+	dy = -540;
 	getSelectionCoordinates(x,y);
 	for (i=0; i<x.length; i++) {
-		x[i] = (x[i] * factor) - 640;
-		y[i] = (y[i] * factor) - 540;
+		x[i] = (x[i] * factor) + dx;
+		y[i] = (y[i] * factor) + dy;
 	}
 	makeSelection("polygon", x, y);
+
+	//Scale all rois in ImageJ ROI Manager by a factor and shift x,y pixels
+    factor = 2.00; //scaling factor
+    dx = -640; //no. of pixels to move ROI
+	dy = -540;
+	for (j=0;j<roiManager("count");j++){ 
+		roiManager("select", j);
+	    getSelectionCoordinates(x,y);
+	    for (i=0; i<x.length; i++) {
+	        x[i] = (x[i] * factor) + dx;
+	        y[i] = (y[i] * factor) + dy;
+	    }
+	    makeSelection("polygon", x, y);
+		roiManager("update");
+	} 
+
 	```
 
 * (3) Bootup local copy of matlab and cd into the directory containing the files. Setup dummyAreas.mat region data structure files and add ImageJ roi coordinate outlines for the brain areas. The following code block will loop through these steps based on the number of lines in 'files.txt'. 
@@ -279,9 +297,9 @@ end
 	disp(['Please load the sigTOOL .kcl data file for ' fnm])
 	mySTOpen  %open each .kcl file	
 	fhandle = 1;
-	myBatchFilter(fhandle,1,[], 1,8,'ellip', 'band') %bandpass1 - 20Hz. The motor signal is in this band, with a little bit of respiratory rate signal (but attenuated).
-
-	chanNum = 3;
+	channels=myBatchFilter(fhandle,1,[], 1,8,'ellip', 'band') %bandpass1 - 20Hz. The motor signal is in this band, with a little bit of respiratory rate signal (but attenuated).
+	
+	chanNum =numel(channels);
 	region = wholeBrain_motorSignal(fhandle, region, chanNum);
 	print(gcf,'-dpng',[fnm(1:end-4) 'motorSignal' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
 	print(gcf,'-depsc',[fnm(1:end-4) 'motorSignal' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
