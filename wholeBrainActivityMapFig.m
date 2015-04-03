@@ -112,7 +112,7 @@ switch figType
 		if isempty(handles.clims),
 			handles.clims = [0 mxNormSig]; 
 		end
-		
+		if diff(handles.clims) == 0; handles.clims = [0 1]; end
 		if makePlots; wholeBrainActivityMapPlot(img, mxNormSig, handles, levels); end
 
 	case 2
@@ -139,7 +139,7 @@ switch figType
 		mxNormBadproj=max(normBadproj(:));
 		
 		handles.clims = [0 max([mxNormAllproj mxNormGoodproj mxNormBadproj])];   %normalized to whatever the max one is
-
+		if diff(handles.clims) == 0; handles.clims = [0 1]; end
 		disp(['max Allproj = ' num2str(mxAllproj)])		
 		disp(['mx normAllproj = ' num2str(mxNormAllproj)])
 		handles.axesHandle = subplot(1,3,1);
@@ -198,6 +198,7 @@ switch figType
 			disp(['mx normA3proj = ' num2str(mxNormSig)])
 		
 			handles.clims = [0 mxNormSig];
+			if diff(handles.clims) == 0; handles.clims = [0 1]; end
 			if makePlots; wholeBrainActivityMapPlot(img, mxNormSig, handles); end
 		end
 	end
@@ -250,6 +251,7 @@ switch figType
 			disp(['mx normA3proj = ' num2str(mxNormSig)])
 	
 			handles.clims = [0 mxNormSig];
+			if diff(handles.clims) == 0; handles.clims = [0 1]; end
 			if makePlots; wholeBrainActivityMapPlot(img, mxNormSig, handles); end
 		end
 	%--------end
@@ -305,6 +307,7 @@ switch figType
 
 		mxNormSig = max(MxresponseNorm);
 		handles.clims = [0 mxNormSig];
+		if diff(handles.clims) == 0; handles.clims = [0 1]; end
 		
 		j = 0;
 		for numStim = stimuliToPlot
@@ -384,6 +387,7 @@ switch figType
 
 		mxNormSig = max(MxresponseNorm);
 		handles.clims = [0 mxNormSig];
+		if diff(handles.clims) == 0; handles.clims = [0 1]; end
 		
 		j = 0;
 		for numStim = stimuliToPlot
@@ -469,7 +473,7 @@ switch figType
 		otherwise
 			handles.clims = [0 mxNormSig];
 		end
-		
+		if diff(handles.clims) == 0; handles.clims = [0 1]; end
 		% disp(['max vals: ' num2str(MxresponseNorm)])
 		% disp(['min vals: ' num2str(MnresponseNorm)])
 		disp(['clims: ' num2str(handles.clims)])

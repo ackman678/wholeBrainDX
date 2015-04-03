@@ -45,6 +45,8 @@ function wholeBrain_batch(filename,handles)
 %		* 'dMotorCorr.txt'
 %		* 'dSpatialCorr.txt'
 %
+% See also wholeBrain_segmentation.m, wholeBrain_detect.m, wholeBrain_workflow.md
+%
 %James B. Ackman, 2013-11-19 12:06:20
 % Except where otherwise noted, all code in this program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -244,7 +246,7 @@ disp(['Segmentation finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 %==2==Detection============================
 [A3, CC, STATS] = wholeBrain_detect(A2,A,[4 3],makeInitMovies,fnm,region,hemisphereIndices);
 fnm2 = [fnm(1:length(fnm)-4) '_' datestr(now,'yyyymmdd-HHMMSS') '.mat'];
-save([fnm2(1:length(fnm2)-4) '_connComponents_BkgndSubtr60' '.mat'],'A2','A3','CC','STATS','-v7.3');  
+save([fnm2(1:length(fnm2)-4) '_connComponents' '.mat'],'A2','A3','CC','STATS','-v7.3');  
 clear A2 A3;
 
 disp(['Detection finished: ' datestr(now,'yyyymmdd-HHMMSS')])
@@ -295,7 +297,7 @@ end
 
 data = wholeBrain_activeFraction(A3,region);   
 
-region.locationData.data = data;    
+region.locationData.data = data; clear data
 save(fnm,'region','-v7.3');     
 
 disp('-----')
@@ -434,6 +436,7 @@ chkFile = exist('optFlowLk.m');
 if chkFile == 2
 [Vsum, ~, ~] = wholeBrain_opticFlowByDomain(A3,region,fnm,makeInitMovies);
 region.domainData.Vsum = Vsum;
+clear Vsum
 else
 	disp('Skipping opticflow...optFlowLk from piotrImageVideoProcessingToolbox v.2.61 not installed')
 end
@@ -500,3 +503,4 @@ end
 
 disp(['Batch finished: ' datestr(now,'yyyymmdd-HHMMSS')])
 close all
+clear region

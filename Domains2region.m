@@ -14,8 +14,10 @@ region.location = [];
 sz = CC.ImageSize(1:2);
 nROI = numel(hemisphereIndices);
 ROImasks = false(sz(1),sz(2),nROI);
+se = strel('disk',1);
 for j = 1:nROI
 	ROImasks(:,:,j) = poly2mask(region.coords{hemisphereIndices(j)}(:,1),region.coords{hemisphereIndices(j)}(:,2),sz(1),sz(2));
+	ROImasks(:,:,j) = imdilate(ROImasks(:,:,j),se);
 	%figure; imshow(regionMask1);
 end
 

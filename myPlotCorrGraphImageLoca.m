@@ -180,8 +180,6 @@ title(['plotType' num2str(plotType) ',alpha' num2str(alphaLevel) ';' edgeAesthet
 
 function [dist,edgeList,pvalues,rvalues,names] = plotAll(data,region,numLoca,rXY,datasetSelector)
 
-%the following sets which region.location you want to analyse
-% numLoca = unique(region.location);
 %         numLoca = 2;
 figure;
 set(gcf,'color',[1 1 1]);

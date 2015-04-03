@@ -142,7 +142,7 @@ function output = wholeBrain_getActiveFractionStats(region, functionHandles, dat
 %Should get an extra location signal too-- for combined locations/hemisphere periods.
 %2013-04-11 18:00:23  Added under the batchFetchLocation generalized wrapper table functions
 
-locationMarkers = unique(region.location);
+locationMarkers = {region.locationData.data.name};
 varin.datafilename=datafilename;
 varin.region=region;
 

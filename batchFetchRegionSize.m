@@ -149,11 +149,8 @@ function output = wholeBrain_getDomainStats(region, functionHandles, datafilenam
 %Should get an extra location signal too-- for combined locations/hemisphere periods.
 %2013-04-11 18:00:23  Added under the batchFetchLocation generalized wrapper table functions
 
-%locationMarkers = unique(region.location);
 varin.datafilename=datafilename;
 varin.region=region;
-%locationName = region.locationData.data(locationIndex).name;
-
 
 if strcmp(useStimuli,'true') & isempty(stimuliIndices) & isfield(region,'stimuli'); 
 	stimuliIndices=1:numel(region.stimuli);

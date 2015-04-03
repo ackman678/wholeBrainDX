@@ -366,8 +366,12 @@ sortNumObj = sort(NumObjects,'descend');
 figure;
 hold on
 for j = 1:Nclusters
-    %	j = find(sortNumObj == NumObjects(i));
-    i = find(NumObjects == sortNumObj(j));
+    if length(unique(sortNumObj)) == Nclusters
+        %   j = find(sortNumObj == NumObjects(i));
+        i = find(NumObjects == sortNumObj(j));
+    else
+        i=j;
+    end
     %plot3(centr(cidx==i,1),centr(cidx==i,2),centr(cidx==i,3),'o','Color',myColors(j,:))
     plot(centr(cidx==i,1),centr(cidx==i,2),'o','Color',myColors(j,:))
     hold on
@@ -390,8 +394,12 @@ sortNumObj = sort(NumObjects,'descend');
 figure;
 hold on
 for j = 1:Nclusters
-    %	j = find(sortNumObj == NumObjects(i));
-    i = find(NumObjects == sortNumObj(j));
+    if length(unique(sortNumObj)) == Nclusters
+        %	j = find(sortNumObj == NumObjects(i));
+        i = find(NumObjects == sortNumObj(j));
+    else
+        i=j;
+    end
     plot3(X(cidx==i,1),X(cidx==i,2),X(cidx==i,3),'o','Color',myColors(j,:))     %plot3(X(cidx==i,1),X(cidx==i,2),X(cidx==i,3),'o')
     hold on
 end

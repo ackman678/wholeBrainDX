@@ -5,7 +5,7 @@ function data = wholeBrain_activeFraction(A3,region,locationMarkers,stimDesc)
 %2013-04-04 09:46:23
 
 if nargin < 2 || isempty(region), region = myOpen; end  %to load the hemisphere region outlines from 'region' calciumdx struct
-if nargin < 3 || isempty(locationMarkers), locationMarkers = unique(region.location); end  %index location of the hemisphere region outlines or local areal outlines in the 'region' calciumdx data structure you want to analyse
+if nargin < 3 || isempty(locationMarkers), locationMarkers = find(~strcmp(region.name,'field') & ~strcmp(region.name,'craniotomy'));  end  %index location of the hemisphere region outlines or local areal outlines in the 'region' data structure you want to analyse
 if nargin < 4 || isempty(stimDesc), stimDesc = ''; end  %plot stimulus periods on active fraction plot below, e.g. stimDesc='drug.state.isoflurane';
 
 stimuli=region.stimuli;
@@ -101,11 +101,13 @@ ax(nPlots) = subplot(nPlots,1,nPlots);
 hold all
 for locationIndex = 1:length(locationMarkers)
 	minY = min(data(locationIndex).activeFractionByFrame); maxY = max(data(locationIndex).activeFractionByFrame);
+	if maxY == 0 | isnan(maxY); minY=0; maxY=1; end
 	plotStimuli(region,stimuli,minY,maxY,[0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8; 0.8 0.8 0.8],stimDesc);
 	plot(1:sz(3),data(locationIndex).activeFractionByFrame,'LineWidth',lineSize)
 	%legendText{locationIndex} = data(locationIndex).name;
 end
 %title('Active Fraction by Frame')
+if ymax == 0 | isnan(ymax); ymax=1; end
 set(ax,'ylim', [0 ymax]);
 xlabel('frame no.'); ylabel('Fraction of pixels active'); legend(legendText);
 linkaxes(ax,'x');
@@ -119,7 +121,6 @@ zoom xon
 %	disp([data(locationIndex).name ' ' num2str(data(locationIndex).activeFraction)]) 
 %end
 
-%locationMarkers = unique(region.location);
 disp(['name ' 'actvFraction ' 'maxFraction ' 'minFraction ' 'meanFraction ' 'sdFraction ' 'meanActvFraction ' 'sdActvFraction ' 'actvFrames ' 'actvTimeFraction ' 'nonActvFrames ' 'nonActvTimeFraction'])
 
 for locationIndex = 1:length(locationMarkers)
