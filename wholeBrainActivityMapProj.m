@@ -28,7 +28,7 @@ if (nargin < 4 || isempty(mapType)), mapType = 'pixelFreq'; end
 %-----------main-----------------
 frTxt = ['fr' num2str(frames(1)) ':' num2str(frames(2))];
 
-if strcmp(mapType,'pixelFreq')
+if (strcmp(mapType,'pixelFreq') | strcmp(mapType,'actvTimeFraction'))
 	A3bw = makeBlankArray(sz);
 else
 	A3 = zeros(sz(1:2));
@@ -67,8 +67,24 @@ case 2
 			disp([num2str(nSigPx2) ' ' frTxt ' true positive active pixels'])
 			disp([num2str(round(nSigPx2/(diff(frames)*region.timeres))) ' active pixels/sec'])
 			disp(['Fraction of total: ' num2str(nSigPx2/nSigPx)])	
+		
+		case 'actvTimeFraction'
+			A3bw = makeBinaryPixelArrayTagged(A3bw, CC, STATS, '');
+			nSigPx = numel(find(A3bw));
+			disp([num2str(nSigPx) ' whole movie true positive active pixels'])
+
+			A3proj = sumProjectArray(A3bw,frames);
+
+			nSigPx2 = sum(A3proj(:));
+			disp([num2str(nSigPx2) ' ' frTxt ' true positive active pixels'])
+			disp([num2str(round(nSigPx2/(diff(frames)*region.timeres))) ' active pixels/sec'])
+			disp(['Fraction of total: ' num2str(nSigPx2/nSigPx)])	
+
+			A3proj = A3proj ./ (diff(frames) + 1); 
+			A3proj = A3proj .* ((diff(frames) + 1) .* region.timeres);
 		case 'domainFreq'
 			A3proj = makeBinaryPixelArrayTaggedDomainFreq(A3, CC, STATS, domains, '', frames);
+			A3proj = A3proj ./ ((diff(frames) + 1) .* region.timeres .* (1/60)); %freq (min^-1s)
 		case 'domainDur'
 			A3proj = makeBinaryPixelArrayTaggedDomainDuration(A3, CC, STATS, domains, '', frames, region.timeres);
 		case 'domainDiam'

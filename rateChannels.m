@@ -1,9 +1,18 @@
-function rateChan = rateChannels(region,cActvFraction,makePlots)
+function rateChan = rateChannels(region,cActvFraction,makePlots,stimIdx,maxlagsAll)
 %rateChannels(region)
 %Fetches a series of moving average timeseries for Cortical and/or Motor Activity Signals
 %Author - James B. Ackman 2013-11-20 15:59:22  
 
 y = region.motorSignal;
+if nargin<5 || isempty(maxlagsAll), maxlagsAll = 50:50:500; end
+if nargin<4 || isempty(stimIdx), 
+	stimIdx = 1;
+	for i = 1:length(region.stimuli)
+		if strcmp(region.stimuli{i}.descriptor,'motor.onsets')
+			stimIdx = i; 
+		end
+	end
+end
 if nargin<3 || isempty(makePlots), makePlots = 1; end
 if nargin<2 || isempty(cActvFraction),
 	x = [];
@@ -13,14 +22,13 @@ else
 	N = length(x);
 end
 
-[motorOnsets,spkChan] = getMotorOnsets(region);
+[motorOnsets,spkChan] = getMotorOnsets(region,stimIdx);
 
 %   figure; plot(spkChan, 'or')  %TESTING
 %   spkChan = fliplr(spkChan);  %to reverse spkChan to run the rolling window backwards
 %   hold on; plot(spkChan, 'ob')  %TESTING  
 
-maxlagsAll = 50:50:500;  
-rateChan = getCorticalRateChannel(maxlagsAll,x,region);
+rateChan = getCorticalRateChannel(maxlagsAll,x,region); %TODO:
 rateChan = getMotorRateChannel(rateChan,maxlagsAll,y,region);
 
 myColors = jet(length(maxlagsAll));      
@@ -75,7 +83,7 @@ else
 	end    
 
 	linkaxes(ax,'x'); zoom xon    
-	clickableLegend(ax(2),h(1).leg,[]);    
+	% clickableLegend(ax(2),h(1).leg,[]);    
 	set(ax,'YGrid','off')  
 end
 

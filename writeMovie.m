@@ -1,14 +1,17 @@
-function writeMovie(M,filename,useFFmpeg)
+function writeMovie(M,filename,useFFmpeg,q)
 %writeMovie - Make avi movie
 %PURPOSE -- Make movie video from a colormapped matlab movie structure. Called by Iarr2avi.m and others and used in conjunction with output from timeColorMapProj.m
 %USAGE -- 	writeMovie(M, 'filename.avi');
 % M - A matlab specific 'movie' data structure
 % filename - string, the 'filename.avi' that the data come from and the string from which the output filename will be formatted
+% useFFmpeg - binary, flag to indicate whether ffmpeg should be used if found on local system
+% q - numeric value between 1-31 to indicate video mjpeg compression quality for ffmpeg. 1 is very high quality (bigger file), 31 is very low quality (smaller file).
 %
 % See also timeColorMapProj.m, Iarr2montage.m, myMovie2avi.m, Iarr2avi.m
 %
 %James B. Ackman 2014-12-31 10:46:39
 
+if nargin < 4 || isempty(q), q = 1; end
 if nargin < 3 || isempty(useFFmpeg), useFFmpeg = 1; end
 if nargin < 2 || isempty(filename), filename = ['movie' datestr(now,'yyyymmdd-HHMMSS') '.avi']; end
 
@@ -49,9 +52,9 @@ if useFFmpeg
 	for fr = 1:szZ; %option:parfor
 		tmpFilename = fullfile(tmpPath, sprintf('img%05d.jpg',fr));
 		if isempty(M(fr).colormap)
-			imwrite(M(fr).cdata,tmpFilename)
+			imwrite(M(fr).cdata,tmpFilename,'Mode','lossless'); %'Quality',100 %or %'Mode','lossless'
 		else
-			imwrite(M(fr).cdata,M(fr).colormap,tmpFilename)
+			imwrite(M(fr).cdata,M(fr).colormap,tmpFilename,'Mode','lossless'); %'Quality',100 %or %'Mode','lossless'
 		end
 	end
 	
@@ -60,7 +63,7 @@ if useFFmpeg
 	try
 		%System cmd to ffmpeg:
 		%system('ffmpeg -f image2 -i img%05d.jpg -vcodec mjpeg a.avi')
-		system(['ffmpeg -f image2 -i ' tmpPath filesep 'img%05d.jpg -vcodec mjpeg ' filename])
+		system(['ffmpeg -f image2 -i ' tmpPath filesep 'img%05d.jpg -vcodec mjpeg -q:v ' num2str(q) ' ' filename])
 		%system(['ffmpeg -f image2 -i ' tmpPath filesep 'img%05d.jpg -r 30 ' filename])
 		%The call to ffmpeg can be modified to write something other than a motion jpeg avi video:
 		%system('ffmpeg -f image2 -i img%05d.png a.mpg')

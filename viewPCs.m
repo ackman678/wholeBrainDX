@@ -35,7 +35,7 @@ while i <= nPC
     usepcs = ind(1):ind(2);
     pcs = reshape(U(:,usepcs), sz(1), sz(2), []);
     pcs = permute(pcs, [1, 2, 4, 3]);
-    montage(pcs,'DisplayRange',[-1,1]*7); colormap(hot);
+    montage(pcs,'DisplayRange',[-1,1]*7); colormap(hot); colorbar
     formataxis(sz,usepcs)
     PCf = input('(''b/f'' to scroll backwards/forwards)): ','s'); 
     if PCf=='b' 

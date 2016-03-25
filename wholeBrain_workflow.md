@@ -295,8 +295,8 @@ end
 	load(fnm,'region')
 	
 	disp(['Please load the sigTOOL .kcl data file for ' fnm])
-	mySTOpen  %open each .kcl file	
-	fhandle = 1;
+	fhandle = mySTOpen([filelist{k,1}(1:end-4) '.kcl'])  %open each .kcl file, assuming same naming convention as your movie files
+	%fhandle = mySTOpen  %open each .kcl file manually
 	channels=myBatchFilter(fhandle,1,[], 1,8,'ellip', 'band') %bandpass1 - 20Hz. The motor signal is in this band, with a little bit of respiratory rate signal (but attenuated).
 	
 	chanNum =numel(channels);
@@ -318,7 +318,7 @@ end
 
 	%rateChannels(5).y is the 250fr lag returned from the moving average rate channel code above for filtfilt on decY2  
 	deltaspacing = 100; %in seconds  
-	[motorOns, motorOffs] = detectMotorStates(region, rateChan(5).y, deltaspacing);   
+	[motorOns, motorOffs] = detectMotorStates(region, rateChan(5).y, deltaspacing, [], 'false'); %change 5th input to true if you want to manually refine active motor periods   
 	%make manual corrections using gui if needed, i.e. motorOns(1) = 1; motorOffs(1) = 123; motorOffs(4) = 3000;
 
 	region = makeMotorStateStimParams(region, motorOns, motorOffs);
