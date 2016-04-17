@@ -278,64 +278,71 @@ end
 	end	
 	```
 
-* (5) Optional:  
-	* Run `sigTOOL` from matlab and use `Batch Import` in the sigTOOL gui to convert each Spike2.smr file into a .kcl data file for use with sigTOOL for simultaneously acquired signals like motorSignal from photodiode or electrophysiology signals.  
-		* Export motor signal from Spike2.smr file, make filtered signal for dummyfile, and detect motor active periods and save in dummyfile for each movie  
-		* Add other stimuli info to dummy file, using makeMotorStateStimParams.m and makeDrugStateStimParams.m  
-		* Save region fnm  
+## Add additional signal information to dummy files
 
-	```matlab
-	filelist = readtext('files.txt',' ');
-	fnms = filelist(:,2);  %Second column is dummy region matfiles
-	k = 0;  %Initialization only. For using the following code on multiple files in a directory
-	
-	%---START Add motor signal---
-	k = k+1;
-	for k = 1:length(fnms)
-	fnm = fnms{k};  %***change iterator to desired filename***
-	load(fnm,'region')
-	
-	disp(['Please load the sigTOOL .kcl data file for ' fnm])
-	fhandle = mySTOpen([filelist{k,1}(1:end-4) '.kcl'])  %open each .kcl file, assuming same naming convention as your movie files
-	%fhandle = mySTOpen  %open each .kcl file manually
-	channels=myBatchFilter(fhandle,1,[], 1,8,'ellip', 'band') %bandpass1 - 20Hz. The motor signal is in this band, with a little bit of respiratory rate signal (but attenuated).
-	
-	chanNum =numel(channels);
-	region = wholeBrain_motorSignal(fhandle, region, chanNum);
-	print(gcf,'-dpng',[fnm(1:end-4) 'motorSignal' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
-	print(gcf,'-depsc',[fnm(1:end-4) 'motorSignal' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
-	save(fnm,'region')
+Optional-- add motor movement signals and stimulation/manipulation/state parameters.
 
-	%Detect and add motor.onsets to region.stimuli
-	[index] = detectMotorOnsets(region);
-	region = makeStimParams(region, index, 'motor.onsets'); 
-	print(gcf,'-dpng',[fnm(1:end-4) 'motorSignal' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
-	print(gcf,'-depsc',[fnm(1:end-4) 'motorSignal' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
+For example if you have additional signals recorded in Spike2:  
 
-	%Detect and add motor.states to region.stimuli
-	rateChan = rateChannels(region);
-	print(gcf,'-dpng',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.png'])        
-	print(gcf,'-depsc',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
+* (5a) Run `sigTOOL` from matlab and use `Batch Import` in the sigTOOL gui to convert each Spike2.smr file into a .kcl data file for use with sigTOOL for simultaneously acquired signals like motorSignal from photodiode or electrophysiology signals.  
+	* Export motor signal from Spike2.smr file, make filtered signal for dummyfile, and detect motor active periods and save in dummyfile for each movie  
+	* Add other stimuli info to dummy file, using makeMotorStateStimParams.m and makeDrugStateStimParams.m  
+	* Save region fnm  
 
-	%rateChannels(5).y is the 250fr lag returned from the moving average rate channel code above for filtfilt on decY2  
-	deltaspacing = 100; %in seconds  
-	[motorOns, motorOffs] = detectMotorStates(region, rateChan(5).y, deltaspacing, [], 'false'); %change 5th input to true if you want to manually refine active motor periods   
-	%make manual corrections using gui if needed, i.e. motorOns(1) = 1; motorOffs(1) = 123; motorOffs(4) = 3000;
+* (5b) Extract and add motor signal to dummyfile for each individual movie:  
 
-	region = makeMotorStateStimParams(region, motorOns, motorOffs);
-	save(fnm,'region')
+```matlab
+filelist motor movements and quiet and active states and add parameters to dummyfiles. This requires concatenation of all motor signals for an individual animal to calculate a global threshold, thus after the above : 
+fnms = filelist(:,2);  %Second column is dummy region matfiles
+k = 0;  %Initialization only. For using the following code on multiple files in a directory
 
-	print(gcf,'-dpng',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.png'])        
-	print(gcf,'-depsc',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
-	%---END Add motor signal---
-	close all
-	end
-	
-	%---------------------------------------------------------------------------
-	%**Optional, if a drug movie
-	region = makeDrugStateStimParams(region, [1], [region.nframes], 'isoflurane') %where the frame indices inputs (second and third arguments) are drugOns and drugOffs
-	save(fnm,'region')
-	```
+%---START Add motor signal---
+k = k+1;
+for k = 1:length(fnms)
+fnm = fnms{k};  %***change iterator to desired filename***
+load(fnm,'region')
+
+disp(['Please load the sigTOOL .kcl data file for ' fnm])
+fhandle = mySTOpen([filelist{k,1}(1:end-4) '.kcl'])  %open each .kcl file, assuming same naming convention as your movie files
+%fhandle = mySTOpen  %open each .kcl file manually
+channels=myBatchFilter(fhandle,1,[], 1,8,'ellip', 'band') %bandpass1 - 20Hz. The motor signal is in this band, with a little bit of respiratory rate signal (but attenuated).
+
+chanNum =numel(channels);
+region = wholeBrain_motorSignal(fhandle, region, chanNum);
+print(gcf,'-dpng',[fnm(1:end-4) 'motorSignal' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
+print(gcf,'-depsc',[fnm(1:end-4) 'motorSignal' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
+save(fnm,'region')
+close all
+end
+```
+
+* (5c) Add stimulation parameters or drug state information for an individual movie (can also use this or `makeStimParams.m` instead for adding other types of stimulation information):  
+
+```matlab
+%**Optional, if a drug movie
+region = makeDrugStateStimParams(region, [1], [region.nframes], 'isoflurane') %where the frame indices inputs (second and third arguments) are drugOns and drugOffs
+save(fnm,'region')
+```
+
+* (5d) Detect motor movements and quiet and active states and add parameters to dummyfiles. This requires concatenation of all motor signals for an individual * animal to calculate a global threshold-- thus this is done after the above step 5b is finished for all movies/dummyfiles for an individual animal. Then format a new filename list in filesTmp.txt that has the dummyAreas file names in the **first column** and a **third column** being a grouping factor for the recordings of the animal (e.g. in case you have movies with different sampling rates) that indicates to `groupMotorStates.m` which signals to concatenate together.
+
+Example file format:  
+
+```
+/videos/150123/150123_09_dummyAreas.mat 150123_09.tif 20150123_1_10
+/videos/150123/150123_11_dummyAreas.mat 150123_11.tif 20150123_1_10
+/videos/150123/150123_12_dummyAreas.mat 150123_12.tif 20150123_1_5
+/videos/150123/150123_13_dummyAreas.mat 150123_13.tif 20150123_1_5
+...
+```
+
+Then run the following couple commands to first cat movie motor signals, compute a global signal stats, and save this info to each individual dummyfile. Then batchFetchMotorStats will add stimulus descriptors for movements onsets as well as different state information based on the movement rate from a rolling window, as well as fetch and save of motor measurements called 'dMotorStates.txt':  
+
+```matlab
+filelist = readtext('filesTmp.txt',' ');
+groupMotorStates(filelist,0) %change last vargin input to 1 to make plots
+batchFetchMotorStates(filelist,[],[],{'motor.onsets' 'motor.state.active' 'motor.state.quiet'},0); %change last vargin input to 1 to make plots
+```
 
 
 ## Perform SVD
