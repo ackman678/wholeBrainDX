@@ -87,6 +87,7 @@ else
 	end
 	handles.clims = [0 max(vertcat(allResults.maxSig))];  %calculate max clim value for all plots
 	plotFigure(allResults, handles);
+	results=allResults;
 end
 
 
@@ -173,7 +174,7 @@ print(gcf, '-depsc', [fnm2(1:end-4) '.eps']);
 function [rows, cols] = setupPlotMatrix(stimuliToPlot, cols)
 numplots = numel(stimuliToPlot);
 if nargin < 2 || isempty(cols), cols = 2; end
-rows = floor(numplots/cols);
+rows = ceil(numplots/cols);
 if rem(numplots,cols) > 0
 	rows = rows+1;
 end

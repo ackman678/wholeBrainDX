@@ -84,17 +84,21 @@ switch figType
 				normValue = mx;
 				img = A3proj./normValue;
 				disp(['max A3proj = ' num2str(mx)])
+			case 'actvTimeFraction'
+				handles.axesTitle = 'actvTimeFraction, Fraction of time active, sec. MaxSig=';
+				img = A3proj;
 			case 'domainFreq'
-				handles.axesTitle = 'domainFreq, No. of domain activations MaxSig=';
+				handles.axesTitle = 'domainFreq, Domain activation frequency, (min^-1). MaxSig=';
 				img = A3proj;
 			case 'domainDur'
-				handles.axesTitle = 'domainDur, Mean domain duration, sec MaxSig=';
+				handles.axesTitle = 'domainDur, Mean domain duration, sec. MaxSig=';
 				img = A3proj;			
 			case 'domainDiam'
-				handles.axesTitle = 'domainDiam, Mean domain diameter, um MaxSig=';
+				% handles.axesTitle = 'domainDiam, Mean domain diameter, um. MaxSig=';
+				handles.axesTitle = 'domainDiam, Median domain diameter, um. MaxSig=';
 				img = A3proj;
 			case 'domainAmpl'
-				handles.axesTitle = 'domainAmpl, Mean domain, scaled dF/F MaxSig=';
+				handles.axesTitle = 'domainAmpl, Mean domain, scaled dF/F. MaxSig=';
 				img = A3proj;
 				if isfield(region,'Amin')
 					%Amin = region.Amin;

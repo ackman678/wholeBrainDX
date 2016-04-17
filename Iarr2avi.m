@@ -1,4 +1,4 @@
-function Iarr2avi(Iarr, frStart, frEnd, filename, useFFmpeg)
+function Iarr2avi(Iarr, frStart, frEnd, filename, useFFmpeg, q)
 %Iarr2avi - Make avi movie
 %PURPOSE -- Make avi movie from from 8 bit indexed array. Use in conjunction with output from timeColorMapProj.m
 %USAGE -- 	Iarr2avi(Iarr,1638,1757, 'filename.tif');
@@ -6,11 +6,14 @@ function Iarr2avi(Iarr, frStart, frEnd, filename, useFFmpeg)
 % frStart - integer, start frame
 % frEnd - integer, end frame
 % filename - string, the 'filename.tif' that the data come from and the string from which the output filename will be formatted
+% useFFmpeg - binary, flag to indicate whether ffmpeg should be used if found on local system
+% q - numeric value between 1-31 to indicate video mjpeg compression quality for ffmpeg. 1 is very high quality (bigger file), 31 is very low quality (smaller file).
 %
 % See also timeColorMapProj.m, Iarr2montage.m, myMovie2avi.m
 %
 %James B. Ackman 2014-07-28 08:06:40
 
+if nargin < 6 || isempty(q), q = 15; end
 if nargin < 5 || isempty(useFFmpeg), useFFmpeg = 1; end
 
 sz=size(Iarr);
@@ -36,4 +39,4 @@ for fr = totalframes
 	k=k+1;
 	M(k) = im2frame(Iarr(:,:,fr),rgbColors);
 end
-writeMovie(M,filename,useFFmpeg)
+writeMovie(M,filename,useFFmpeg,q)

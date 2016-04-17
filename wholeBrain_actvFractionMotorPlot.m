@@ -10,7 +10,7 @@ if nargin < 6 || isempty(titleStr2), titleStr2 = 'bp/rect/dec/motor signal'; end
 
 if nargin < 7 || isempty(ylabel1), ylabel1 = 'Fraction of px active'; end
 
-if nargin < 8 || isempty(ylabel2), ylabel2 = 'motor activity (uV)'; end
+if nargin < 8 || isempty(ylabel2), ylabel2 = 'motor activity (V)'; end
 
 cActvFraction = signal1;
 decY2 = signal2;
