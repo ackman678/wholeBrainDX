@@ -27,7 +27,8 @@ if length(region.stimuli) > 0
   if overwrite
     for i = 1:length(region.stimuli)
       if strcmp(region.stimuli{i}.description,desc)
-        j = i; 
+        j = i;
+        region.stimuli{i}.stimulusParams = {};
       end
     end
   end

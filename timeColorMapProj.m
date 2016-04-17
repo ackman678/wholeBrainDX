@@ -1,5 +1,5 @@
 function [maxProj, Iarr, MnMx] = timeColorMapProj(A, frStart, frEnd, filename, nStdev, MnMx)
-%timeColorMapProj - Make time based colored projection maps from raw deltaF/F movies
+%timeColorMapProj - Make time based colored projection maps from raw deltaF/F movies.
 %PURPOSE -- Make a time lapse color map projection from a dF/F input array
 %USAGE -- 	[maxProj, Iarr] = timeColorMapProj(A,1638,1757, [], [-3 7]);
 %			[maxProj, ~] = timeColorMapProj(Iarr,1638,1757);
@@ -57,22 +57,22 @@ else
 	filename = [filename(1:length(filename)-4) '-fr' num2str(frStart) '-' num2str(frEnd) '-' datestr(now,'yyyymmdd-HHMMSS') '.png']; 
 end
 
-rgbColors = jet(256);
+rgbColors = jet(256); %hue
 frColors = zeros(size(rgbColors));
 totalframes = frEnd - frStart + 1;
-intensityfactor=repmat(((0:255)/255)',1,3);
+intensityfactor=repmat(((0:255)/255)',1,3); %values for hues (amount of black)
 rgbA = zeros(sz(1), sz(2), 3, totalframes);
 
 for i = 0:totalframes-1
 	fr=i+frStart;
-	colorscale = floor((256 / totalframes) * i);
+	colorscale = floor((256 / totalframes) * i); %hue index for frame
 	frColors = repmat(rgbColors(colorscale+1,:),256,1);
-	frColors = frColors .* intensityfactor;
-	RGB=ind2rgb(Iarr(:,:,fr),frColors);
+	frColors = frColors .* intensityfactor; %hue-value (hv) map for frame
+	RGB=ind2rgb(Iarr(:,:,fr),frColors); %assign hv map for frame
 	rgbA(:,:,:,i+1) = RGB;
 end
 
-maxProj = max(rgbA, [], 4);
+maxProj = max(rgbA, [], 4); %project hv 4D RGB array over time to make saturation map
 if sum(get(0, 'ScreenSize')) > 4  %hack to test whether matlab is started with no display which would give get(0, 'ScreenSize') = [1 1 1 1]
 	imshow(maxProj);
 end

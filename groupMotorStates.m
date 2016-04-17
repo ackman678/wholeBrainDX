@@ -24,7 +24,7 @@ if nargin < 2 || isempty(makePlots), makePlots = 1; end
 if size(filelist,2) < 3
 	error('filelist not formatted correctly for catMotorTraces')
 else
-	dataFnms = filelist(:,2);
+	dataFnms = filelist(:,1);
 	groupingFactor = filelist(:,3);
 end
 
@@ -34,7 +34,7 @@ groupnum = 0;
 while groupnum < ngroups
 	groupnum = groupnum + 1;
 	fnms = dataFnms(strcmp(groupNames(groupnum), groupingFactor));
-	handles = catMotorTraces(fnms)
+	handles = catMotorTraces(fnms,makePlots)
 end
 
 
@@ -63,10 +63,11 @@ end
 
 catTrace2 = catTrace2';
 region.motorSignal = catTrace2;  %assign grouped motor trace to a dummy region data structure temporarily to get grouped stats below
+region.tmpName = fnms{j};
 
 %Detect and add motor.onsets to region.stimuli
-nsd=2;
-[spks,groupRawThresh,groupDiffThresh] = detectMotorOnsets(region,nsd,[],[],0);
+nsd=1;
+[spks,groupRawThresh,groupDiffThresh] = detectMotorOnsets(region,nsd,[],[],1);
 region = makeStimParams(region, spks, 'motor.onsets', 1); 
 
 handles.groupRawThresh = groupRawThresh; %save this threshold of raw motor trace for detection of id. file motor onsets later
@@ -75,6 +76,18 @@ handles.nsd = nsd; %save no. of sd used for reference
 handles.groupRawMedian = median(catTrace2);
 handles.groupRawMean = mean(catTrace2);
 handles.groupRawSD = std(catTrace2);
+handles.groupRawMax = max(catTrace2);
+handles.groupRawMin = min(catTrace2);
+
+if region.motorSignal(1) >= handles.groupRawThresh
+    region.motorSignal(1) = handles.groupRawMedian;
+end
+
+if region.motorSignal(end) >= handles.groupRawThresh
+    region.motorSignal(end) = handles.groupRawMedian;
+end
+
+
 
 if printFig
 	hFig = figure;
@@ -84,26 +97,30 @@ if printFig
     set(hFig,'PaperType','usletter');
     set(hFig,'PaperPositionMode','auto');
     
-    plot(catTrace2,'-'); ylabel('motor activity (uV)'); title('bp/rect/dec/motor signal')    
-    xlabel('Time (image frame no.)');     
-    line([0 length(catTrace2)],[thrN thrN],'LineStyle','--','color','r');       
-    line([0 length(catTrace2)],[thr1 thr1],'LineStyle','--','color','g');    
-    legend({'catTrace2' [num2str(nsd) 'sd mdn'] '1sd mdn'})  
-    hold on  
-	plot(spks, catTrace2(spks),'og')
+	thrN = groupRawThresh;
+	nsd = nsd;
+	disp(['groupRawThresh=' num2str(thrN)])
 
-	fnm = fnms{j};
-	print(gcf,'-dpng',[fnm(1:end-4) 'motorSignal-cat' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
-	print(gcf,'-depsc',[fnm(1:end-4) 'motorSignal-cat' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
+    plot(region.motorSignal,'-'); ylabel('motor activity (V)'); title('bp/rect/dec/motor signal')    
+    xlabel('Time (image frame no.)');     
+    line([0 length(region.motorSignal)],[thrN thrN],'LineStyle','--','color','r');
+    legend({'region.motorSignal' [num2str(nsd) 'sd mdn']})  
+    hold on  
+	plot(spks, region.motorSignal(spks),'og')
+	title(fnms{j},'Interpreter','none')
+
+	% fnm = fnms{j};
+	% print(gcf,'-dpng',[fnm(1:end-4) 'motorSignal-cat' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
+	% print(gcf,'-depsc',[fnm(1:end-4) 'motorSignal-cat' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
 end
 
 %Detect and add motor.states to region.stimuli
 maxlagsAll = 50:10:150; 
-rateChan = rateChannels(region,[],0,[],maxlagsAll);
+rateChan = rateChannels(region,[],printFig,[],maxlagsAll);
 
 if printFig
-	print(gcf,'-dpng',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.png'])        
-	print(gcf,'-depsc',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
+	% print(gcf,'-dpng',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.png'])        
+	% print(gcf,'-depsc',[fnm(1:end-4) 'motorSignalDetect' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
 end
 
 
@@ -124,12 +141,15 @@ while sw == 0
     xbar = mean(x);
     xsd = std(x);
     x(x<xbar) = 0;
+    if x(end) >= xbar
+    	x(end) = 0;
+    end
     dfY = [diff(x) 0];
 
 	if printFig
 	    ax(1) = subplot(2,1,1)  
 	    %plot(x, '-')  
-	    plot(decY2, '-')  
+	    plot(region.motorSignal, '-')  
 	    hold on; 
 	    line([0 length(x)],[xbar xbar],'LineStyle','--','color','r');
 
@@ -183,15 +203,16 @@ while sw == 0
     sw = 1;
 
 	if printFig
-        plot(ax(1), ons, decY2(ons),'or')
-        plot(ax(1), offs, decY2(offs),'ok')
+        plot(ax(1), ons, region.motorSignal(ons),'or')
+        plot(ax(1), offs, region.motorSignal(offs),'ok')
         plot(ax(2), ons, x(ons),'or')
         plot(ax(2), offs, x(offs),'ok')
         hold off
 
-        plot(ax(1), idx1, decY2(idx1),'og')
-        plot(ax(1), idx2, decY2(idx2),'ob')
+        plot(ax(1), idx1, region.motorSignal(idx1),'og')
+        plot(ax(1), idx2, region.motorSignal(idx2),'ob')
         hold off
+        title(fnms{j},'Interpreter','none')
     end
 end
 

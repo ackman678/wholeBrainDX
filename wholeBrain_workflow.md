@@ -160,6 +160,7 @@ end
 	%matlab
 	addpath(genpath('~/Documents/MATLAB/wholeBrainDX'))
 	addpath(genpath('~/Documents/MATLAB/sigTOOL'))
+	addpath(genpath('~/Documents/MATLAB/physioDX'))
 	addpath(genpath('~/Documents/MATLAB/piotrImageVideoProcessingToolbox'))
 	%addpath(genpath('~/Documents/MATLAB/bfmatlab'))
 
@@ -332,7 +333,7 @@ end
 	
 	%---------------------------------------------------------------------------
 	%**Optional, if a drug movie
-	region = makeDrugStateStimParams(region, [1], [region.nframes], 'isoflurane') %where the frame indices inputs are drugOns and drugOffs
+	region = makeDrugStateStimParams(region, [1], [region.nframes], 'isoflurane') %where the frame indices inputs (second and third arguments) are drugOns and drugOffs
 	save(fnm,'region')
 	```
 

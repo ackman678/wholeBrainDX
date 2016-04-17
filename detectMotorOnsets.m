@@ -19,27 +19,38 @@ function [index, thrN, thrN2] = detectMotorOnsets(region,nsd,groupRawThresh,grou
 
 decY2 = region.motorSignal;
 if nargin < 5 || isempty(printFig), printFig = 0; end
-if nargin < 2 || isempty(nsd), nsd = 2; end
+if nargin < 2 || isempty(nsd), nsd = 1; end
 
-mdn=median(abs(decY2));
+mdn1=median(abs(decY2));
+mad1=mad(abs(decY2)); %median absolute deviation
 if nargin < 3 || isempty(groupRawThresh)
-	sd1=mdn/0.6745;
-	thrN = nsd*sd1;
-	thr1 = 1*sd1;
+    sd1=mad1;
+    % sd1=mad1/0.6745; %standard deviation estimate of background
+	thrN = (nsd*sd1) + mdn1;
+	thr1 = (1*sd1) + mdn1;
 else
 	thrN = groupRawThresh;
 	thr1 = thrN/nsd;
 end
 
 dfY2 = diff(decY2);
-mdn=median(abs(dfY2));
+mdn2=median(abs(dfY2));
+mad2=mad(abs(dfY2));
 
 if nargin < 4 || isempty(groupDiffThresh)
-	sd1=mdn/0.6745;    
-	thrN2 = nsd*sd1; 
+    sd2=mad2;    
+    % sd2=mad2/0.6745;    
+	thrN2 = (nsd*sd2) + mdn2; 
 else
-	thrN2 = groupThresh; 
+	thrN2 = groupDiffThresh; 
 end
+
+% figure; hist(decY2)
+% figure; hist(dfY2)
+% disp(['median abs(raw)= ' num2str(mdn1)])
+% disp(['groupRawThresh= ' num2str(thrN)])
+% disp(['median abs(diff)= ' num2str(mdn2)])
+% disp(['groupDiffThresh= ' num2str(thrN2)])
 
 deadTime = 500;  % dead time for spikes and artifacts is in msec  
 [index, thrN2] = mySpikeDetect(dfY2, 1/region.timeres, thrN2, deadTime);
@@ -57,7 +68,7 @@ if printFig
     set(hFig,'PaperPositionMode','auto');
                
     ax(1) = subplot(2,1,1);        
-    plot(decY2,'-'); ylabel('motor activity (uV)'); title('bp/rect/dec/motor signal')    
+    plot(decY2,'-'); ylabel('motor activity (V)'); title('bp/rect/dec/motor signal')    
     xlabel('Time (image frame no.)');     
     line([0 length(decY2)],[thrN thrN],'LineStyle','--','color','r');       
     line([0 length(decY2)],[thr1 thr1],'LineStyle','--','color','g');    
@@ -75,7 +86,13 @@ if printFig
     hold on;  
     plot(index, dfY2(index),'or')  
     legend({'diff(decY2)' [num2str(nsd) 'sd mdn'] '1sd mdn' ['spkDet,' num2str(deadTime) 'msWin']})    
-
+    
     zoom xon     
     linkaxes(ax,'x')    
+
+    fnm = region.tmpName;
+    title(fnm,'Interpreter','none')
+    print(gcf,'-dpng',[fnm(1:end-4) 'motorSignal-cat' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
+    print(gcf,'-depsc',[fnm(1:end-4) 'motorSignal-cat' datestr(now,'yyyymmdd-HHMMSS') '.eps'])
+
 end 

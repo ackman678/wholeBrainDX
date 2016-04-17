@@ -24,14 +24,35 @@ if length(motorOns) ~= length(motorOffs)
 	error('The number of motor onsets and motor offset is not the same')
 end
 
+if ~isfield(region,'nframes')
+	error('region.nframes (movieLength) needed')
+end
+
+if ~isempty(motorOns)
+	if motorOns(1) < 3  %if a motor offset is one frame away from the start make it fr1
+		motorOns(1) = 1;
+	end
+
+	if abs(motorOns(end) - region.nframes) < 2  %if a motor onset is one frame away from end it pass through the following logic
+		motorOns = motorOns(1:end-1);
+		motorOffs = motorOffs(1:end-1);
+	end
+
+end
+
+if ~isempty(motorOffs)
+	if abs(motorOffs(end) - region.nframes) < 2  %if a motor offset is one frame away from end it pass through the following logic
+		motorOffs(end) = region.nframes;
+	end
+end
+
+% disp(['active state ons = ' num2str(motorOns)]) %TESTING
+% disp(['active state offs = ' num2str(motorOffs)]) %TESTING
+
 desc = 'motor.state.active';
 region = appendStimulusParams(region, motorOns, motorOffs, desc, overwrite)
 
 desc = 'motor.state.quiet';
-
-if ~isfield(region,'nframes')
-	error('region.nframes (movieLength) needed')
-end
 
 q_onsets = [1 motorOffs + 1 region.nframes];
 q_offsets = [1 motorOns - 1 region.nframes];
@@ -41,6 +62,10 @@ q_offsets = intersect(setxor(q_offsets,motorOffs),q_offsets);
 
 q_onsets = unique(q_onsets(q_onsets < region.nframes & q_onsets >= 1));
 q_offsets = unique(q_offsets(q_offsets <= region.nframes & q_offsets > 1));
+
+
+% disp(['quiet state ons = ' num2str(q_onsets)]) %TESTING
+% disp(['quiet state offs = ' num2str(q_offsets)]) %TESTING
 
 if length(q_onsets) ~= length(q_offsets)
 	error('The number of quiet onsets and offsets is not the same')
@@ -61,7 +86,8 @@ function region = appendStimulusParams(region, stimframe_indices, stimframe_offs
 	  if overwrite
 	    for i = 1:length(region.stimuli)
 	      if strcmp(region.stimuli{i}.description,desc)
-	        j = i; 
+	        j = i;
+	        region.stimuli{i}.stimulusParams = {};
 	      end
 	    end
 	  end

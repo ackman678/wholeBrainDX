@@ -87,6 +87,7 @@ else
 	end
 	handles.clims = [0 max(vertcat(allResults.maxSig))];  %calculate max clim value for all plots
 	plotFigure(allResults, handles);
+	results=allResults;
 end
 
 

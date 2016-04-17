@@ -1,11 +1,11 @@
-function batchFetchMotorStates(filelist,region, datafilename, stimuliIndices)
+function batchFetchMotorStates(filelist,region, datafilename, stimuliIndices, makePlots)
 %batchFetchMotorStates - A wrapper and output generator for getting information on active pixel fraction per location during the movie, after 'locationData' data structure has been returned and saved into 'region' from wholeBrain_activeFraction.m
 %Examples:
 % >> batchFetchMotorStates(filelist);
 % >> batchFetchMotorStates({filename},region);
-% >> batchFetchMotorStates(filelist,[],[], 'true', {'motor.state.active' 'motor.state.quiet'});
-% >> batchFetchMotorStates({fnm},region,[], 'true', {'motor.state.active' 'motor.state.quiet' 'sleep'});
-% >> batchFetchMotorStates({filename},region,'dMotorStates.txt', 'true', [2 3]);
+% >> batchFetchMotorStates(filelist,[],[],{'motor.onsets' 'motor.state.active' 'motor.state.quiet'});
+% >> batchFetchMotorStates({fnm},region,[],{'motor.state.active' 'motor.state.quiet' 'sleep'});
+% >> batchFetchMotorStates({filename},region,'dMotorStates.txt',[2 3]);
 %
 %**USE**
 %Must provide one input:
@@ -36,6 +36,7 @@ function batchFetchMotorStates(filelist,region, datafilename, stimuliIndices)
 %-----------------------------------------------------------------------------------------
 
 
+if nargin< 5 || isempty(makePlots); makePlots = 0; end 
 if nargin< 4 || isempty(stimuliIndices); stimuliIndices = []; end 
 if nargin< 3 || isempty(datafilename), 
 	datafilename = 'dMotorStates.txt';
@@ -53,7 +54,7 @@ end
 if nargin< 2 || isempty(region); region = []; end
 
 %---**functionHandles.workers and functionHandles.main must be valid functions in this program or in matlabpath to provide an array of function_handles
-functionHandles.workers = {@filename @matlab_filename @motorTimeFraction @motorFreq_hz @stimulusDesc @stimOn @stimOff @TimeFractionState @TimeState_sec @freqState_hz @area @ISI};
+functionHandles.workers = {@filename @matlab_filename @motorTimeFractionAll @stimulusDesc @motorTimeFraction @motorFreq_permin @nstimuli @stimOn @stimOff @Duration_s @Area_mVs @ISI_s};
 functionHandles.main = @wholeBrain_getMovementStats;
 %tableHeaders = {'filename' 'matlab.filename' 'region.name' 'roi.number' 'nrois' 'roi.height.px' 'roi.width.px' 'xloca.px' 'yloca.px' 'xloca.norm' 'yloca.norm' 'freq.hz' 'intvls.s' 'onsets.s' 'durs.s' 'ampl.df'};
 %filename %roi no. %region.name %roi size %normalized xloca %normalized yloca %region.stimuli{numStim}.description %normalized responseFreq %absolutefiringFreq(dFreq) %meanLatency %meanAmpl %meanDur
@@ -70,11 +71,11 @@ else
 	fid = fopen(datafilename,'a');
 end
 
-fetchMotorStates(filelist)
+fetchMotorStates(filelist,makePlots)
 
 %---Generic main function loop-------------------
 %Provide valid function handle
-mainfcnLoop(filelist, region, datafilename, functionHandles, [], fid, stimuliIndices)
+mainfcnLoop(filelist, region, datafilename, functionHandles, fid, stimuliIndices)
 fclose(fid);
 
 
@@ -83,28 +84,41 @@ fclose(fid);
 
 function fetchMotorStates(filelist,makePlots)
 if nargin < 2 || isempty(makePlots), makePlots = 1; end
-fnms = filelist(:,2);
+fnms = filelist(:,1); %assuming **first column** has your dummy files for this script...
 
 for j=1:numel(fnms)
     load(fnms{j});  %load the dummy file at fnms{j} containing parcellations, motor signal, etc
     sprintf(fnms{j})    
     nframes = numel(region.motorSignal);
 
-	[spks,~,~] = detectMotorOnsets(region, motorSignalGroupParams.nsd, motorSignalGroupParams.groupRawThresh, motorSignalGroupParams.groupDiffThresh, 0);
+    if region.motorSignal(1) >= region.motorSignalGroupParams.groupRawThresh
+        region.motorSignal(1) = region.motorSignalGroupParams.groupRawMedian;
+    end
+
+    if region.motorSignal(end) >= region.motorSignalGroupParams.groupRawThresh
+        region.motorSignal(end) = region.motorSignalGroupParams.groupRawMedian;
+    end
+
+	[spks,~,~] = detectMotorOnsets(region, region.motorSignalGroupParams.nsd, region.motorSignalGroupParams.groupRawThresh, region.motorSignalGroupParams.groupDiffThresh, makePlots);
 	region = makeStimParams(region, spks, 'motor.onsets', 1); 
 
-	rateChan = rateChannels(region,[],0,[],motorSignalGroupParams.rateChanMaxlagsAll(motorSignalGroupParams.rateChanNum));
+	rateChan = rateChannels(region,[],makePlots,[],region.motorSignalGroupParams.rateChanMaxlagsAll(region.motorSignalGroupParams.rateChanNum));
 
     x = rateChan(1).y;
-    xbar = motorSignalGroupParams.rateChanMean;
+    xbar = region.motorSignalGroupParams.rateChanMean;
     x(x<xbar) = 0;
     dfY = [diff(x) 0];
 
     ons = find(dfY > xbar); ons = ons+1;
     offs = find(dfY < -xbar);
-    if ons(1) > offs(1)
-        offs = offs(2:end);
-    end
+    if ~isempty(ons)
+	    if ons(1) > offs(1)
+	        offs = offs(2:end);
+	    end
+	end
+	
+	% disp(['num ons =' num2str(numel(ons))]) %TESTING
+	% disp(['num offs =' num2str(numel(offs))]) %TESTING
 
 	% if no. of onsets not equal to offsets, try removing the first offset (in case detected in beginning of movie)
     if numel(ons) ~= numel(offs)
@@ -136,10 +150,37 @@ for j=1:numel(fnms)
         end
     end
 
+	if makePlots
+		hFig = figure;
+	    scrsize = get(0,'screensize');
+	    set(hFig,'Position',scrsize);
+	    set(hFig,'color',[1 1 1]);
+	    set(hFig,'PaperType','usletter');
+	    set(hFig,'PaperPositionMode','auto');
+
+	    thrN = region.motorSignalGroupParams.groupRawThresh;
+	    nsd=region.motorSignalGroupParams.nsd;
+	    
+	    plot(region.motorSignal,'-'); ylabel('motor activity (V)'); title('bp/rect/dec/motor signal')    
+	    xlabel('Time (image frame no.)');     
+	    line([0 length(region.motorSignal)],[thrN thrN],'LineStyle','--','color','r');       
+	    legend({'region.motorSignal' [num2str(nsd) 'sd mdn']})  
+	    hold on  
+		plot(idx1, region.motorSignal(idx1),'or')
+		plot(idx2, region.motorSignal(idx2),'ok')
+		zoom xon
+
+		% fnm = fnms{j};
+		% print(gcf,'-dpng',[fnm(1:end-4) 'motorSignal-cat' datestr(now,'yyyymmdd-HHMMSS') '.png'])            
+		% print(gcf,'-depsc',[fnm(1:end-4) 'motorSignal-cat' datestr(now,'yyyymmdd-HHMMSS') '.eps']) 
+	end
+
     region = makeMotorStateStimParams(region, idx1, idx2, 1);
 
     save(fnms{j},'region','-v7.3');  %load the dummy file at fnms{j} containing parcellations, motor signal, etc
 end
+
+
 
 
 
@@ -154,13 +195,23 @@ else
     loadfile = 0;
 end
 
-fnms = filelist(:,2);  %assuming **second column** has your dummy files for this script...
+fnms = filelist(:,1);  %assuming **first column** has your dummy files for this script...
+fnms2 = filelist(:,2);  %assuming **second column** has your movie tif filenames for this script...
 
 for j=1:numel(fnms)
     if loadfile > 0
         load(fnms{j},'region');
     end
     
+    if ~isfield(region,'filename')    
+		if size(filelist,2) > 1 && ~isfield(region,'filename')
+			[pathstr, name, ext] = fileparts(fnms2{j});
+			region.filename = [name ext];  %2012-02-07 jba
+		else
+			region.filename = ['.tif'];
+		end
+    end
+
 	[pathstr, name, ext] = fileparts(fnms{j});
 	region.matfilename = [name ext];  %2012-02-07 jba    
 	
@@ -220,10 +271,11 @@ end
 
 %START loop here by stimulus.stimuliParams to make a stimulus period based dataset------------------------
 for numStim = stimuliIndices
+	varin.numStim = numStim;
+	varin.stimulusdesc = region.stimuli{numStim}.description;
+	% disp(varin.stimulusdesc) %TESTING
 	for nstimuli=1:numel(region.stimuli{numStim}.stimulusParams)
-		varin.numStim = numStim;
 		varin.nstimuli = nstimuli;
-		varin.stimulusdesc = region.stimuli{numStim}.description;
 		varin.on = region.stimuli{numStim}.stimulusParams{nstimuli}.frame_indices(1);
 		varin.off = region.stimuli{numStim}.stimulusParams{nstimuli}.frame_indices(end);
 		printStats(functionHandles, varin, fid) 
@@ -231,9 +283,6 @@ for numStim = stimuliIndices
 end
 %END loop here by stimulus.stimuliParams-------------------------------
 
-
-
-@filename @matlab_filename @motorTimeFractionAll @stimulusDesc @motorTimeFraction @motorFreq_hz @nstimuli @stimOn @stimOff @Duration_s @Area_uVs @ISI_s
 
 
 
@@ -248,19 +297,22 @@ out = varin.region.matfilename;
 
 
 function out = motorTimeFractionAll(varin)
+%fraction of complete motor signal above threshold
 idx = find(varin.region.motorSignal >= varin.region.motorSignalGroupParams.groupRawThresh);
 out = numel(idx)/varin.region.nframes;
 
 
 function out = stimulusDesc(varin)
+%stimulus name
 out = varin.stimulusdesc;
 
 
 function out = motorTimeFraction(varin)
+%fraction of motor signal above threshold for stimulus type
 tf = false(1,varin.region.nframes);	
-for i=1:numel(varin.region.stimuli{numStim}.stimulusParams)
-	t1 = varin.region.stimuli{numStim}.stimulusParams{i}.frame_indices(1);
-	t2 = varin.region.stimuli{numStim}.stimulusParams{i}.frame_indices(end);
+for i=1:numel(varin.region.stimuli{varin.numStim}.stimulusParams)
+	t1 = varin.region.stimuli{varin.numStim}.stimulusParams{i}.frame_indices(1);
+	t2 = varin.region.stimuli{varin.numStim}.stimulusParams{i}.frame_indices(end);
 	tf(t1:t2) = 1; 
 end
 tmpSignal = varin.region.motorSignal;
@@ -269,125 +321,45 @@ idx = find(tmpSignal >= varin.region.motorSignalGroupParams.groupRawThresh);
 out = numel(idx)/varin.region.nframes;
 
 
-function out = motorFreq_hz(varin)
-out = numel(varin.region.stimuli{varin.numStim}.stimulusParams) / (varin.region.nframes*varin.region.timeres);
+function out = motorFreq_permin(varin)
+%overall stimulus frequency for movie, events per minute
+out = (numel(varin.region.stimuli{varin.numStim}.stimulusParams) / (varin.region.nframes*varin.region.timeres)) * 60;
 
 
 function out = nstimuli(varin)
+%stimulus number
 out = varin.nstimuli;
 
 
 function out = stimOn(varin) 
+%stimulus onset frame
 out = varin.on;
 
 
 function out = stimOff(varin)
+%stimulus offset frame
 out = varin.off;
 
+
 function out = Duration_s(varin)
+%duration of stimulus in seconds
 out = (varin.off-varin.on+1).*varin.region.timeres;
 
 
-function out = Area_uVs(varin)
-out = numel(varin.region.stimuli{varin.numStim}.stimulusParams) / (varin.region.nframes*varin.region.timeres);
-
-out = trapz(varin.on:varin.off*varin.region.timeres,vel);
+function out = Area_mVs(varin)
+%area under curve (mV*s). Multiplied by 1000 below to convert to mV (otherwise default values in volts too small)
+% disp(varin.nstimuli) %TESTING
+onset = varin.on;
+offset = min([max([varin.on+1 varin.off]) varin.region.nframes]);
+%out = trapz((onset:offset)*varin.region.timeres, varin.region.motorSignal(onset:offset) * 1000);
+out = trapz((onset:offset)*varin.region.timeres, (varin.region.motorSignal(onset:offset) / varin.region.motorSignalGroupParams.groupRawMax)*1000);
 
 
 function out = ISI_s(varin)
-%wave ISI------------------------------------------------------------------
-tmpres=region.timeres;
-d=region.waveonsets;
-e=region.waveoffsets;
-
-d1 = [d size(region.traces,2)];
-e1 = [0 e-d];
-ints=diff([0 d1]) - e1;
-if d(1) ~= 1
-    ints=ints(2:end);
+%stimulus onset ISI-------------------------------------------------------
+len = numel(varin.region.stimuli{varin.numStim}.stimulusParams);
+if varin.nstimuli+1 <= len
+	out = (varin.region.stimuli{varin.numStim}.stimulusParams{varin.nstimuli+1}.frame_indices(1) - varin.on)*varin.region.timeres;
+else
+	out = NaN;
 end
-if d(end) ~= size(region.traces,2)
-    ints=ints(1:end-1);
-end
-ints=ints*tmpres;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%------------Find active period functions---------------
-function pulseSignal = makeActivePulseSignal(rawSignal)
-pulseSignal = rawSignal;
-pulseSignal(rawSignal>0) = 1;
-
-
-function pulseSignal = makeNonActivePulseSignal(rawSignal)
-pulseSignal = rawSignal;
-pulseSignal(rawSignal>0) = -1;
-pulseSignal(pulseSignal>-1) = 1;
-pulseSignal(pulseSignal<1) = 0;
-
-
-function [wvonsets, wvoffsets] = getPulseOnsetsOffsets(rawSignal,pulseSignal,plotTitles,locationName,makePlots)
-if nargin < 5 || isempty(makePlots), makePlots = 0; end
-if nargin < 4 || isempty(locationName), locationName = 'unknown location'; end
-if nargin < 3 || isempty(plotTitles), plotTitles{1} = ['active fraction by frame for ' locationName]; plotTitles{2} = 'active periods to positive pulse'; plotTitles{3} = 'derivative of active pulse'; end
-
-x = pulseSignal;
-sig = rawSignal;
-%ax = axesHandles;
-dx = diff(x);
-dx2 = [dx 0];  %because diff makes the vector one data point shorter.
-
-if makePlots > 0
-	figure, 
-	ax(1)=subplot(3,1,1);
-	plot(sig); title(plotTitles{1})
-
-	ax(2)=subplot(3,1,2);
-	plot(x); title(plotTitles{2})		
-
-	ax(3)=subplot(3,1,3);
-	plot(dx2); title(plotTitles{3})		
-	linkaxes(ax,'x')
-	zoom xon
-end
-wvonsets = find(dx > 0);
-wvoffsets = find(dx < 0);
-
-%figure out if an offset was at last frame of movie (no. of onsets and offsets not equal)
-if wvonsets(1) > wvoffsets(1)
-   wvonsets = [1 wvonsets];
-end
-
-if wvoffsets(end) < wvonsets(end)
-   wvoffsets = [wvoffsets size(sig,2)];
-end
-
-if makePlots > 0 
-	axes(ax(1))
-	hold on
-	plot(wvonsets,sig(wvonsets),'og');
-	plot(wvoffsets,sig(wvoffsets),'or');
-
-	axes(ax(2))
-	hold on
-	plot(wvonsets,x(wvonsets),'og');
-	plot(wvoffsets,x(wvoffsets),'or');
-
-	axes(ax(3))
-	hold on
-	plot(wvonsets,dx2(wvonsets),'og');
-	plot(wvoffsets,dx2(wvoffsets),'or');
-end
-

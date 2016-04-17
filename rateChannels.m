@@ -8,7 +8,7 @@ if nargin<5 || isempty(maxlagsAll), maxlagsAll = 50:50:500; end
 if nargin<4 || isempty(stimIdx), 
 	stimIdx = 1;
 	for i = 1:length(region.stimuli)
-		if strcmp(region.stimuli{i}.descriptor,'motor.onsets')
+		if strcmp(region.stimuli{i}.description,'motor.onsets')
 			stimIdx = i; 
 		end
 	end

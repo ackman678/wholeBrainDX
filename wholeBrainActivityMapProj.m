@@ -86,9 +86,9 @@ case 2
 			A3proj = makeBinaryPixelArrayTaggedDomainFreq(A3, CC, STATS, domains, '', frames);
 			A3proj = A3proj ./ ((diff(frames) + 1) .* region.timeres .* (1/60)); %freq (min^-1s)
 		case 'domainDur'
-			A3proj = makeBinaryPixelArrayTaggedDomainDuration(A3, CC, STATS, domains, '', frames, region.timeres);
+			A3proj = makeBinaryPixelArrayTaggedDomainDuration(A3, CC, STATS, domains, '', frames, region);
 		case 'domainDiam'
-			A3proj = makeBinaryPixelArrayTaggedDomainDiameter(A3, CC, STATS, domains, '', frames, region.spaceres);
+			A3proj = makeBinaryPixelArrayTaggedDomainDiameter(A3, CC, STATS, domains, '', frames, region);
 		case 'domainAmpl'	
 			A3proj = makeBinaryPixelArrayTaggedDomainAmplitude(A3, CC, STATS, domains, '', frames);
 		otherwise
@@ -152,8 +152,9 @@ for i = 1:CC.NumObjects
 	end
 end
 
-function A3proj = makeBinaryPixelArrayTaggedDomainDuration(A3, CC, STATS, domains, tag, frames, framePeriod)
+function A3proj = makeBinaryPixelArrayTaggedDomainDuration(A3, CC, STATS, domains, tag, frames, region)
 %tag should be 'artifact' if you want to plot artifacts or '' if you want to plot with artifacts removed.
+framePeriod = region.timeres;
 if (nargin < 5 || isempty(tag)), tag = ''; end
 
 roiBoundingBox = zeros(length(STATS),6);
@@ -165,8 +166,9 @@ durations = roiBoundingBox(:,6) * framePeriod;
 A3proj = meanProjectArray(A3, CC, STATS, domains, durations, tag, frames);
 
 
-function A3proj = makeBinaryPixelArrayTaggedDomainDiameter(A3, CC, STATS, domains, tag, frames, spaceres)
+function A3proj = makeBinaryPixelArrayTaggedDomainDiameter(A3, CC, STATS, domains, tag, frames, region)
 %tag should be 'artifact' if you want to plot artifacts or '' if you want to plot with artifacts removed.
+spaceres = region.spaceres;
 if (nargin < 5 || isempty(tag)), tag = ''; end
 
 roiBoundingBox = zeros(length(STATS),6);
@@ -175,7 +177,8 @@ for i = 1:length(STATS)
 end
 
 diameters = mean([roiBoundingBox(:,4) roiBoundingBox(:,5)], 2) .* spaceres;
-A3proj = meanProjectArray(A3, CC, STATS, domains, diameters, tag, frames);
+%A3proj = meanProjectArray(A3, CC, STATS, domains, diameters, tag, frames);
+A3proj = medianProjectArray(A3, CC, STATS, domains, diameters, tag, frames, region);
 
 
 function A3proj = makeBinaryPixelArrayTaggedDomainAmplitude(A3, CC, STATS, domains, tag, frames)
@@ -202,3 +205,29 @@ for i = 1:CC.NumObjects
 	end
 end
 A3proj = A3./count; 
+
+
+function A3proj = medianProjectArray(A3, CC, STATS, domains, signalMetric, tag, frames, region, thr)
+%frames should be a vector containing two integers, the startFrame and endFrame for the range you want to plot
+%this function requires the statistics toolbox (nanmedian)
+if nargin < 9 || isempty(thr), thr = 0.15; end
+sz = CC.ImageSize;
+A3 = NaN(sz(1),sz(2),CC.NumObjects);
+hemisphereIndices = find(strcmp(region.name,'cortex.L') | strcmp(region.name,'cortex.R')); 
+if ~isempty(hemisphereIndices)
+	dim = max(region.coords{hemisphereIndices(1)}) - min(region.coords{hemisphereIndices(1)}) + 1;
+	maxDiam = mean(dim * region.spaceres);
+	thr = maxDiam - (thr*maxDiam);
+else
+	thr = mean(sz(1:2) * region.spaceres);
+end
+for i = 1:CC.NumObjects  
+	if strcmp(STATS(i).descriptor, tag) & ceil(STATS(i).BoundingBox(3)) >= frames(1) & ceil(STATS(i).BoundingBox(3)) <= frames(2) & signalMetric(i) < thr
+		BW = NaN(sz(1),sz(2));
+		BW(domains(i).PixelInd) = signalMetric(i);
+		A3(:,:,i) = BW;
+	end
+end
+% A3proj = nanmedian(A3,3);
+A3proj = nanmean(A3,3); %mean is more accurate for activity maps
+A3proj(isnan(A3proj)) = 0;

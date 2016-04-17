@@ -94,7 +94,8 @@ switch figType
 				handles.axesTitle = 'domainDur, Mean domain duration, sec. MaxSig=';
 				img = A3proj;			
 			case 'domainDiam'
-				handles.axesTitle = 'domainDiam, Mean domain diameter, um. MaxSig=';
+				% handles.axesTitle = 'domainDiam, Mean domain diameter, um. MaxSig=';
+				handles.axesTitle = 'domainDiam, Median domain diameter, um. MaxSig=';
 				img = A3proj;
 			case 'domainAmpl'
 				handles.axesTitle = 'domainAmpl, Mean domain, scaled dF/F. MaxSig=';
